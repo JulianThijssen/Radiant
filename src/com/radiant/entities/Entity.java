@@ -2,6 +2,7 @@ package com.radiant.entities;
 
 import com.radiant.Scene;
 import com.radiant.components.Transform;
+import com.radiant.geom.Mesh;
 
 public abstract class Entity {
 	public String name;

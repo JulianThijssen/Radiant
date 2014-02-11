@@ -4,10 +4,15 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 
 import obj.radiant.exceptions.OBJImportException;
 
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.radiant.geom.Face;
@@ -19,15 +24,15 @@ import com.radiant.geom.Model;
  * */
 
 public class OBJImport {
-	public static Model load(String filepath) throws OBJImportException {
+	public static int load(String filepath) throws OBJImportException {
 		try {
-			FileReader fr = new FileReader(new File(filepath));
-			BufferedReader in = new BufferedReader(fr);
+			BufferedReader in = new BufferedReader(new FileReader(new File(filepath)));
 			
 			Model model = new Model();
 			ArrayList<Vector3f> vertices = new ArrayList<Vector3f>();
 			ArrayList<Vector3f> normals = new ArrayList<Vector3f>();
 			ArrayList<Face> faces = new ArrayList<Face>();
+			int verticesPerFace = -1;
 			
 			String line = null;
 
@@ -39,7 +44,9 @@ public class OBJImport {
 					continue;
 				}
 				
-				if(segments[0].equals("v")) {
+				String type = segments[0];
+				
+				if(type.equals("v")) {
 					try {
 						float x = Float.parseFloat(segments[1]);
 						float y = Float.parseFloat(segments[2]);
@@ -47,11 +54,11 @@ public class OBJImport {
 						
 						vertices.add(new Vector3f(x, y, z));
 					} catch(NumberFormatException e) {
-						e.printStackTrace();
-						Log.error("Invalid vertex coordinate at line: " + line);
+						in.close();
+						throw new OBJImportException("Invalid vertex coordinate at line: " + line);
 					}
 				}
-				if(segments[0].equals("vn")) {
+				if(type.equals("vn")) {
 					try {
 						float x = Float.parseFloat(segments[1]);
 						float y = Float.parseFloat(segments[2]);
@@ -59,16 +66,17 @@ public class OBJImport {
 						
 						normals.add(new Vector3f(x, y, z));
 					} catch(NumberFormatException e) {
-						Log.error("Invalid vertex normal at line: " + line);
+						in.close();
+						throw new OBJImportException("Invalid vertex normal at line: " + line);
 					}
 				}
-				if(segments[0].equals("f")) {
+				if(type.equals("f")) {
 					try {
-						int vertexCount = segments.length - 1;
+						verticesPerFace = segments.length - 1;
 						Face face = new Face();
-						face.vertices = new int[vertexCount];
-						face.normals = new int[vertexCount];
-						for(int i = 0; i < vertexCount; i++) {
+						face.vertices = new int[verticesPerFace];
+						face.normals = new int[verticesPerFace];
+						for(int i = 0; i < verticesPerFace; i++) {
 							String[] elements = segments[i+1].split("/");
 							face.vertices[i] = Integer.parseInt(elements[0]);
 							if(elements.length == 2) {
@@ -78,16 +86,17 @@ public class OBJImport {
 								if(!elements[1].isEmpty()) {
 									//Store vt
 								}
-								face.normals[i] = Integer.parseInt(elements[0]);
+								face.normals[i] = Integer.parseInt(elements[2]);
 							}
 						}
 						faces.add(face);
 					} catch(NumberFormatException e) {
-						Log.error("Invalid face at line: " + line);
+						in.close();
+						throw new OBJImportException("Invalid face at line: " + line);
 					}
 				}
 			}
-
+			
 			in.close();
 			
 			//Copy vertices to model
@@ -108,7 +117,35 @@ public class OBJImport {
 				model.faces[i] = faces.get(i);
 			}
 			
-			return model;
+			FloatBuffer faceBuffer = FloatBuffer.allocate(faces.size() * verticesPerFace);
+			for(Face face: faces) {
+				for(int i = 0; i < 3; i++) {
+					Vector3f vertex = model.vertices[face.vertices[i] - 1];
+					faceBuffer.put(vertex.x);
+					faceBuffer.put(vertex.y);
+					faceBuffer.put(vertex.z);
+				}
+			}
+			faceBuffer.flip();
+			
+			int vao = GL30.glGenVertexArrays();
+			GL30.glBindVertexArray(vao);
+			
+			int vertexBuffer = GL15.glGenBuffers();
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
+			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, faceBuffer, GL15.GL_STATIC_DRAW);
+			GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+			
+			int normalBuffer = GL15.glGenBuffers();
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, normalBuffer);
+			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, faceBuffer, GL15.GL_STATIC_DRAW);
+			GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, 0, 0);
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+			
+			GL30.glBindVertexArray(0);
+			
+			return vao;
 		} catch (IOException e) {
 			throw new OBJImportException(e.getMessage());
 		}
