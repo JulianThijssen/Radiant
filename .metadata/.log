@@ -1,0 +1,15 @@
+!SESSION 2014-02-11 11:47:01.496 -----------------------------------------------
+eclipse.buildId=4.3.0.M20130911-1000
+java.version=1.7.0_51
+java.vendor=Oracle Corporation
+BootLoader constants: OS=linux, ARCH=x86_64, WS=gtk, NL=en_US
+Framework arguments:  -product org.eclipse.epp.package.standard.product
+Command-line arguments:  -os linux -ws gtk -arch x86_64 -product org.eclipse.epp.package.standard.product
+
+!ENTRY org.eclipse.ui.ide 4 4 2014-02-11 11:50:40.830
+!MESSAGE Problems saving workspace
+
+!ENTRY org.eclipse.ui.ide 2 1 2014-02-11 11:50:40.836
+!MESSAGE Problems occurred while trying to save the state of the workbench.
+!SUBENTRY 1 org.eclipse.core.resources 2 234 2014-02-11 11:50:40.837
+!MESSAGE The project description file (.project) for 'Radiant' was missing.  This file contains important information about the project.  A new project description file has been created, but some information about the project may have been lost.

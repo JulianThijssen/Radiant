@@ -86,7 +86,7 @@ public class Camera extends Entity {
 		
 	}
 	
-	public Matrix4f getPerspectiveMatrix() {
+	public Matrix4f getProjectionMatrix() {
 		projectionMatrix.m00 = (float) (1 / Math.tan(Math.toRadians(fieldOfView / 2f)));
 		projectionMatrix.m11 = (float) (1 / Math.tan(Math.toRadians(fieldOfView / 2f)));
 		projectionMatrix.m22 = -((zFar + zNear) / (zFar - zNear));
