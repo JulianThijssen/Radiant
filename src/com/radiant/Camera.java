@@ -1,11 +1,9 @@
-package com.radiant.entities;
+package com.radiant;
 
 import org.lwjgl.util.vector.Matrix4f;
 
-import com.radiant.Scene;
-
-public class Camera extends Entity {
-	public static final float   DEFAULT_FOV = 30;
+public class Camera {
+	public static final float   DEFAULT_FOV = 90;
 	public static final float   DEFAULT_ASPECTRATIO = 1;
 	public static final float   DEFAULT_ZNEAR = 0.1f;
 	public static final float   DEFAULT_ZFAR = 100f;
@@ -76,12 +74,6 @@ public class Camera extends Entity {
 		return viewMatrix;
 	}
 	
-	@Override
-	public void create() {
-		// TODO Auto-generated method stub
-		
-	}
-	
 	public void update(Scene world) {
 		
 	}
@@ -95,10 +87,4 @@ public class Camera extends Entity {
 		projectionMatrix.m33 = 0;
 		return projectionMatrix;
     }
-
-	@Override
-	public void destroy() {
-		// TODO Auto-generated method stub
-		
-	}
 }

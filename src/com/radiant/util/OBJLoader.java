@@ -9,26 +9,26 @@ import java.util.ArrayList;
 
 import obj.radiant.exceptions.OBJImportException;
 
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Vector3f;
 
+import com.radiant.components.Mesh;
 import com.radiant.geom.Face;
-import com.radiant.geom.Model;
 
-/** Support for v and vn 
+/** Support for v and vn and f
  * No support for rational curves in 'v'
  * No support for vt
  * */
 
-public class OBJImport {
-	public static int load(String filepath) throws OBJImportException {
+public class OBJLoader {
+	public static Mesh loadMesh(String filepath) throws OBJImportException {
 		try {
 			BufferedReader in = new BufferedReader(new FileReader(new File(filepath)));
 			
-			Model model = new Model();
 			ArrayList<Vector3f> vertices = new ArrayList<Vector3f>();
 			ArrayList<Vector3f> normals = new ArrayList<Vector3f>();
 			ArrayList<Face> faces = new ArrayList<Face>();
@@ -78,15 +78,23 @@ public class OBJImport {
 						face.normals = new int[verticesPerFace];
 						for(int i = 0; i < verticesPerFace; i++) {
 							String[] elements = segments[i+1].split("/");
-							face.vertices[i] = Integer.parseInt(elements[0]);
-							if(elements.length == 2) {
-								//Store vt
-							}
-							if(elements.length == 3) {
-								if(!elements[1].isEmpty()) {
-									//Store vt
+							if(elements.length >= 1) {
+								if(elements[0].isEmpty()) {
+									throw new OBJImportException("Vertex missing for face at: " + line);
 								}
-								face.normals[i] = Integer.parseInt(elements[2]);
+								face.vertices[i] = Integer.parseInt(elements[0]);
+								
+								if(elements.length >= 2) {
+									if(!elements[1].isEmpty()) {
+										//Store vt
+									}
+								}
+								
+								if(elements.length >= 3) {
+									if(!elements[2].isEmpty()) {
+										face.normals[i] = Integer.parseInt(elements[2]);
+									}
+								}
 							}
 						}
 						faces.add(face);
@@ -99,53 +107,47 @@ public class OBJImport {
 			
 			in.close();
 			
-			//Copy vertices to model
-			model.vertices = new Vector3f[vertices.size()];
-			for(int i = 0; i < model.vertices.length; i++) {
-				model.vertices[i] = vertices.get(i);
-			}
+			//Store the faces in a floatbuffer
+			FloatBuffer vertexBuffer = BufferUtils.createFloatBuffer(faces.size() * verticesPerFace * 3);
+			FloatBuffer normalBuffer = BufferUtils.createFloatBuffer(faces.size() * verticesPerFace * 3);
 			
-			//Copy normals to model
-			model.normals = new Vector3f[normals.size()];
-			for(int i = 0; i < model.normals.length; i++) {
-				model.normals[i] = normals.get(i);
-			}
-			
-			//Copy faces to model
-			model.faces = new Face[faces.size()];
-			for(int i = 0; i < model.faces.length; i++) {
-				model.faces[i] = faces.get(i);
-			}
-			
-			FloatBuffer faceBuffer = FloatBuffer.allocate(faces.size() * verticesPerFace);
 			for(Face face: faces) {
-				for(int i = 0; i < 3; i++) {
-					Vector3f vertex = model.vertices[face.vertices[i] - 1];
-					faceBuffer.put(vertex.x);
-					faceBuffer.put(vertex.y);
-					faceBuffer.put(vertex.z);
+				for(int i = 0; i < verticesPerFace; i++) {
+					Vector3f vertex = vertices.get(face.vertices[i] - 1);
+					vertex.store(vertexBuffer);
+				}
+				for(int i = 0; i < verticesPerFace; i++) {
+					Vector3f normal = normals.get(face.normals[i] - 1);
+					normal.store(normalBuffer);
 				}
 			}
-			faceBuffer.flip();
+			vertexBuffer.flip();
+			normalBuffer.flip();
 			
+			//Make the mesh component to store all the data in
+			Mesh mesh = new Mesh();
+			
+			//Generate the vertex array object
 			int vao = GL30.glGenVertexArrays();
 			GL30.glBindVertexArray(vao);
 			
-			int vertexBuffer = GL15.glGenBuffers();
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
-			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, faceBuffer, GL15.GL_STATIC_DRAW);
+			int vertexVBO = GL15.glGenBuffers();
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexVBO);
+			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertexBuffer, GL15.GL_STATIC_DRAW);
 			GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 			
-			int normalBuffer = GL15.glGenBuffers();
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, normalBuffer);
-			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, faceBuffer, GL15.GL_STATIC_DRAW);
+			int normalVBO = GL15.glGenBuffers();
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, normalVBO);
+			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, normalBuffer, GL15.GL_STATIC_DRAW);
 			GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, 0, 0);
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 			
 			GL30.glBindVertexArray(0);
 			
-			return vao;
+			mesh.vao = vao;
+			mesh.vertexCount = vertexBuffer.capacity();
+			return mesh;
 		} catch (IOException e) {
 			throw new OBJImportException(e.getMessage());
 		}

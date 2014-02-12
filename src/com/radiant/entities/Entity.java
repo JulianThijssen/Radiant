@@ -1,18 +1,14 @@
 package com.radiant.entities;
 
-import com.radiant.Scene;
-import com.radiant.components.Transform;
-import com.radiant.geom.Mesh;
+import java.util.ArrayList;
 
-public abstract class Entity {
+import com.radiant.components.Component;
+
+public class Entity {
 	public String name;
+	public ArrayList<Component> components = new ArrayList<Component>();
 	
-	public Transform transform = new Transform();
-	public Mesh mesh = null;
-	
-	public abstract void create();
-	
-	public abstract void update(Scene world);
-	
-	public abstract void destroy();
+	public void addComponent(Component c) {
+		components.add(c);
+	}
 }
