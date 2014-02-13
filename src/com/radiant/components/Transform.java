@@ -8,19 +8,11 @@ public class Transform extends Component {
 	public Vector3f scale = new Vector3f(1, 1, 1);
 	
 	public Transform(float x, float y, float z) {
-		position.x = x;
-		position.y = y;
-		position.z = z;
+		this(x, y, z, 0, 0, 0, 1, 1, 1);
 	}
 	
 	public Transform(float x, float y, float z, float pitch, float yaw, float roll) {
-		position.x = x;
-		position.y = y;
-		position.z = z;
-		
-		rotation.x = pitch;
-		rotation.y = yaw;
-		rotation.z = roll;
+		this(x, y, z, pitch, yaw, roll, 1, 1, 1);
 	}
 	
 	public Transform(float x, float y, float z, float pitch, float yaw, float roll, float sx, float sy, float sz) {
@@ -28,9 +20,9 @@ public class Transform extends Component {
 		position.y = y;
 		position.z = z;
 		
-		rotation.x = pitch;
-		rotation.y = yaw;
-		rotation.z = roll;
+		rotation.x = (float) Math.toRadians(pitch);
+		rotation.y = (float) Math.toRadians(yaw);
+		rotation.z = (float) Math.toRadians(roll);
 		
 		scale.x = sx;
 		scale.y = sy;

@@ -4,6 +4,7 @@ import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.glClear;
 import static org.lwjgl.opengl.GL11.glClearColor;
+
 import java.nio.FloatBuffer;
 
 import org.lwjgl.BufferUtils;
@@ -14,6 +15,7 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.radiant.components.Component;
+import com.radiant.components.Light;
 import com.radiant.components.Mesh;
 import com.radiant.components.Transform;
 import com.radiant.entities.Entity;
@@ -24,9 +26,6 @@ public class SceneRenderer {
 	private Matrix4f projectionMatrix = new Matrix4f();
 	private Matrix4f viewMatrix = new Matrix4f();
 	private Matrix4f modelMatrix = new Matrix4f();
-	
-	//Temporary light
-	private Vector3f light = new Vector3f(0, 10, -15);
 	
 	private Scene scene;
 	
@@ -42,13 +41,12 @@ public class SceneRenderer {
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		glClearColor(0.0f, 0.0f, 0.2f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		projectionMatrix = scene.mainCamera.getProjectionMatrix();
+		
+		Camera camera = scene.mainCamera;
 		
 		int projLoc = GL20.glGetUniformLocation(shader, "projectionMatrix");
 		int viewLoc = GL20.glGetUniformLocation(shader, "viewMatrix");
 		int modelLoc = GL20.glGetUniformLocation(shader, "modelMatrix");
-		//Temp
-		int lightLoc = GL20.glGetUniformLocation(shader, "lightPos");
 		
 		GL20.glUseProgram(shader);
 		
@@ -64,9 +62,42 @@ public class SceneRenderer {
 		
 		GL20.glUniformMatrix4(projLoc, false, projBuffer);
 		GL20.glUniformMatrix4(viewLoc, false, viewBuffer);
-		//Temp
-		GL20.glUniform4f(lightLoc, light.x, light.y, light.z, 1);
 		
+		//Calculate projection matrix
+		projectionMatrix.m00 = (float) (1 / Math.tan(Math.toRadians(camera.fieldOfView / 2f)));
+		projectionMatrix.m11 = (float) (1 / Math.tan(Math.toRadians(camera.fieldOfView / 2f)));
+		projectionMatrix.m22 = -((camera.zFar + camera.zNear) / (camera.zFar - camera.zNear));
+		projectionMatrix.m23 = -1;
+		projectionMatrix.m32 = -((2 * camera.zNear * camera.zFar) / (camera.zFar - camera.zNear));
+		projectionMatrix.m33 = 0;
+		
+		//Calculate view matrix
+		viewMatrix.setIdentity();
+		//Vector3f cameraPosition = scene.mainCamera.position;
+		
+		//Lighting
+		for (Entity entity: scene.entities) {
+			Transform transform = null;
+			Light light = null;
+			
+			for(Component c: entity.components) {
+				if(c instanceof Transform) {
+					transform = (Transform) c;
+				}
+				if(c instanceof Light) {
+					light = (Light) c;
+				}
+			}
+			
+			if(transform == null || light == null) {
+				continue;
+			}
+			
+			int lightLoc = GL20.glGetUniformLocation(shader, "lightPos");
+			GL20.glUniform4f(lightLoc, transform.position.x, transform.position.y, transform.position.z, 1);
+		}
+		
+		//Mesh rendering
 		for(Entity entity: scene.entities) {
 			Transform transform = null;
 			Mesh mesh = null;

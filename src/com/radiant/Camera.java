@@ -1,7 +1,5 @@
 package com.radiant;
 
-import org.lwjgl.util.vector.Matrix4f;
-
 public class Camera {
 	public static final float   DEFAULT_FOV = 90;
 	public static final float   DEFAULT_ASPECTRATIO = 1;
@@ -12,15 +10,12 @@ public class Camera {
 	public static final float   MAX_PITCH = 90;
 	public static final float   DEFAULT_SENSITIVITY = 0.1f;
 	
-	private float   fieldOfView = DEFAULT_FOV;
-	private float   aspectRatio = DEFAULT_ASPECTRATIO;
-	private float   zNear       = DEFAULT_ZNEAR;
-	private float   zFar        = DEFAULT_ZFAR;
-	private boolean perspective = DEFAULT_PERSPECTIVE;
-	private float   sensitivity = DEFAULT_SENSITIVITY;
-	
-	private Matrix4f projectionMatrix = new Matrix4f();
-	private Matrix4f viewMatrix = new Matrix4f();
+	public float   fieldOfView = DEFAULT_FOV;
+	public float   aspectRatio = DEFAULT_ASPECTRATIO;
+	public float   zNear       = DEFAULT_ZNEAR;
+	public float   zFar        = DEFAULT_ZFAR;
+	public boolean perspective = DEFAULT_PERSPECTIVE;
+	public float   sensitivity = DEFAULT_SENSITIVITY;
 	
 	public float getFieldOfView() {
 		return fieldOfView;
@@ -69,22 +64,4 @@ public class Camera {
 	public void setSensitivity(float sensitivity) {
 		this.sensitivity = sensitivity;
 	}
-	
-	public Matrix4f getViewMatrix() {
-		return viewMatrix;
-	}
-	
-	public void update(Scene world) {
-		
-	}
-	
-	public Matrix4f getProjectionMatrix() {
-		projectionMatrix.m00 = (float) (1 / Math.tan(Math.toRadians(fieldOfView / 2f)));
-		projectionMatrix.m11 = (float) (1 / Math.tan(Math.toRadians(fieldOfView / 2f)));
-		projectionMatrix.m22 = -((zFar + zNear) / (zFar - zNear));
-		projectionMatrix.m23 = -1;
-		projectionMatrix.m32 = -((2 * zNear * zFar) / (zFar - zNear));
-		projectionMatrix.m33 = 0;
-		return projectionMatrix;
-    }
 }
