@@ -17,8 +17,8 @@ public class ImportTest {
 			assertTrue("OBJ loaded without exceptions", true);
 		} catch(Exception e) {
 			Display.destroy();
+			e.printStackTrace();
 			System.out.println(e.getMessage());
-			fail("Loading file threw an exception");
 		}
 	}
 	
