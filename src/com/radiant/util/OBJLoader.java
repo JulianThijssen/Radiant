@@ -92,7 +92,6 @@ public class OBJLoader {
 					}
 				}
 				if(type.equals("f")) {
-					if(segments[1])
 					try {
 						verticesPerFace = segments.length - 1;
 						Face face = new Face();
@@ -130,29 +129,6 @@ public class OBJLoader {
 			
 			in.close();
 			
-			//Store the faces in a float buffer
-			FloatBuffer vertexBuffer = BufferUtils.createFloatBuffer(faces.size() * verticesPerFace * 3);
-			FloatBuffer textureBuffer = BufferUtils.createFloatBuffer(faces.size() * verticesPerFace * 3);
-			FloatBuffer normalBuffer = BufferUtils.createFloatBuffer(faces.size() * verticesPerFace * 3);
-			
-			for(Face face: faces) {
-				for(int i = 0; i < verticesPerFace; i++) {
-					Vector3f vertex = vertices.get(face.vertices[i] - 1);
-					vertex.store(vertexBuffer);
-				}
-				for(int i = 0; i < verticesPerFace; i++) {
-					Vector2f texture = textures.get(face.textures[i] - 1);
-					texture.store(textureBuffer);
-				}
-				for(int i = 0; i < verticesPerFace; i++) {
-					Vector3f normal = normals.get(face.normals[i] - 1);
-					normal.store(normalBuffer);
-				}
-			}
-			vertexBuffer.flip();
-			textureBuffer.flip();
-			normalBuffer.flip();
-			
 			//Make the mesh component to store all the data in
 			Mesh mesh = new Mesh();
 			
@@ -160,24 +136,64 @@ public class OBJLoader {
 			int vao = GL30.glGenVertexArrays();
 			GL30.glBindVertexArray(vao);
 			
-			int vertexVBO = GL15.glGenBuffers();
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexVBO);
-			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertexBuffer, GL15.GL_STATIC_DRAW);
-			GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+			//Store the faces in a float buffer
+			FloatBuffer vertexBuffer = null;
+			FloatBuffer textureBuffer = null;
+			FloatBuffer normalBuffer = null;
 			
-			int textureVBO = GL15.glGenBuffers();
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, textureVBO);
-			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, textureBuffer, GL15.GL_STATIC_DRAW);
-			GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, 0, 0);
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+			if(vertices.size() > 0) {
+				vertexBuffer = BufferUtils.createFloatBuffer(faces.size() * verticesPerFace * 3);
+				
+				for(Face face: faces) {
+					for(int i = 0; i < verticesPerFace; i++) {
+						Vector3f vertex = vertices.get(face.vertices[i] - 1);
+						vertex.store(vertexBuffer);
+					}
+				}
+				vertexBuffer.flip();
+				
+				int vertexVBO = GL15.glGenBuffers();
+				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexVBO);
+				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertexBuffer, GL15.GL_STATIC_DRAW);
+				GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
+				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+			}
+			if(textures.size() > 0) {
+				textureBuffer = BufferUtils.createFloatBuffer(faces.size() * verticesPerFace * 3);
+				
+				for(Face face: faces) {
+					for(int i = 0; i < verticesPerFace; i++) {
+						Vector2f texture = textures.get(face.textures[i] - 1);
+						texture.store(textureBuffer);
+					}
+				}
+				textureBuffer.flip();
+				
+				int textureVBO = GL15.glGenBuffers();
+				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, textureVBO);
+				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, textureBuffer, GL15.GL_STATIC_DRAW);
+				GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 0, 0);
+				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+			}
+			if(normals.size() > 0) {
+				normalBuffer = BufferUtils.createFloatBuffer(faces.size() * verticesPerFace * 3);
+				
+				for(Face face: faces) {
+					for(int i = 0; i < verticesPerFace; i++) {
+						Vector3f normal = normals.get(face.normals[i] - 1);
+						normal.store(normalBuffer);
+					}
+				}
+				normalBuffer.flip();
+				
+				int normalVBO = GL15.glGenBuffers();
+				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, normalVBO);
+				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, normalBuffer, GL15.GL_STATIC_DRAW);
+				GL20.glVertexAttribPointer(2, 3, GL11.GL_FLOAT, false, 0, 0);
+				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+			}
 			
-			int normalVBO = GL15.glGenBuffers();
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, normalVBO);
-			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, normalBuffer, GL15.GL_STATIC_DRAW);
-			GL20.glVertexAttribPointer(2, 3, GL11.GL_FLOAT, false, 0, 0);
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-			
+			//Unbind the vao
 			GL30.glBindVertexArray(0);
 			
 			mesh.vao = vao;
@@ -188,7 +204,7 @@ public class OBJLoader {
 		}
 	}
 	
-	private String[] getElements(String line) {
+	private static String[] getElements(String line) {
 		//Remove leading and trailing whitespace
 		line = line.trim();
 		
@@ -211,11 +227,11 @@ public class OBJLoader {
 		return properArray;
 	}
 	
-	private Pattern getPattern(String line) {
+	/*private static Pattern getPattern(String line) {
 		String[] segments = getElements(line);
 		if(vpattern.matcher(segments[1]).matches()) {return vpattern;}
 		else if(vtpattern.matcher(segments[1]).matches()) {return vtpattern;}
 		else if(vtnpattern.matcher(segments[1]).matches()) {return vtnpattern;}
 		return null;
-	}
+	}*/
 }
