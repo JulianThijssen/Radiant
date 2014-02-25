@@ -10,6 +10,10 @@ public class Scene {
 	public ArrayList<Entity> entities = new ArrayList<Entity>();
 	public Camera mainCamera = new Camera();
 	
+	public Scene() {
+		renderer.start();
+	}
+	
 	public void addEntity(Entity e) {
 		entities.add(e);
 	}

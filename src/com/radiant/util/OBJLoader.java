@@ -4,22 +4,14 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.regex.Pattern;
-
-import obj.radiant.exceptions.OBJImportException;
-
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.radiant.components.Mesh;
+import com.radiant.exceptions.OBJLoaderException;
 import com.radiant.geom.Face;
+import com.radiant.geom.Object;
+import com.radiant.material.Material;
 
 /** Support for v, no support for rational curves
  * Support for vt, no support for w element
@@ -28,26 +20,20 @@ import com.radiant.geom.Face;
  * */
 
 public class OBJLoader {
-	private Pattern vpattern = Pattern.compile("\\d+");
-	private Pattern vtpattern = Pattern.compile("\\d+/\\d+");
-	private Pattern vtnpattern = Pattern.compile("\\d+/\\d+/\\d+");
-	
-	private Pattern facePattern = null;
-	
-	public static Mesh loadMesh(String filepath) throws OBJImportException {
+	public static Mesh loadMesh(String filepath) throws OBJLoaderException {
+		//Make the mesh component to store all the data in
+		Mesh mesh = new Mesh();
+		
 		try {
 			BufferedReader in = new BufferedReader(new FileReader(new File(filepath)));
 			
-			ArrayList<Vector3f> vertices = new ArrayList<Vector3f>();
-			ArrayList<Vector2f> textures = new ArrayList<Vector2f>();
-			ArrayList<Vector3f> normals = new ArrayList<Vector3f>();
-			ArrayList<Face> faces = new ArrayList<Face>();
 			int verticesPerFace = -1;
 			
+			Object currentObject = null;
+			
 			String line = null;
-
 			while((line = in.readLine()) != null) {
-				String[] segments = getElements(line);
+				String[] segments = getSegments(line);
 				
 				//If the line consists of less than 1 segment it's not valid
 				if(segments.length < 1) {
@@ -56,16 +42,28 @@ public class OBJLoader {
 				
 				String type = segments[0];
 				
+				//Load a material library
+				if(type.equals("mtllib")) {
+					String name = segments[1];
+					
+					mesh.materials = MTLLoader.load(getPath(filepath) + name);
+				}
+				if(type.equals("g")) {
+					String name = segments[1];
+					currentObject = new Object(name);
+					mesh.objects.add(currentObject);
+				}
 				if(type.equals("v")) {
 					try {
 						float x = Float.parseFloat(segments[1]);
 						float y = Float.parseFloat(segments[2]);
 						float z = Float.parseFloat(segments[3]);
 						
-						vertices.add(new Vector3f(x, y, z));
+						mesh.vertices.add(new Vector3f(x, y, z));
+						
 					} catch(NumberFormatException e) {
 						in.close();
-						throw new OBJImportException("Invalid vertex coordinate at line: " + line);
+						throw new OBJLoaderException("Invalid vertex coordinate at line: " + line);
 					}
 				}
 				if(type.equals("vt")) {
@@ -73,10 +71,10 @@ public class OBJLoader {
 						float u = Float.parseFloat(segments[1]);
 						float v = Float.parseFloat(segments[2]);
 						
-						textures.add(new Vector2f(u, v));
+						mesh.textureCoords.add(new Vector2f(u, v));
 					} catch(NumberFormatException e) {
 						in.close();
-						throw new OBJImportException("Invalid texture coordinate at line: " + line);
+						throw new OBJLoaderException("Invalid texture coordinate at line: " + line);
 					}
 				}
 				if(type.equals("vn")) {
@@ -85,153 +83,79 @@ public class OBJLoader {
 						float y = Float.parseFloat(segments[2]);
 						float z = Float.parseFloat(segments[3]);
 						
-						normals.add(new Vector3f(x, y, z));
+						mesh.normals.add(new Vector3f(x, y, z));
 					} catch(NumberFormatException e) {
 						in.close();
-						throw new OBJImportException("Invalid vertex normal at line: " + line);
+						throw new OBJLoaderException("Invalid vertex normal at line: " + line);
+					}
+				}
+				if(currentObject == null) {
+					continue;
+				}
+				if(type.equals("usemtl")) {
+					String name = segments[1];
+					
+					for(Material material: mesh.materials) {
+						if(material.getName().equals(name)) {
+							currentObject.material = material;
+						}
 					}
 				}
 				if(type.equals("f")) {
 					try {
 						verticesPerFace = segments.length - 1;
 						Face face = new Face();
-						face.vertices = new int[verticesPerFace];
-						face.textures = new int[verticesPerFace];
-						face.normals = new int[verticesPerFace];
+						face.vi = new int[verticesPerFace];
+						face.ti = new int[verticesPerFace];
+						face.ni = new int[verticesPerFace];
 						for(int i = 0; i < verticesPerFace; i++) {
 							String[] elements = segments[i+1].split("/");
 							if(elements.length >= 1) {
 								if(elements[0].isEmpty()) {
-									throw new OBJImportException("Vertex missing for face at: " + line);
+									throw new OBJLoaderException("Vertex missing for face at: " + line);
 								}
-								face.vertices[i] = Integer.parseInt(elements[0]);
+								face.vi[i] = Integer.parseInt(elements[0]);
 								
 								if(elements.length >= 2) {
 									if(!elements[1].isEmpty()) {
-										face.textures[i] = Integer.parseInt(elements[1]);
+										face.ti[i] = Integer.parseInt(elements[1]);
 									}
 								}
 								
 								if(elements.length >= 3) {
 									if(!elements[2].isEmpty()) {
-										face.normals[i] = Integer.parseInt(elements[2]);
+										face.ni[i] = Integer.parseInt(elements[2]);
 									}
 								}
 							}
 						}
-						faces.add(face);
+						currentObject.faces.add(face);
 					} catch(NumberFormatException e) {
 						in.close();
-						throw new OBJImportException("Invalid face at line: " + line);
+						throw new OBJLoaderException("Invalid face at line: " + line);
 					}
 				}
 			}
 			
 			in.close();
-			
-			//Make the mesh component to store all the data in
-			Mesh mesh = new Mesh();
-			
-			//Generate the vertex array object
-			int vao = GL30.glGenVertexArrays();
-			GL30.glBindVertexArray(vao);
-			
-			//Store the faces in a float buffer
-			FloatBuffer vertexBuffer = null;
-			FloatBuffer textureBuffer = null;
-			FloatBuffer normalBuffer = null;
-			
-			if(vertices.size() > 0) {
-				vertexBuffer = BufferUtils.createFloatBuffer(faces.size() * verticesPerFace * 3);
-				
-				for(Face face: faces) {
-					for(int i = 0; i < verticesPerFace; i++) {
-						Vector3f vertex = vertices.get(face.vertices[i] - 1);
-						vertex.store(vertexBuffer);
-					}
-				}
-				vertexBuffer.flip();
-				
-				int vertexVBO = GL15.glGenBuffers();
-				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexVBO);
-				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertexBuffer, GL15.GL_STATIC_DRAW);
-				GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
-				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-			}
-			if(textures.size() > 0) {
-				textureBuffer = BufferUtils.createFloatBuffer(faces.size() * verticesPerFace * 3);
-				
-				for(Face face: faces) {
-					for(int i = 0; i < verticesPerFace; i++) {
-						Vector2f texture = textures.get(face.textures[i] - 1);
-						texture.store(textureBuffer);
-					}
-				}
-				textureBuffer.flip();
-				
-				int textureVBO = GL15.glGenBuffers();
-				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, textureVBO);
-				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, textureBuffer, GL15.GL_STATIC_DRAW);
-				GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 0, 0);
-				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-			}
-			if(normals.size() > 0) {
-				normalBuffer = BufferUtils.createFloatBuffer(faces.size() * verticesPerFace * 3);
-				
-				for(Face face: faces) {
-					for(int i = 0; i < verticesPerFace; i++) {
-						Vector3f normal = normals.get(face.normals[i] - 1);
-						normal.store(normalBuffer);
-					}
-				}
-				normalBuffer.flip();
-				
-				int normalVBO = GL15.glGenBuffers();
-				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, normalVBO);
-				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, normalBuffer, GL15.GL_STATIC_DRAW);
-				GL20.glVertexAttribPointer(2, 3, GL11.GL_FLOAT, false, 0, 0);
-				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-			}
-			
-			//Unbind the vao
-			GL30.glBindVertexArray(0);
-			
-			mesh.vao = vao;
-			mesh.vertexCount = vertexBuffer.capacity();
+
 			return mesh;
 		} catch (IOException e) {
-			throw new OBJImportException(e.getMessage());
+			throw new OBJLoaderException(e.getMessage());
 		}
 	}
 	
-	private static String[] getElements(String line) {
-		//Remove leading and trailing whitespace
+	private static String[] getSegments(String line) {
 		line = line.trim();
-		
-		//Get all the elements delimited by a space character
-		String[] elements = line.split(" ");
-		
-		//Put all elements that aren't empty in a list
-		ArrayList<String> properElements = new ArrayList<String>();
-		for(int i = 0; i < elements.length; i++) {
-			if(!elements[i].isEmpty()) {
-				properElements.add(elements[i]);
-			}
-		}
-		
-		//Return the proper elements as an array
-		String[] properArray = new String[properElements.size()];
-		for(int i = 0; i < properArray.length; i++) {
-			properArray[i] = properElements.get(i);
-		}
-		return properArray;
+		return line.split("\\s+");
 	}
 	
-	/*private static Pattern getPattern(String line) {
-		String[] segments = getElements(line);
-		if(vpattern.matcher(segments[1]).matches()) {return vpattern;}
-		else if(vtpattern.matcher(segments[1]).matches()) {return vtpattern;}
-		else if(vtnpattern.matcher(segments[1]).matches()) {return vtnpattern;}
-		return null;
-	}*/
+	private static String getPath(String filepath) {
+		String path = "";
+		int index = filepath.lastIndexOf('/');
+		if(index != -1) {
+			path += filepath.substring(0, index+1);
+		}
+		return path;
+	}
 }

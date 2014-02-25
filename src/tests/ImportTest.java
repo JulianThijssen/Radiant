@@ -23,6 +23,20 @@ public class ImportTest {
 	}
 	
 	@Test
+	public void full() {
+		try {
+			Display.create();
+			OBJLoader.loadMesh("res/Lightning/lightning.obj");
+			Display.destroy();
+			assertTrue("OBJ loaded without exceptions", true);
+		} catch(Exception e) {
+			Display.destroy();
+			e.printStackTrace();
+			System.out.println(e.getMessage());
+		}
+	}
+	
+	@Test
 	public void badVertex() {
 		try {
 			Display.create();

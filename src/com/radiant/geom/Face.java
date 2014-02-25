@@ -1,9 +1,9 @@
 package com.radiant.geom;
 
 public class Face {
-	public int[] vertices;
-	public int[] textures;
-	public int[] normals;
+	public int[] vi;
+	public int[] ti;
+	public int[] ni;
 	
 	public Face() {
 		
@@ -13,9 +13,9 @@ public class Face {
 		this(vertices, null, null);
 	}
 	
-	public Face(int[] vertices, int[] textures, int[] normals) {
-		this.vertices = vertices;
-		this.textures = textures;
-		this.normals = normals;
+	public Face(int[] vi, int[] ti, int[] ni) {
+		this.vi = vi;
+		this.ti = ti;
+		this.ni = ni;
 	}
 }

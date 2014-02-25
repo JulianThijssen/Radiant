@@ -32,11 +32,11 @@ public class ShaderLoader {
 		glAttachShader(shaderProgram, fragmentShader);
 		
 		//Position information will be attribute 0
-		glBindAttribLocation(shaderProgram, 0, "in_Position");
+		glBindAttribLocation(shaderProgram, 0, "position");
 		//Normal information will be attribute 1
-		glBindAttribLocation(shaderProgram, 1, "in_Normal");
+		glBindAttribLocation(shaderProgram, 1, "texCoord");
 		//Color information will be attribute 2
-		glBindAttribLocation(shaderProgram, 2, "in_Color");
+		glBindAttribLocation(shaderProgram, 2, "normal");
 		
 		glLinkProgram(shaderProgram);
 		glValidateProgram(shaderProgram);

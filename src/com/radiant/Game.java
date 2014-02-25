@@ -1,6 +1,6 @@
 package com.radiant;
 
-import obj.radiant.exceptions.RadiantException;
+import com.radiant.exceptions.RadiantException;
 
 public interface Game {	
 	public void start() throws RadiantException;
