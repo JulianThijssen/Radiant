@@ -1,4 +1,4 @@
-package com.radiant.material;
+package com.radiant.assets;
 
 import org.lwjgl.util.vector.Vector3f;
 

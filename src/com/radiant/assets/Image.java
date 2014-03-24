@@ -1,4 +1,4 @@
-package com.radiant.material;
+package com.radiant.assets;
 
 import java.nio.ByteBuffer;
 

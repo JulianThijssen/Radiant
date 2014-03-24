@@ -1,26 +1,24 @@
-package com.radiant.util;
+package com.radiant.assets;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.IOException;
+
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.radiant.components.Mesh;
-import com.radiant.exceptions.OBJLoaderException;
+import com.radiant.exceptions.AssetLoaderException;
 import com.radiant.geom.Face;
-import com.radiant.geom.Object;
-import com.radiant.material.Material;
+import com.radiant.managers.AssetManager;
 
-/** Support for v, no support for rational curves
- * Support for vt, no support for w element
- * Support for vn
- * Support for f
- * */
-
-public class OBJLoader {
-	public static Mesh loadMesh(String filepath) throws OBJLoaderException {
+public class MeshLoader {
+	/** Support for v, no support for rational curves
+	 * Support for vt, no support for w element
+	 * Support for vn
+	 * Support for f
+	 * */
+	public static Mesh loadOBJ(AssetManager am, String filepath) throws AssetLoaderException {
 		//Make the mesh component to store all the data in
 		Mesh mesh = new Mesh();
 		
@@ -42,14 +40,14 @@ public class OBJLoader {
 				
 				String type = segments[0];
 				
-				//Load a material library
 				if(type.equals("mtllib")) {
-					String name = segments[1];
-					
-					mesh.materials = MTLLoader.load(getPath(filepath) + name);
+					if(segments.length > 1) {
+						String name = segments[1];
+						mesh.materials = am.getMaterials(getPath(filepath) + name);
+					}
 				}
 				if(type.equals("g")) {
-					String name = segments[1];
+					String name = (segments.length > 1) ? segments[1] : "Group";
 					currentObject = new Object(name);
 					mesh.objects.add(currentObject);
 				}
@@ -63,7 +61,7 @@ public class OBJLoader {
 						
 					} catch(NumberFormatException e) {
 						in.close();
-						throw new OBJLoaderException("Invalid vertex coordinate at line: " + line);
+						throw new AssetLoaderException("Invalid vertex coordinate at line: " + line);
 					}
 				}
 				if(type.equals("vt")) {
@@ -74,7 +72,7 @@ public class OBJLoader {
 						mesh.textureCoords.add(new Vector2f(u, v));
 					} catch(NumberFormatException e) {
 						in.close();
-						throw new OBJLoaderException("Invalid texture coordinate at line: " + line);
+						throw new AssetLoaderException("Invalid texture coordinate at line: " + line);
 					}
 				}
 				if(type.equals("vn")) {
@@ -86,7 +84,7 @@ public class OBJLoader {
 						mesh.normals.add(new Vector3f(x, y, z));
 					} catch(NumberFormatException e) {
 						in.close();
-						throw new OBJLoaderException("Invalid vertex normal at line: " + line);
+						throw new AssetLoaderException("Invalid vertex normal at line: " + line);
 					}
 				}
 				if(currentObject == null) {
@@ -95,11 +93,7 @@ public class OBJLoader {
 				if(type.equals("usemtl")) {
 					String name = segments[1];
 					
-					for(Material material: mesh.materials) {
-						if(material.getName().equals(name)) {
-							currentObject.material = material;
-						}
-					}
+					currentObject.material = name;
 				}
 				if(type.equals("f")) {
 					try {
@@ -112,7 +106,7 @@ public class OBJLoader {
 							String[] elements = segments[i+1].split("/");
 							if(elements.length >= 1) {
 								if(elements[0].isEmpty()) {
-									throw new OBJLoaderException("Vertex missing for face at: " + line);
+									throw new AssetLoaderException("Vertex missing for face at: " + line);
 								}
 								face.vi[i] = Integer.parseInt(elements[0]);
 								
@@ -132,16 +126,15 @@ public class OBJLoader {
 						currentObject.faces.add(face);
 					} catch(NumberFormatException e) {
 						in.close();
-						throw new OBJLoaderException("Invalid face at line: " + line);
+						throw new AssetLoaderException("Invalid face at line: " + line);
 					}
 				}
 			}
 			
 			in.close();
-
 			return mesh;
-		} catch (IOException e) {
-			throw new OBJLoaderException(e.getMessage());
+		} catch (Exception e) {
+			throw new AssetLoaderException(e.getMessage());
 		}
 	}
 	
@@ -152,7 +145,7 @@ public class OBJLoader {
 	
 	private static String getPath(String filepath) {
 		String path = "";
-		int index = filepath.lastIndexOf('/');
+		int index = filepath.lastIndexOf('\\');
 		if(index != -1) {
 			path += filepath.substring(0, index+1);
 		}

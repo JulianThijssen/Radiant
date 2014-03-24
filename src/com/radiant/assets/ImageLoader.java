@@ -1,18 +1,19 @@
-package com.radiant.util;
+package com.radiant.assets;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-import com.radiant.exceptions.TextureLoaderException;
-import com.radiant.material.Image;
+import com.radiant.exceptions.AssetLoaderException;
+import com.radiant.managers.AssetManager;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
-public class TextureLoader {
-	public static Image load(String filepath) throws TextureLoaderException {
+public class ImageLoader {
+	public static Image loadPNG(AssetManager am, String filepath) throws AssetLoaderException {
 		ByteBuffer buf = null;
 		int width = 0;
 		int height = 0;
@@ -32,9 +33,10 @@ public class TextureLoader {
 			in.close();
 			
 			return new Image(buf, width, height);
+		} catch (FileNotFoundException e) {
+			throw new AssetLoaderException("Image was not found");
 		} catch (IOException e) {
-			e.printStackTrace();
+			throw new AssetLoaderException("An error occurred while loading the image");
 		}
-		return null;
 	}
 }

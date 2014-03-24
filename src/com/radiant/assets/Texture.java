@@ -1,4 +1,5 @@
-package com.radiant.material;
+package com.radiant.assets;
+
 
 public class Texture {
 	public TextureType type = null;
@@ -12,7 +13,9 @@ public class Texture {
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append(String.format("Type: %s\n", type.toString()));
-		sb.append(String.format("Image: %s\n", image.toString()));
+		if(image != null) {
+			sb.append(String.format("Image: %s\n", image.toString()));
+		}
 		return sb.toString();
 	}
 	

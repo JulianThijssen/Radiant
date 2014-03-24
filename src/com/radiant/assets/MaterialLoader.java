@@ -1,23 +1,20 @@
-package com.radiant.util;
+package com.radiant.assets;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
+import com.radiant.assets.Texture.TextureType;
+import com.radiant.exceptions.AssetLoaderException;
+import com.radiant.managers.AssetManager;
 
-import com.radiant.exceptions.TextureLoaderException;
-import com.radiant.material.Material;
-import com.radiant.material.Texture;
-import com.radiant.material.Texture.TextureType;
-
-public class MTLLoader {
-	public static ArrayList<Material> load(String filepath) {
+public class MaterialLoader {
+	public static MaterialLibrary loadMTL(AssetManager am, String filepath) throws AssetLoaderException {
 		BufferedReader in = null;
 		try {
 			in = new BufferedReader(new FileReader(new File(filepath)));
 			
-			ArrayList<Material> materials = new ArrayList<Material>();
+			MaterialLibrary library = new MaterialLibrary();
 			Material currentMaterial = null;
 			
 			String line = null;
@@ -32,7 +29,7 @@ public class MTLLoader {
 				
 				if(prefix.equals("newmtl")) {
 					currentMaterial = new Material(segments[1]);
-					materials.add(currentMaterial);
+					library.add(currentMaterial);
 				}
 				//If no material has been made yet, continue parsing till one has
 				if(currentMaterial == null) {
@@ -45,7 +42,7 @@ public class MTLLoader {
 						currentMaterial.diffuseColor.y = Float.parseFloat(segments[2]);
 						currentMaterial.diffuseColor.z = Float.parseFloat(segments[3]);
 					} catch(NumberFormatException e) {
-						e.printStackTrace();
+						throw new AssetLoaderException("Invalid diffuse color: " + line);
 					}
 				}
 				//Specular color
@@ -55,7 +52,7 @@ public class MTLLoader {
 						currentMaterial.specularColor.y = Float.parseFloat(segments[2]);
 						currentMaterial.specularColor.z = Float.parseFloat(segments[3]);
 					} catch(NumberFormatException e) {
-						e.printStackTrace();
+						throw new AssetLoaderException("Invalid specular color: " + line);
 					}
 				}
 				//Ambient color
@@ -65,7 +62,7 @@ public class MTLLoader {
 						currentMaterial.ambientColor.y = Float.parseFloat(segments[2]);
 						currentMaterial.ambientColor.z = Float.parseFloat(segments[3]);
 					} catch(NumberFormatException e) {
-						e.printStackTrace();
+						throw new AssetLoaderException("Invalid ambient color: " + line);
 					}
 				}
 				//Illumination model
@@ -76,18 +73,10 @@ public class MTLLoader {
 				if(prefix.equals("map_Kd")) {
 					String imagepath = segments[1];
 					currentMaterial.diffuse = new Texture(TextureType.DIFFUSE);
-					
-					try {
-						currentMaterial.diffuse.image = TextureLoader.load(getPath(filepath) + imagepath);
-					} catch (TextureLoaderException e) {
-						Log.info("Failed to load texture: " + imagepath);
-					}
+					currentMaterial.diffuse.image = am.getImage(getPath(filepath) + imagepath);
 				}
 			}
-			for(Material material: materials) {
-				System.out.println(material.toString());
-			}
-			return materials;
+			return library;
 		} catch(IOException e) {
 			e.printStackTrace();
 		} finally {
@@ -109,14 +98,10 @@ public class MTLLoader {
 	
 	private static String getPath(String filepath) {
 		String path = "";
-		int index = filepath.lastIndexOf('/');
+		int index = filepath.lastIndexOf('\\');
 		if(index != -1) {
 			path += filepath.substring(0, index+1);
 		}
 		return path;
-	}
-	
-	public static void main(String[] args) {
-		MTLLoader.load("res/test.mtl");
 	}
 }
