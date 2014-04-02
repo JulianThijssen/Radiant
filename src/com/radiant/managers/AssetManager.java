@@ -44,6 +44,18 @@ public class AssetManager implements Manager {
 		Log.info("Meshes loaded");
 	}
 	
+	public void loadResource(String path) throws AssetLoaderException {
+		if(path.endsWith(".obj")) {
+			MeshLoader.loadOBJ(this, path);
+		}
+		if(path.endsWith(".mtl")) {
+			MaterialLoader.loadMTL(this, path);
+		}
+		if(path.endsWith(".png")) {
+			ImageLoader.loadPNG(this, path);
+		}
+	}
+	
 	public void loadImages(File file) {
 		if(file.isDirectory()) {
 			File[] files = file.listFiles();

@@ -6,13 +6,27 @@ import com.radiant.entities.Entity;
 
 public class Scene {
 	public ArrayList<Entity> entities = new ArrayList<Entity>();
-	public Camera mainCamera = new Camera();
+	public ArrayList<Script> scripts = new ArrayList<Script>();
+	public Camera mainCamera;
 	
 	public void addEntity(Entity e) {
 		entities.add(e);
 	}
 	
+	public void addScript(Script s) {
+		scripts.add(s);
+		s.onStart();
+	}
+	
+	public void addCamera(Camera c) {
+		mainCamera = c;
+	}
+	
 	public void update() {
-		
+		for(Script s: scripts) {
+			for(Entity e: entities) {
+				s.update(e);
+			}
+		}
 	}
 }

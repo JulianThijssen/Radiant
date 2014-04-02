@@ -63,7 +63,7 @@ public class RenderManager implements Manager {
 		modelLocation = GL20.glGetUniformLocation(shader, "modelMatrix");
 		
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		glClearColor(0.0f, 0.0f, 0.2f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.4f, 1.0f);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
@@ -80,6 +80,10 @@ public class RenderManager implements Manager {
 	public void render() {
 		Scene scene = engine.getScene();
 		
+		//Render all entities
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		GL20.glUseProgram(shader);
+		
 		projectionMatrix = scene.mainCamera.getProjectionMatrix();
 		projectionMatrix.store(projBuffer);
 		projBuffer.flip();
@@ -93,10 +97,6 @@ public class RenderManager implements Manager {
 		//Upload projection and view matrices to the shader
 		GL20.glUniformMatrix4(projectionLocation, false, projBuffer);
 		GL20.glUniformMatrix4(viewLocation, false, viewBuffer);
-		
-		//Render all entities
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		GL20.glUseProgram(shader);
 		
 		for(Entity entity: scene.entities) {
 			renderEntity(entity);
@@ -132,7 +132,6 @@ public class RenderManager implements Manager {
 			modelMatrix.translate(transform.position);
 			modelMatrix.rotate(transform.rotation.x, axisX);
 			modelMatrix.rotate(transform.rotation.y, axisY);
-			transform.rotation.y++; //DELETE
 			modelMatrix.rotate(transform.rotation.z, axisZ);
 			modelMatrix.scale(transform.scale);
 			
@@ -150,18 +149,10 @@ public class RenderManager implements Manager {
 				Material material = mesh.materials.getMaterial(object.material);
 				if(material != null) {
 					if(material.diffuse != null) {
-						Image image = material.diffuse.image;
-						int diffuse = GL11.glGenTextures();
-						GL11.glBindTexture(GL11.GL_TEXTURE_2D, diffuse);
-						GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
-						GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, image.width, image.height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, image.data);
-						GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-						
-						//Bind the texture
+						int diffuse = material.diffuse.image.handle;
 						GL11.glBindTexture(GL11.GL_TEXTURE_2D, diffuse);
 					}
 				}
-				
 				GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, object.faces.size() * 3);
 				GL30.glBindVertexArray(0);
 			}

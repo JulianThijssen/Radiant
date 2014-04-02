@@ -47,6 +47,7 @@ public class Engine {
 			}
 			renderer.render();
 			window.update();
+			updateFPS();
 		}
 		shutdown();
 	}

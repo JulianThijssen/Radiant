@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
+
 import com.radiant.exceptions.AssetLoaderException;
 import com.radiant.managers.AssetManager;
 
@@ -32,7 +35,13 @@ public class ImageLoader {
 			
 			in.close();
 			
-			return new Image(buf, width, height);
+			int handle = GL11.glGenTextures();
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, handle);
+			GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buf);
+			GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+			
+			return new Image(handle, width, height);
 		} catch (FileNotFoundException e) {
 			throw new AssetLoaderException("Image was not found");
 		} catch (IOException e) {

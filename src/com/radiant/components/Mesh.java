@@ -15,5 +15,5 @@ public class Mesh extends Component {
 	public ArrayList<Vector2f> textureCoords = new ArrayList<Vector2f>();
 	public ArrayList<Vector3f> normals = new ArrayList<Vector3f>();
 	
-	public MaterialLibrary materials = null;
+	public MaterialLibrary materials = new MaterialLibrary();
 }

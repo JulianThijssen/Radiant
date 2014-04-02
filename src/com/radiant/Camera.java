@@ -26,7 +26,7 @@ public class Camera {
 	private Matrix4f projectionMatrix = new Matrix4f();
 	
 	public Camera() {
-		
+		recalculate();
 	}
 	
 	public Camera(float left, float right, float top, float bottom, float zNear, float zFar) {
@@ -53,7 +53,7 @@ public class Camera {
 		return projectionMatrix;
 	}
 	
-	public void recalculate() {
+	private void recalculate() {
 		if(perspective) {
 			projectionMatrix.m00 = (float) (1 / Math.tan(Math.toRadians(fovy / 2f))) / aspect;
 			projectionMatrix.m11 = (float) (1 / Math.tan(Math.toRadians(fovy / 2f)));
@@ -93,9 +93,11 @@ public class Camera {
 	
 	public void setPerspective() {
 		perspective = true;
+		recalculate();
 	}
 	
 	public void setOrthographic() {
 		perspective = false;
+		recalculate();
 	}
 }

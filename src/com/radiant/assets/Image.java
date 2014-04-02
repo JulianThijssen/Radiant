@@ -1,13 +1,11 @@
 package com.radiant.assets;
 
-import java.nio.ByteBuffer;
-
 public class Image {
 	public int width, height;
-	public ByteBuffer data;
+	public int handle;
 	
-	public Image(ByteBuffer data, int width, int height) {
-		this.data = data;
+	public Image(int handle, int width, int height) {
+		this.handle = handle;
 		this.width = width;
 		this.height = height;
 	}

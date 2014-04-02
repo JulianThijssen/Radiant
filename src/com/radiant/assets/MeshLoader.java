@@ -19,6 +19,7 @@ public class MeshLoader {
 	 * Support for f
 	 * */
 	public static Mesh loadOBJ(AssetManager am, String filepath) throws AssetLoaderException {
+		long time = System.currentTimeMillis();
 		//Make the mesh component to store all the data in
 		Mesh mesh = new Mesh();
 		
@@ -69,7 +70,7 @@ public class MeshLoader {
 						float u = Float.parseFloat(segments[1]);
 						float v = Float.parseFloat(segments[2]);
 						
-						mesh.textureCoords.add(new Vector2f(u, v));
+						mesh.textureCoords.add(new Vector2f(u, -v));
 					} catch(NumberFormatException e) {
 						in.close();
 						throw new AssetLoaderException("Invalid texture coordinate at line: " + line);
@@ -132,6 +133,9 @@ public class MeshLoader {
 			}
 			
 			in.close();
+			long dtime = System.currentTimeMillis();
+			System.out.println(filepath+" : " + (dtime - time) + "ms");
+			
 			return mesh;
 		} catch (Exception e) {
 			throw new AssetLoaderException(e.getMessage());
