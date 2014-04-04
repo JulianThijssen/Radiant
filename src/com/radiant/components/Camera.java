@@ -1,8 +1,8 @@
-package com.radiant;
+package com.radiant.components;
 
 import org.lwjgl.util.vector.Matrix4f;
 
-public class Camera {
+public class Camera extends Component {
 	public static final float   DEFAULT_FOVY = 90;
 	public static final float   DEFAULT_ASPECTRATIO = 1;
 	public static final float   DEFAULT_LEFT = -1;
@@ -26,10 +26,12 @@ public class Camera {
 	private Matrix4f projectionMatrix = new Matrix4f();
 	
 	public Camera() {
+		super("Camera");
 		recalculate();
 	}
 	
 	public Camera(float left, float right, float top, float bottom, float zNear, float zFar) {
+		super("Camera");
 		setOrthographic();
 		this.left = left;
 		this.right = right;
@@ -41,6 +43,7 @@ public class Camera {
 	}
 	
 	public Camera(float fovy, float aspect, float zNear, float zFar) {
+		super("Camera");
 		setPerspective();
 		this.fovy = fovy;
 		this.aspect = aspect;

@@ -19,17 +19,16 @@ import org.lwjgl.util.vector.Vector3f;
 
 import com.radiant.Engine;
 import com.radiant.Scene;
-import com.radiant.assets.Image;
 import com.radiant.assets.Material;
 import com.radiant.assets.Object;
 import com.radiant.assets.ShaderLoader;
+import com.radiant.components.Camera;
 import com.radiant.components.Component;
 import com.radiant.components.Light;
 import com.radiant.components.Mesh;
 import com.radiant.components.Transform;
 import com.radiant.entities.Entity;
 import com.radiant.geom.Face;
-import com.radiant.util.Log;
 
 public class RenderManager implements Manager {
 	private Engine engine;
@@ -84,13 +83,18 @@ public class RenderManager implements Manager {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		GL20.glUseProgram(shader);
 		
-		projectionMatrix = scene.mainCamera.getProjectionMatrix();
+		Camera camera = (Camera) scene.mainCamera.getComponent("Camera");
+		projectionMatrix = camera.getProjectionMatrix();
 		projectionMatrix.store(projBuffer);
 		projBuffer.flip();
 		
 		//Calculate view matrix
 		viewMatrix.setIdentity();
-				
+		Transform cameraT = (Transform) scene.mainCamera.getComponent("Transform");
+		viewMatrix.rotate(-cameraT.rotation.x, axisX);
+		viewMatrix.rotate(-cameraT.rotation.y, axisY);
+		viewMatrix.rotate(-cameraT.rotation.z, axisZ);
+		viewMatrix.translate(cameraT.position.negate(null));
 		viewMatrix.store(viewBuffer);
 		viewBuffer.flip();
 		

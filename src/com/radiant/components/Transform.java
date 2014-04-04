@@ -16,6 +16,7 @@ public class Transform extends Component {
 	}
 	
 	public Transform(float x, float y, float z, float pitch, float yaw, float roll, float sx, float sy, float sz) {
+		super("Transform");
 		position.x = x;
 		position.y = y;
 		position.z = z;
