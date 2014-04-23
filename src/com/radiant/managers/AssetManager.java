@@ -15,9 +15,9 @@ import com.radiant.util.Log;
 public class AssetManager implements Manager {
 	public static final File DEFAULT_ROOT = new File("res");
 	private File root;
-	private HashMap<String, Image> images = new HashMap<String, Image>();
-	private HashMap<String, MaterialLibrary> materials = new HashMap<String, MaterialLibrary>();
-	public HashMap<String, Mesh> meshes = new HashMap<String, Mesh>();
+	private static HashMap<String, Image> images = new HashMap<String, Image>();
+	private static HashMap<String, MaterialLibrary> materials = new HashMap<String, MaterialLibrary>();
+	public static HashMap<String, Mesh> meshes = new HashMap<String, Mesh>();
 	
 	public AssetManager() {
 		this(DEFAULT_ROOT);
@@ -123,7 +123,7 @@ public class AssetManager implements Manager {
 		}
 	}
 	
-	public Image getImage(String path) throws AssetLoaderException {
+	public static Image getImage(String path) throws AssetLoaderException {
 		path = path.replace('/', '\\'); //FIXME
 		if(!images.containsKey(path)) {
 			throw new AssetLoaderException("Could not find image: " + path);
@@ -131,7 +131,7 @@ public class AssetManager implements Manager {
 		return images.get(path);
 	}
 	
-	public MaterialLibrary getMaterials(String path) throws AssetLoaderException {
+	public static MaterialLibrary getMaterials(String path) throws AssetLoaderException {
 		path = path.replace('/', '\\'); //FIXME
 		if(!materials.containsKey(path)) {
 			throw new AssetLoaderException("Could not find material: " + path);
@@ -139,7 +139,7 @@ public class AssetManager implements Manager {
 		return materials.get(path);
 	}
 	
-	public Mesh getMesh(String path) throws AssetLoaderException {
+	public static Mesh getMesh(String path) throws AssetLoaderException {
 		path = path.replace('/', '\\'); //FIXME
 		if(!meshes.containsKey(path)) {
 			throw new AssetLoaderException("Could not find mesh: " + path);

@@ -89,7 +89,8 @@ public class MeshLoader {
 					}
 				}
 				if(currentObject == null) {
-					continue;
+					currentObject = new Object("Group");
+					mesh.objects.add(currentObject);
 				}
 				if(type.equals("usemtl")) {
 					String name = segments[1];

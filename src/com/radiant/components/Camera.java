@@ -30,13 +30,13 @@ public class Camera extends Component {
 		recalculate();
 	}
 	
-	public Camera(float left, float right, float top, float bottom, float zNear, float zFar) {
+	public Camera(float left, float right, float bottom, float top, float zNear, float zFar) {
 		super("Camera");
 		setOrthographic();
 		this.left = left;
 		this.right = right;
-		this.top = top;
 		this.bottom = bottom;
+		this.top = top;
 		this.zNear = zNear;
 		this.zFar = zFar;
 		recalculate();

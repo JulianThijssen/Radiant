@@ -7,6 +7,7 @@ public class Transform extends Component {
 	public Vector3f rotation = new Vector3f(0, 0, 0);
 	public Vector3f scale = new Vector3f(1, 1, 1);
 	
+	// 3D Transform
 	public Transform(float x, float y, float z) {
 		this(x, y, z, 0, 0, 0, 1, 1, 1);
 	}
@@ -28,5 +29,10 @@ public class Transform extends Component {
 		scale.x = sx;
 		scale.y = sy;
 		scale.z = sz;
+	}
+	
+	// 2D Transform
+	public Transform(float x, float y) {
+		this(x, y, 0, 0, 0, 0, 1, 1, 1);
 	}
 }

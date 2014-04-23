@@ -9,8 +9,8 @@ import com.radiant.util.Log;
 
 public final class Window {
 	public static final String DEFAULT_TITLE = "Radiant Game";
-	public static final int DEFAULT_WIDTH = 1024;
-	public static final int DEFAULT_HEIGHT = 768;
+	public static final int DEFAULT_WIDTH = 800;
+	public static final int DEFAULT_HEIGHT = 600;
 	
 	private DisplayMode currentDisplayMode;
 	

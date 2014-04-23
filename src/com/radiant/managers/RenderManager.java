@@ -23,7 +23,6 @@ import com.radiant.assets.Material;
 import com.radiant.assets.Object;
 import com.radiant.assets.ShaderLoader;
 import com.radiant.components.Camera;
-import com.radiant.components.Component;
 import com.radiant.components.Light;
 import com.radiant.components.Mesh;
 import com.radiant.components.Transform;
@@ -62,6 +61,8 @@ public class RenderManager implements Manager {
 		modelLocation = GL20.glGetUniformLocation(shader, "modelMatrix");
 		
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glEnable(GL11.GL_CULL_FACE);
+		GL11.glCullFace(GL11.GL_BACK);
 		glClearColor(0.0f, 0.0f, 0.4f, 1.0f);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
@@ -90,11 +91,11 @@ public class RenderManager implements Manager {
 		
 		//Calculate view matrix
 		viewMatrix.setIdentity();
-		Transform cameraT = (Transform) scene.mainCamera.getComponent("Transform");
-		viewMatrix.rotate(-cameraT.rotation.x, axisX);
-		viewMatrix.rotate(-cameraT.rotation.y, axisY);
-		viewMatrix.rotate(-cameraT.rotation.z, axisZ);
-		viewMatrix.translate(cameraT.position.negate(null));
+		Transform ct = (Transform) scene.mainCamera.getComponent("Transform");
+		viewMatrix.rotate(-ct.rotation.x, axisX);
+		viewMatrix.rotate(-ct.rotation.y, axisY);
+		viewMatrix.rotate(-ct.rotation.z, axisZ);
+		viewMatrix.translate(ct.position.negate(null));
 		viewMatrix.store(viewBuffer);
 		viewBuffer.flip();
 		
@@ -110,21 +111,10 @@ public class RenderManager implements Manager {
 	}
 	
 	public void renderEntity(Entity entity) {
-		Transform transform = null;
-		Mesh mesh = null;
-		Light light = null;
+		Transform transform = (Transform) entity.getComponent("Transform");
+		Mesh mesh = (Mesh) entity.getComponent("Mesh");
+		Light light = (Light) entity.getComponent("Light");
 		
-		for(Component c: entity.components) {
-			if(c instanceof Transform) {
-				transform = (Transform) c;
-			}
-			if(c instanceof Mesh) {
-				mesh = (Mesh) c;
-			}
-			if(c instanceof Light) {
-				light = (Light) c;
-			}
-		}
 		if(transform != null && light != null) {
 			int lightLoc = GL20.glGetUniformLocation(shader, "lightPos");
 			GL20.glUniform4f(lightLoc, transform.position.x, transform.position.y, transform.position.z, 1);
@@ -153,8 +143,7 @@ public class RenderManager implements Manager {
 				Material material = mesh.materials.getMaterial(object.material);
 				if(material != null) {
 					if(material.diffuse != null) {
-						int diffuse = material.diffuse.image.handle;
-						GL11.glBindTexture(GL11.GL_TEXTURE_2D, diffuse);
+						GL11.glBindTexture(GL11.GL_TEXTURE_2D, material.diffuse.image.handle);
 					}
 				}
 				GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, object.faces.size() * 3);
