@@ -5,19 +5,17 @@ import java.util.ArrayList;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
-import com.radiant.assets.MaterialLibrary;
-import com.radiant.assets.Object;
+import com.radiant.geom.Face;
 
 public class Mesh extends Component {
-	public ArrayList<Object> objects = new ArrayList<Object>();
+	public String name;
+	public ArrayList<Vector3f> vertices = null;
+	public ArrayList<Vector2f> textureCoords = null;
+	public ArrayList<Vector3f> normals = null;
+	public ArrayList<Face> faces = null;
 	
-	public ArrayList<Vector3f> vertices = new ArrayList<Vector3f>();
-	public ArrayList<Vector2f> textureCoords = new ArrayList<Vector2f>();
-	public ArrayList<Vector3f> normals = new ArrayList<Vector3f>();
-	
-	public MaterialLibrary materials = new MaterialLibrary();
-	
-	public Mesh() {
+	public Mesh(String name) {
 		super("Mesh");
+		this.name = name;
 	}
 }

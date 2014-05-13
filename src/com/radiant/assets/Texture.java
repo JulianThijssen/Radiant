@@ -1,25 +1,15 @@
 package com.radiant.assets;
 
-
 public class Texture {
-	public TextureType type = null;
-	public Image image = null;
+	public int width, height;
+	public int handle;
 	
-	public Texture(TextureType type) {
-		this.type = type;
+	public Texture() {
+		
 	}
 	
 	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
-		sb.append(String.format("Type: %s\n", type.toString()));
-		if(image != null) {
-			sb.append(String.format("Image: %s\n", image.toString()));
-		}
-		return sb.toString();
-	}
-	
-	public enum TextureType {
-		DIFFUSE, NORMAL, SPECULAR, AMBIENT;
+		return "Tex: " + width + "x" + height;
 	}
 }

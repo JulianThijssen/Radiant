@@ -15,7 +15,6 @@ public class Engine {
 	private Window window;
 	
 	/* Managers */
-	public AssetManager assetManager;
 	public RenderManager renderer;
 	
 	/* FPS */
@@ -29,9 +28,6 @@ public class Engine {
 	public void startup() throws RadiantException {
 		window = Window.create();
 		
-		assetManager = new AssetManager();
-		assetManager.loadAll();
-		
 		renderer = new RenderManager(this);
 		renderer.create();
 	}
@@ -42,12 +38,26 @@ public class Engine {
 	
 	public void update() {
 		while(!window.isClosed()) {
+			long t = System.nanoTime();
 			if(currentScene != null) {
 				currentScene.update();
 			}
 			renderer.render();
 			window.update();
 			updateFPS();
+			long dt = System.nanoTime() - t;
+			
+			long lag = (long) (1000000000/60) - dt;
+			long millis = lag / 1000000;
+			int nanos = (int) (lag - (millis * 1000000));
+			if(lag > 0) {
+				try {
+					Thread.sleep(millis, nanos);
+				} catch(Exception e) {
+					e.printStackTrace();
+				}
+			}
+			Time.deltaTime = (System.nanoTime() - t) / 1000000000f;
 		}
 		shutdown();
 	}
@@ -77,7 +87,11 @@ public class Engine {
 	/*
 	 * Game
 	 */
-	public final void startGame() throws RadiantException {
+	public final void startGame() {
+		if(AssetManager.getErrors() > 0) {
+			Log.debug("Can't start game, there are unresolved errors");
+			return;
+		}
 		lastFPS = getTime(); //set lastFPS to current Time
 		update();
 	}

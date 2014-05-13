@@ -1,25 +1,49 @@
-package com.radiant.assets;
+package com.radiant.components;
 
 import org.lwjgl.util.vector.Vector3f;
 
-public class Material {
+import com.radiant.assets.Texture;
+
+public class Material extends Component {
 	private String name;
-	public Vector3f diffuseColor = new Vector3f(1, 1, 1);
-	public Vector3f specularColor = new Vector3f(1, 1, 1);
-	public Vector3f ambientColor = new Vector3f(0, 0, 0);
-	public int illumination = 0;
+	private Vector3f diffuseColor = new Vector3f(1, 1, 1);
+	private Vector3f specularColor = new Vector3f(1, 1, 1);
+	private Vector3f ambientColor = new Vector3f(0, 0, 0);
+	private int illumination = 0;
 
 	public Texture diffuse = null;
 	public Texture normal = null;
 	public Texture specular = null;
 	
 	public Material(String name) {
+		super("Material");
 		this.name = name;
 	}
 	
 	public String getName() {
 		return name;
 	}
+	
+	public void setDiffuseColor(float r, float g, float b) {
+		diffuseColor.set(r, g, b);
+	}
+	
+	public void setSpecularColor(float r, float g, float b) {
+		specularColor.set(r, g, b);
+	}
+	
+	public void setAmbientColor(float r, float g, float b) {
+		ambientColor.set(r, g, b);
+	}
+	
+	public void setIllumination(int illumination) {
+		this.illumination = illumination;
+	}
+	
+	public void setDiffuseTexture(Texture diffuse) {
+		this.diffuse = diffuse;
+	}
+	
 	
 	@Override
 	public String toString() {

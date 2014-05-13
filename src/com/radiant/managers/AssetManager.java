@@ -1,31 +1,19 @@
 package com.radiant.managers;
 
-import java.io.File;
 import java.util.HashMap;
 
-import com.radiant.assets.Image;
-import com.radiant.assets.ImageLoader;
-import com.radiant.assets.MaterialLibrary;
-import com.radiant.assets.MaterialLoader;
+import com.radiant.assets.TextureLoader;
 import com.radiant.assets.MeshLoader;
+import com.radiant.assets.Texture;
 import com.radiant.components.Mesh;
 import com.radiant.exceptions.AssetLoaderException;
 import com.radiant.util.Log;
 
 public class AssetManager implements Manager {
-	public static final File DEFAULT_ROOT = new File("res");
-	private File root;
-	private static HashMap<String, Image> images = new HashMap<String, Image>();
-	private static HashMap<String, MaterialLibrary> materials = new HashMap<String, MaterialLibrary>();
-	public static HashMap<String, Mesh> meshes = new HashMap<String, Mesh>();
+	protected static HashMap<String, Texture> textureCache = new HashMap<String, Texture>();
+	protected static HashMap<String, Mesh> meshCache = new HashMap<String, Mesh>();
 	
-	public AssetManager() {
-		this(DEFAULT_ROOT);
-	}
-	
-	public AssetManager(File root) {
-		this.root = root;
-	}
+	private static int errors = 0;
 	
 	public void create() {
 		
@@ -35,115 +23,37 @@ public class AssetManager implements Manager {
 		
 	}
 	
-	public void loadAll() {
-		loadImages(root);
-		Log.info("Images loaded");
-		loadMaterials(root);
-		Log.info("Materials loaded");
-		loadMeshes(root);
-		Log.info("Meshes loaded");
+	public static int getErrors() {
+		return errors;
 	}
 	
-	public void loadResource(String path) throws AssetLoaderException {
-		if(path.endsWith(".obj")) {
-			MeshLoader.loadOBJ(this, path);
+	public static Texture loadTexture(String path) {
+		if(textureCache.containsKey(path)) {
+			return textureCache.get(path);
 		}
-		if(path.endsWith(".mtl")) {
-			MaterialLoader.loadMTL(this, path);
+		try {
+			Texture texture = TextureLoader.loadTexture(path);
+			textureCache.put(path, texture);
+			return texture;
+		} catch (AssetLoaderException e) {
+			Log.error(e.getMessage());
+			errors++;
 		}
-		if(path.endsWith(".png")) {
-			ImageLoader.loadPNG(this, path);
-		}
+		return null;
 	}
 	
-	public void loadImages(File file) {
-		if(file.isDirectory()) {
-			File[] files = file.listFiles();
-			for(int i = 0; i < files.length; i++) {
-				loadImages(files[i]);
-			}
-			return;
+	public static Mesh loadMesh(String path) {
+		if(meshCache.containsKey(path)) {
+			return meshCache.get(path);
 		}
-		
-		String path = file.getPath();
-		//FIXME
-		String ext = path.substring(path.lastIndexOf("."));
-		
-		if(ext.equals(".png")) {
-			try {
-				this.images.put(path, ImageLoader.loadPNG(this, path));
-			} catch(AssetLoaderException e) {
-				Log.error("Failed to load image: " + path + ": " + e.getMessage());
-			}
+		try {
+			Mesh mesh = MeshLoader.loadMesh(path);
+			meshCache.put(path, mesh);
+			return mesh;
+		} catch (AssetLoaderException e) {
+			Log.error(e.getMessage());
+			errors++;
 		}
-	}
-	
-	public void loadMaterials(File file) {
-		if(file.isDirectory()) {
-			File[] files = file.listFiles();
-			for(int i = 0; i < files.length; i++) {
-				loadMaterials(files[i]);
-			}
-			return;
-		}
-		
-		String path = file.getPath();
-		//FIXME
-		String ext = path.substring(path.lastIndexOf("."));
-		
-		if(ext.equals(".mtl")) {
-			try {
-				this.materials.put(path, MaterialLoader.loadMTL(this, path));
-			} catch(AssetLoaderException e) {
-				Log.error("Failed to load material: " + path + ": " + e.getMessage());
-			}
-		}
-	}
-	
-	public void loadMeshes(File file) {
-		if(file.isDirectory()) {
-			File[] files = file.listFiles();
-			for(int i = 0; i < files.length; i++) {
-				loadMeshes(files[i]);
-			}
-			return;
-		}
-		
-		String path = file.getPath();
-		//FIXME
-		String ext = path.substring(path.lastIndexOf("."));
-		
-		if(ext.equals(".obj")) {
-			try {
-				Mesh mesh = MeshLoader.loadOBJ(this, path);
-				this.meshes.put(path, mesh);
-			} catch(AssetLoaderException e) {
-				Log.error("Failed to load mesh: " + path + ": " + e.getMessage());
-			}
-		}
-	}
-	
-	public static Image getImage(String path) throws AssetLoaderException {
-		path = path.replace('/', '\\'); //FIXME
-		if(!images.containsKey(path)) {
-			throw new AssetLoaderException("Could not find image: " + path);
-		}
-		return images.get(path);
-	}
-	
-	public static MaterialLibrary getMaterials(String path) throws AssetLoaderException {
-		path = path.replace('/', '\\'); //FIXME
-		if(!materials.containsKey(path)) {
-			throw new AssetLoaderException("Could not find material: " + path);
-		}
-		return materials.get(path);
-	}
-	
-	public static Mesh getMesh(String path) throws AssetLoaderException {
-		path = path.replace('/', '\\'); //FIXME
-		if(!meshes.containsKey(path)) {
-			throw new AssetLoaderException("Could not find mesh: " + path);
-		}
-		return meshes.get(path);
+		return null;
 	}
 }

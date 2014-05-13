@@ -2,6 +2,8 @@ package com.radiant.assets;
 
 import java.util.ArrayList;
 
+import com.radiant.components.Material;
+
 public class MaterialLibrary {
 	public String name;
 	public ArrayList<Material> materials = new ArrayList<Material>();

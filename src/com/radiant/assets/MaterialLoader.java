@@ -4,12 +4,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import com.radiant.assets.Texture.TextureType;
+
+import com.radiant.components.Material;
 import com.radiant.exceptions.AssetLoaderException;
-import com.radiant.managers.AssetManager;
 
 public class MaterialLoader {
-	public static MaterialLibrary loadMTL(AssetManager am, String filepath) throws AssetLoaderException {
+	public static MaterialLibrary loadMTL(String filepath) throws AssetLoaderException {
 		BufferedReader in = null;
 		try {
 			in = new BufferedReader(new FileReader(new File(filepath)));
@@ -35,45 +35,31 @@ public class MaterialLoader {
 				if(currentMaterial == null) {
 					continue;
 				}
-				//Diffuse color
-				if(prefix.equals("Kd")) {
-					try {
-						currentMaterial.diffuseColor.x = Float.parseFloat(segments[1]);
-						currentMaterial.diffuseColor.y = Float.parseFloat(segments[2]);
-						currentMaterial.diffuseColor.z = Float.parseFloat(segments[3]);
-					} catch(NumberFormatException e) {
-						throw new AssetLoaderException("Invalid diffuse color: " + line);
+				try {
+					//Diffuse color
+					if(prefix.equals("Kd")) {
+						currentMaterial.setDiffuseColor(Float.parseFloat(segments[1]), Float.parseFloat(segments[2]), Float.parseFloat(segments[3]));
 					}
-				}
-				//Specular color
-				if(prefix.equals("Ks")) {
-					try {
-						currentMaterial.specularColor.x = Float.parseFloat(segments[1]);
-						currentMaterial.specularColor.y = Float.parseFloat(segments[2]);
-						currentMaterial.specularColor.z = Float.parseFloat(segments[3]);
-					} catch(NumberFormatException e) {
-						throw new AssetLoaderException("Invalid specular color: " + line);
+					//Specular color
+					if(prefix.equals("Ks")) {
+						currentMaterial.setSpecularColor(Float.parseFloat(segments[1]), Float.parseFloat(segments[2]), Float.parseFloat(segments[3]));
 					}
-				}
-				//Ambient color
-				if(prefix.equals("Ka")) {
-					try {
-						currentMaterial.ambientColor.x = Float.parseFloat(segments[1]);
-						currentMaterial.ambientColor.y = Float.parseFloat(segments[2]);
-						currentMaterial.ambientColor.z = Float.parseFloat(segments[3]);
-					} catch(NumberFormatException e) {
-						throw new AssetLoaderException("Invalid ambient color: " + line);
+					//Ambient color
+					if(prefix.equals("Ka")) {
+						currentMaterial.setAmbientColor(Float.parseFloat(segments[1]), Float.parseFloat(segments[2]), Float.parseFloat(segments[3]));
 					}
+					//Illumination model
+					if(prefix.equals("illum")) {
+						currentMaterial.setIllumination(Integer.parseInt(segments[1]));
+					}
+				} catch(NumberFormatException e) {
+					throw new AssetLoaderException("Invalid number at line: " + line);
 				}
-				//Illumination model
-				if(prefix.equals("illum")) {
-					currentMaterial.illumination = Integer.parseInt(segments[1]);
-				}
+				
 				//Diffuse texture
 				if(prefix.equals("map_Kd")) {
 					String imagepath = segments[1];
-					currentMaterial.diffuse = new Texture(TextureType.DIFFUSE);
-					currentMaterial.diffuse.image = am.getImage(getPath(filepath) + imagepath);
+					//currentMaterial.diffuse = new Texture(imagepath);
 				}
 			}
 			return library;

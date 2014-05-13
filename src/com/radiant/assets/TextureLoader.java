@@ -5,18 +5,23 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 
 import com.radiant.exceptions.AssetLoaderException;
-import com.radiant.managers.AssetManager;
-
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
-public class ImageLoader {
-	public static Image loadPNG(AssetManager am, String filepath) throws AssetLoaderException {
+public class TextureLoader {
+	public static Texture loadTexture(String filepath) throws AssetLoaderException {
+		String extension = filepath.substring(filepath.lastIndexOf('.'));
+		if(".png".equals(extension)) {
+			return loadPNG(filepath);
+		}
+		throw new AssetLoaderException("Can not open texture file with extension: '" + extension + "'");
+	}
+	
+	private static Texture loadPNG(String filepath) throws AssetLoaderException {
 		ByteBuffer buf = null;
 		int width = 0;
 		int height = 0;
@@ -41,7 +46,11 @@ public class ImageLoader {
 			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buf);
 			GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
 			
-			return new Image(handle, width, height);
+			Texture texture = new Texture();
+			texture.width = width;
+			texture.height = height;
+			texture.handle = handle;
+			return texture;
 		} catch (FileNotFoundException e) {
 			throw new AssetLoaderException("Image was not found");
 		} catch (IOException e) {
