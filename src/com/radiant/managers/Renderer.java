@@ -114,10 +114,12 @@ public class Renderer implements Script {
 		for(int i = 0; i < lightspos.size(); i++) {	
 			int lightpos = GL20.glGetUniformLocation(shader, "lights["+i+"].position");
 			int lightcolor = GL20.glGetUniformLocation(shader, "lights["+i+"].color");
+			int lightintensity = GL20.glGetUniformLocation(shader, "lights["+i+"].intensity");
 			Transform transform = lightspos.get(i);
 			Light light = lightscolor.get(i);
 			GL20.glUniform4f(lightpos, transform.position.x, transform.position.y, transform.position.z, 1);
 			GL20.glUniform3f(lightcolor, light.color.x, light.color.y, light.color.z);
+			GL20.glUniform1f(lightintensity, light.intensity);
 		}
 		
 		//Meshes
