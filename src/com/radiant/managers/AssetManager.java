@@ -9,7 +9,7 @@ import com.radiant.components.Mesh;
 import com.radiant.exceptions.AssetLoaderException;
 import com.radiant.util.Log;
 
-public class AssetManager implements Manager {
+public class AssetManager {
 	protected static HashMap<String, Texture> textureCache = new HashMap<String, Texture>();
 	protected static HashMap<String, Mesh> meshCache = new HashMap<String, Mesh>();
 	

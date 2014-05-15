@@ -7,15 +7,11 @@ import org.lwjgl.opengl.Display;
 
 import com.radiant.exceptions.RadiantException;
 import com.radiant.managers.AssetManager;
-import com.radiant.managers.RenderManager;
 import com.radiant.util.Log;
 
 public class Engine {
 	/* System */
 	private Window window;
-	
-	/* Managers */
-	public RenderManager renderer;
 	
 	/* FPS */
 	long lastFPS = 0;
@@ -27,9 +23,6 @@ public class Engine {
 	 */
 	public void startup() throws RadiantException {
 		window = Window.create();
-		
-		renderer = new RenderManager(this);
-		renderer.create();
 	}
 	
 	public void shutdown() {
@@ -42,7 +35,6 @@ public class Engine {
 			if(currentScene != null) {
 				currentScene.update();
 			}
-			renderer.render();
 			window.update();
 			updateFPS();
 			long dt = System.nanoTime() - t;

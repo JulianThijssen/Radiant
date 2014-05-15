@@ -21,6 +21,7 @@ public class Scene {
 	
 	public void addCamera(Entity c) {
 		mainCamera = c;
+		entities.add(c);
 	}
 	
 	public void update() {

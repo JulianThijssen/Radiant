@@ -105,6 +105,7 @@ public class MeshLoader {
 			
 			return mesh;
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new AssetLoaderException(e.getMessage());
 		}
 	}
