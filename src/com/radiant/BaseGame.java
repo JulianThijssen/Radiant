@@ -11,12 +11,16 @@ import com.radiant.exceptions.RadiantException;
 public abstract class BaseGame {
 	/* System */
 	private Window window;
+	private Renderer renderer;
 	
 	/* Scene */
 	private ArrayList<Scene> scenes = new ArrayList<Scene>();
 	protected Scene currentScene = null;
 	
 	/* FPS */
+	public static final int MAX_SKIP = 15;
+	public static final int SKIP_TIME = 40;
+	
 	long lastFPS = 0;
 	int fps = 0;
 	
@@ -25,6 +29,7 @@ public abstract class BaseGame {
 			throw new RadiantException("Can't start game, there are unresolved errors");
 		}
 		window = Window.create();
+		renderer = new Renderer();
 		lastFPS = getTime(); //set lastFPS to current Time
 		update();
 	}
@@ -34,29 +39,24 @@ public abstract class BaseGame {
 	}
 	
 	public void update() {
+		long nextUpdate = System.currentTimeMillis();
+		
 		if(currentScene != null) {
 			currentScene.start();
 		
 			while(!window.isClosed()) {
-				long t = System.nanoTime();
-				if(currentScene != null) {
-					currentScene.update();
-				}
-				window.update();
-				updateFPS();
-				long dt = System.nanoTime() - t;
+				int skipped = 0;
 				
-				long lag = (long) (1000000000/60) - dt;
-				long millis = lag / 1000000;
-				int nanos = (int) (lag - (millis * 1000000));
-				if(lag > 0) {
-					try {
-						Thread.sleep(millis, nanos);
-					} catch(Exception e) {
-						e.printStackTrace();
+				
+				while(System.currentTimeMillis() > nextUpdate && skipped < MAX_SKIP) {
+					if(currentScene != null) {
+						currentScene.update();
 					}
+					nextUpdate += SKIP_TIME;
+					skipped++;
 				}
-				Time.deltaTime = (System.nanoTime() - t) / 1000000000f;
+				renderer.update(currentScene);
+				window.update();
 			}
 		}
 		shutdown();

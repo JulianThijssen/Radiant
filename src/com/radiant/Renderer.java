@@ -1,4 +1,4 @@
-package com.radiant.managers;
+package com.radiant;
 
 import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
@@ -16,8 +16,6 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
-import com.radiant.Scene;
-import com.radiant.Script;
 import com.radiant.assets.AssetLoader;
 import com.radiant.assets.MeshData;
 import com.radiant.assets.ShaderLoader;
@@ -29,7 +27,7 @@ import com.radiant.components.Mesh;
 import com.radiant.components.Transform;
 import com.radiant.entities.Entity;
 
-public class Renderer implements Script {
+public class Renderer {
 	public int shader;
 	
 	private Matrix4f projectionMatrix;
@@ -48,8 +46,7 @@ public class Renderer implements Script {
 	Vector3f axisY = new Vector3f(0, 1, 0);
 	Vector3f axisZ = new Vector3f(0, 0, 1);
 	
-	@Override
-	public void onStart() {
+	public Renderer() {
 		shader = ShaderLoader.loadShaders("res/shader.vert", "res/shader.frag");
 		projectionLocation = GL20.glGetUniformLocation(shader, "projectionMatrix");
 		viewLocation = GL20.glGetUniformLocation(shader, "viewMatrix");
@@ -59,7 +56,7 @@ public class Renderer implements Script {
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		GL11.glCullFace(GL11.GL_BACK);
 		GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_BLEND);
-		glClearColor(1.0f, 0.0f, 0.4f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.4f, 1.0f);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
@@ -108,14 +105,18 @@ public class Renderer implements Script {
 		int numLights = GL20.glGetUniformLocation(shader, "numLights");
 		GL20.glUniform1i(numLights, lightspos.size());
 		for(int i = 0; i < lightspos.size(); i++) {	
-			int lightpos = GL20.glGetUniformLocation(shader, "lights["+i+"].position");
-			int lightcolor = GL20.glGetUniformLocation(shader, "lights["+i+"].color");
-			int lightintensity = GL20.glGetUniformLocation(shader, "lights["+i+"].intensity");
+			int lightPos = GL20.glGetUniformLocation(shader, "lights["+i+"].position");
+			int lightColor = GL20.glGetUniformLocation(shader, "lights["+i+"].color");
+			int lightConstantAtt = GL20.glGetUniformLocation(shader, "lights["+i+"].constantAtt");
+			int lightLinearAtt = GL20.glGetUniformLocation(shader, "lights["+i+"].linearAtt");
+			int lightQuadraticAtt = GL20.glGetUniformLocation(shader, "lights["+i+"].quadraticAtt");
 			Transform transform = lightspos.get(i);
 			Light light = lightscolor.get(i);
-			GL20.glUniform4f(lightpos, transform.position.x, transform.position.y, transform.position.z, 1);
-			GL20.glUniform3f(lightcolor, light.color.x, light.color.y, light.color.z);
-			GL20.glUniform1f(lightintensity, light.intensity);
+			GL20.glUniform4f(lightPos, transform.position.x, transform.position.y, transform.position.z, 1);
+			GL20.glUniform3f(lightColor, light.color.x, light.color.y, light.color.z);
+			GL20.glUniform1f(lightConstantAtt, light.constantAtt);
+			GL20.glUniform1f(lightLinearAtt, light.linearAtt);
+			GL20.glUniform1f(lightQuadraticAtt, light.quadraticAtt);
 		}
 		
 		//Meshes
@@ -165,11 +166,5 @@ public class Renderer implements Script {
 			GL30.glBindVertexArray(0);
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
 		}
-	}
-
-	@Override
-	public void onStop() {
-		// TODO Auto-generated method stub
-		
 	}
 }
