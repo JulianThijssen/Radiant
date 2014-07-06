@@ -9,12 +9,12 @@ import com.radiant.components.Material;
 import com.radiant.exceptions.AssetLoaderException;
 
 public class MaterialLoader {
-	public static MaterialLibrary loadMTL(String filepath) throws AssetLoaderException {
+	public static void loadMTL(String filepath) throws AssetLoaderException {
 		BufferedReader in = null;
 		try {
 			in = new BufferedReader(new FileReader(new File(filepath)));
 			
-			MaterialLibrary library = new MaterialLibrary();
+
 			Material currentMaterial = null;
 			
 			String line = null;
@@ -29,7 +29,7 @@ public class MaterialLoader {
 				
 				if(prefix.equals("newmtl")) {
 					currentMaterial = new Material(segments[1]);
-					library.add(currentMaterial);
+					//library.add(currentMaterial);
 				}
 				//If no material has been made yet, continue parsing till one has
 				if(currentMaterial == null) {
@@ -62,7 +62,7 @@ public class MaterialLoader {
 					//currentMaterial.diffuse = new Texture(imagepath);
 				}
 			}
-			return library;
+			//return library;
 		} catch(IOException e) {
 			e.printStackTrace();
 		} finally {
@@ -74,7 +74,7 @@ public class MaterialLoader {
 				}
 			}
 		}
-		return null;
+		//return null;
 	}
 	
 	private static String[] getSegments(String line) {
