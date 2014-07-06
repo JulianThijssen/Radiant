@@ -1,10 +1,13 @@
 package com.radiant.assets;
 
-public class Texture {
+import java.nio.ByteBuffer;
+
+public class TextureData {
 	public int width, height;
+	public ByteBuffer buffer;
 	public int handle;
 	
-	public Texture() {
+	public TextureData() {
 		
 	}
 	

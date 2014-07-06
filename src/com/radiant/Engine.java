@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import org.lwjgl.Sys;
 import org.lwjgl.opengl.Display;
 
+import com.radiant.assets.AssetLoader;
 import com.radiant.exceptions.RadiantException;
-import com.radiant.managers.AssetManager;
 import com.radiant.util.Log;
 
 public class Engine {
@@ -80,7 +80,7 @@ public class Engine {
 	 * Game
 	 */
 	public final void startGame() {
-		if(AssetManager.getErrors() > 0) {
+		if(AssetLoader.getErrors() > 0) {
 			Log.debug("Can't start game, there are unresolved errors");
 			return;
 		}

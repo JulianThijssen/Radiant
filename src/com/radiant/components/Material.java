@@ -2,7 +2,7 @@ package com.radiant.components;
 
 import org.lwjgl.util.vector.Vector3f;
 
-import com.radiant.assets.Texture;
+import com.radiant.assets.TextureData;
 
 public class Material extends Component {
 	private String name;

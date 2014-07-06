@@ -34,7 +34,7 @@ public final class Window {
 			Display.create();
 			return window;
 		} catch(LWJGLException e) {
-			throw new RadiantException(e.getMessage());
+			throw new RadiantException("Window context can not be created");
 		}
 	}
 	

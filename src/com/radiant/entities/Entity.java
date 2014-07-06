@@ -2,7 +2,6 @@ package com.radiant.entities;
 
 import java.util.ArrayList;
 
-import com.radiant.components.Camera;
 import com.radiant.components.Component;
 
 public class Entity {

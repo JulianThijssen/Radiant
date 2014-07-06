@@ -16,12 +16,17 @@ public class Scene {
 	
 	public void addScript(Script s) {
 		scripts.add(s);
-		s.onStart();
 	}
 	
 	public void addCamera(Entity c) {
 		mainCamera = c;
 		entities.add(c);
+	}
+	
+	public void start() {
+		for(Script s: scripts) {
+			s.onStart();
+		}
 	}
 	
 	public void update() {

@@ -3,7 +3,6 @@ package com.radiant.assets;
 import static org.lwjgl.opengl.GL20.GL_FRAGMENT_SHADER;
 import static org.lwjgl.opengl.GL20.GL_VERTEX_SHADER;
 import static org.lwjgl.opengl.GL20.glAttachShader;
-import static org.lwjgl.opengl.GL20.glBindAttribLocation;
 import static org.lwjgl.opengl.GL20.glCompileShader;
 import static org.lwjgl.opengl.GL20.glCreateProgram;
 import static org.lwjgl.opengl.GL20.glCreateShader;
@@ -15,28 +14,29 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
 import com.radiant.util.Log;
 
 public class ShaderLoader {
+	public static final int LOG_SIZE = 1024;
+	
 	public static int loadShaders(String vertpath, String fragpath) {
 		int vertexShader = loadShader(vertpath, GL_VERTEX_SHADER);
 		int fragmentShader = loadShader(fragpath, GL_FRAGMENT_SHADER);
 		
 		int shaderProgram = glCreateProgram();
 		
-		System.out.println(GL20.glGetShaderInfoLog(vertexShader, 1000));
-		System.out.println(GL20.glGetShaderInfoLog(fragmentShader, 1000));
+		if(GL20.glGetShaderi(vertexShader, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
+			Log.error(GL20.glGetShaderInfoLog(vertexShader, LOG_SIZE));
+		}
+		if(GL20.glGetShaderi(fragmentShader, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
+			Log.error(GL20.glGetShaderInfoLog(fragmentShader, LOG_SIZE));
+		}
+		
 		glAttachShader(shaderProgram, vertexShader);
 		glAttachShader(shaderProgram, fragmentShader);
-		
-		//Position information will be attribute 0
-		glBindAttribLocation(shaderProgram, 0, "position");
-		//Normal information will be attribute 1
-		glBindAttribLocation(shaderProgram, 1, "texCoord");
-		//Color information will be attribute 2
-		glBindAttribLocation(shaderProgram, 2, "normal");
 		
 		glLinkProgram(shaderProgram);
 		glValidateProgram(shaderProgram);
