@@ -1,4 +1,4 @@
-#version 330
+#version 330 core
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
@@ -12,7 +12,7 @@ out vec4 pass_position;
 out vec2 pass_texCoord;
 out vec4 pass_normal;
 
-void main() {
+void main(void) {
 	pass_position = position;
 	pass_texCoord = texCoord;
 	pass_normal = normal;

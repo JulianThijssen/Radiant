@@ -3,10 +3,10 @@ package com.radiant;
 import java.util.ArrayList;
 
 import org.lwjgl.Sys;
-import org.lwjgl.opengl.Display;
 
 import com.radiant.assets.AssetLoader;
 import com.radiant.exceptions.RadiantException;
+import com.radiant.util.Log;
 
 public abstract class BaseGame {
 	/* System */
@@ -17,12 +17,12 @@ public abstract class BaseGame {
 	private ArrayList<Scene> scenes = new ArrayList<Scene>();
 	protected Scene currentScene = null;
 	
-	/* FPS */
+	/* Game loop */
 	public static final int MAX_SKIP = 15;
 	public static final int SKIP_TIME = 40;
 	
-	long lastFPS = 0;
-	int fps = 0;
+	/* FPS */
+	public int fps = 0;
 	
 	public final void startGame() throws RadiantException {
 		if(AssetLoader.getErrors() > 0) {
@@ -30,7 +30,7 @@ public abstract class BaseGame {
 		}
 		window = Window.create();
 		renderer = new Renderer();
-		lastFPS = getTime(); //set lastFPS to current Time
+		
 		update();
 	}
 	
@@ -40,6 +40,9 @@ public abstract class BaseGame {
 	
 	public void update() {
 		long nextUpdate = System.currentTimeMillis();
+		long lastFpsCount = System.currentTimeMillis();
+		
+		int frames = 0;
 		
 		if(currentScene != null) {
 			currentScene.start();
@@ -47,6 +50,13 @@ public abstract class BaseGame {
 			while(!window.isClosed()) {
 				int skipped = 0;
 				
+				//Count the FPS
+			    if (System.currentTimeMillis() - lastFpsCount > 1000) {
+			      lastFpsCount = System.currentTimeMillis();
+			      fps = frames;
+			      Log.debug("FPS: " + fps);
+			      frames = 0;
+			    }
 				
 				while(System.currentTimeMillis() > nextUpdate && skipped < MAX_SKIP) {
 					if(currentScene != null) {
@@ -55,8 +65,9 @@ public abstract class BaseGame {
 					nextUpdate += SKIP_TIME;
 					skipped++;
 				}
-				renderer.update(currentScene);
+				renderer.update(currentScene, 0);
 				window.update();
+				frames++;
 			}
 		}
 		shutdown();
@@ -82,14 +93,5 @@ public abstract class BaseGame {
 	/* FPS */
 	private long getTime() {
 	    return (Sys.getTime() * 1000) / Sys.getTimerResolution();
-	}
-	
-	private void updateFPS() {
-	    if (getTime() - lastFPS > 1000) {
-	        Display.setTitle("FPS: " + fps); 
-	        fps = 0;
-	        lastFPS += 1000;
-	    }
-	    fps++;
 	}
 }

@@ -2,8 +2,6 @@ package com.radiant.components;
 
 import org.lwjgl.util.vector.Vector3f;
 
-import com.radiant.assets.TextureData;
-
 public class Material extends Component {
 	private String name;
 	private Vector3f diffuseColor = new Vector3f(1, 1, 1);
@@ -44,6 +42,9 @@ public class Material extends Component {
 		this.diffuse = diffuse;
 	}
 	
+	public void setNormalTexture(Texture normal) {
+		this.normal = normal;
+	}
 	
 	@Override
 	public String toString() {
