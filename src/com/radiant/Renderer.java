@@ -184,8 +184,4 @@ public class Renderer {
 			}
 		}
 	}
-	
-	public void renderEntity(Entity entity) {
-		
-	}
 }
