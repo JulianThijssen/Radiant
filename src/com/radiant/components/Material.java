@@ -1,6 +1,6 @@
 package com.radiant.components;
 
-import org.lwjgl.util.vector.Vector3f;
+import com.radiant.util.Vector3f;
 
 public class Material extends Component {
 	private String name;

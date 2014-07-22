@@ -1,5 +1,10 @@
 package com.radiant.assets;
 
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL30.*;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -8,12 +13,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.util.vector.Vector2f;
-import org.lwjgl.util.vector.Vector3f;
+import com.radiant.util.Vector2f;
+import com.radiant.util.Vector3f;
 
 import com.radiant.exceptions.AssetLoaderException;
 import com.radiant.geom.Face;
@@ -110,6 +111,8 @@ public class MeshLoader {
 			}
 			in.close();
 			
+			calculateTangents(meshData);
+			
 			long dtime = System.currentTimeMillis();
 			System.out.println(path + " : " + (dtime - time) + "ms");
 			
@@ -156,15 +159,66 @@ public class MeshLoader {
 		return line.split("\\s+");
 	}
 	
+	private static void calculateTangents(MeshData mesh) {
+		if(mesh.tangents == null) {
+			mesh.tangents = new ArrayList<Vector3f>();
+		}
+		if(mesh.bitangents == null) {
+			mesh.bitangents = new ArrayList<Vector3f>();
+		}
+		for(Face face: mesh.faces) {
+			Vector3f v0 = mesh.vertices.get(face.vi[0] - 1);
+			Vector3f v1 = mesh.vertices.get(face.vi[1] - 1);
+			Vector3f v2 = mesh.vertices.get(face.vi[2] - 1);
+			
+			Vector2f u0 = mesh.textureCoords.get(face.ti[0] - 1);
+			Vector2f u1 = mesh.textureCoords.get(face.ti[1] - 1);
+			Vector2f u2 = mesh.textureCoords.get(face.ti[2] - 1);
+			
+			Vector3f dPos1 = Vector3f.sub(v1, v0);
+			Vector3f dPos2 = Vector3f.sub(v2, v0);
+			
+			Vector2f dUV1 = Vector2f.sub(u1, u0);
+			Vector2f dUV2 = Vector2f.sub(u2, u0);
+			
+			float r = 1.0f / (dUV1.x * dUV2.y - dUV1.y * dUV2.x);
+			Vector3f i1 = new Vector3f(dPos1.x * dUV2.y, dPos1.y * dUV2.y, dPos1.z * dUV2.y);
+			Vector3f i2 = new Vector3f(dPos2.x * dUV1.y, dPos2.y * dUV1.y, dPos2.z * dUV1.y);
+			Vector3f i3 = new Vector3f(dPos2.x * dUV1.x, dPos2.y * dUV1.x, dPos2.z * dUV1.x);
+			Vector3f i4 = new Vector3f(dPos1.x * dUV2.x, dPos1.y * dUV2.x, dPos1.z * dUV2.x);
+			
+			Vector3f tangent = Vector3f.sub(i1, i2);
+			tangent.scale(r);
+			tangent.normalise();
+			Vector3f bitangent = Vector3f.sub(i3, i4);
+			bitangent.scale(r);
+			bitangent.normalise();
+			face.tai = new int[]{mesh.tangents.size() + 1, mesh.tangents.size() + 2, mesh.tangents.size() + 3};
+			face.bti = new int[]{mesh.bitangents.size() + 1, mesh.bitangents.size() + 2, mesh.bitangents.size() + 3};
+			//tangent = glm::normalize(tangent - normal * Vector3f.dot(normal, tangent));
+			
+			for(int i = 0; i < VERTICES_PER_FACE; i++) {
+				Vector3f normal = mesh.normals.get(face.ni[i] - 1);
+				tangent.sub(normal);
+				tangent.scale(Vector3f.dot(normal, tangent));
+				tangent.normalise();
+				mesh.tangents.add(tangent);
+				mesh.bitangents.add(bitangent);
+			}
+		}
+	}
+	
 	private static int uploadMesh(MeshData mesh) {
 		//Declare some variables
 		FloatBuffer vertexBuffer = null;
 		FloatBuffer textureBuffer = null;
 		FloatBuffer normalBuffer = null;
+		FloatBuffer tangentBuffer = null;
+		FloatBuffer bitangentBuffer = null;
 		
 		//Create the vertex array object
-		int vao = GL30.glGenVertexArrays();
-		GL30.glBindVertexArray(vao);
+		int vao = glGenVertexArrays();
+		glBindVertexArray(vao);
 		//Vertices
 		if(mesh.vertices != null) {
 			vertexBuffer = BufferUtils.createFloatBuffer(mesh.faces.size() * VERTICES_PER_FACE * 3);
@@ -179,12 +233,12 @@ public class MeshLoader {
 			vertexBuffer.flip();
 			
 			//Put the vertex buffer into the VAO
-			int vertexVBO = GL15.glGenBuffers();
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexVBO);
-			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertexBuffer, GL15.GL_STATIC_DRAW);
-			GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-			GL20.glEnableVertexAttribArray(0);
+			int vertexVBO = glGenBuffers();
+			glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+			glBufferData(GL_ARRAY_BUFFER, vertexBuffer, GL_STATIC_DRAW);
+			glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glEnableVertexAttribArray(0);
 		}
 		
 		//Textures
@@ -201,12 +255,12 @@ public class MeshLoader {
 			textureBuffer.flip();
 			
 			//Put the texture coordinate buffer into the VAO
-			int textureVBO = GL15.glGenBuffers();
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, textureVBO);
-			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, textureBuffer, GL15.GL_STATIC_DRAW);
-			GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 0, 0);
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-			GL20.glEnableVertexAttribArray(1);
+			int textureVBO = glGenBuffers();
+			glBindBuffer(GL_ARRAY_BUFFER, textureVBO);
+			glBufferData(GL_ARRAY_BUFFER, textureBuffer, GL_STATIC_DRAW);
+			glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glEnableVertexAttribArray(1);
 		}
 		
 		//Normals
@@ -223,16 +277,60 @@ public class MeshLoader {
 			normalBuffer.flip();
 			
 			//Put the normal buffer into the VAO
-			int normalVBO = GL15.glGenBuffers();
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, normalVBO);
-			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, normalBuffer, GL15.GL_STATIC_DRAW);
-			GL20.glVertexAttribPointer(2, 3, GL11.GL_FLOAT, false, 0, 0);
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-			GL20.glEnableVertexAttribArray(2);
+			int normalVBO = glGenBuffers();
+			glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
+			glBufferData(GL_ARRAY_BUFFER, normalBuffer, GL_STATIC_DRAW);
+			glVertexAttribPointer(2, 3, GL_FLOAT, false, 0, 0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glEnableVertexAttribArray(2);
+		}
+		
+		//Tangents
+		if(mesh.tangents != null) {
+			tangentBuffer = BufferUtils.createFloatBuffer(mesh.faces.size() * VERTICES_PER_FACE * 3);
+			
+			//Store the tangents in the tangent buffer
+			for(Face face: mesh.faces) {
+				for(int j = 0; j < VERTICES_PER_FACE; j++) {
+					Vector3f tangent = mesh.tangents.get(face.tai[j] - 1);
+					tangent.store(tangentBuffer);
+				}
+			}
+			tangentBuffer.flip();
+			
+			//Put the tangent buffer into the VAO
+			int tangentVBO = glGenBuffers();
+			glBindBuffer(GL_ARRAY_BUFFER, tangentVBO);
+			glBufferData(GL_ARRAY_BUFFER, tangentBuffer, GL_STATIC_DRAW);
+			glVertexAttribPointer(3, 3, GL_FLOAT, false, 0, 0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glEnableVertexAttribArray(3);
+		}
+		
+		//Bitangents
+		if(mesh.bitangents != null) {
+			bitangentBuffer = BufferUtils.createFloatBuffer(mesh.faces.size() * VERTICES_PER_FACE * 3);
+			
+			//Store the bitangents in the bitangent buffer
+			for(Face face: mesh.faces) {
+				for(int j = 0; j < VERTICES_PER_FACE; j++) {
+					Vector3f bitangent = mesh.bitangents.get(face.bti[j] - 1);
+					bitangent.store(bitangentBuffer);
+				}
+			}
+			bitangentBuffer.flip();
+			
+			//Put the tangent buffer into the VAO
+			int bitangentVBO = glGenBuffers();
+			glBindBuffer(GL_ARRAY_BUFFER, bitangentVBO);
+			glBufferData(GL_ARRAY_BUFFER, bitangentBuffer, GL_STATIC_DRAW);
+			glVertexAttribPointer(4, 3, GL_FLOAT, false, 0, 0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glEnableVertexAttribArray(4);
 		}
 		
 		//Unbind the vao
-		GL30.glBindVertexArray(0);
+		glBindVertexArray(0);
 		
 		return vao;
 	}

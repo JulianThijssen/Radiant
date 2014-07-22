@@ -4,6 +4,8 @@ public class Face {
 	public int[] vi;
 	public int[] ti;
 	public int[] ni;
+	public int[] tai;
+	public int[] bti;
 	
 	public Face() {
 		

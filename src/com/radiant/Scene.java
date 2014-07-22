@@ -25,7 +25,7 @@ public class Scene {
 	
 	public void start() {
 		for(Script s: scripts) {
-			s.onStart();
+			s.onStart(this);
 		}
 	}
 	

@@ -1,6 +1,6 @@
 package com.radiant.components;
 
-import org.lwjgl.util.vector.Matrix4f;
+import com.radiant.util.Matrix4f;
 
 public class Camera extends Component {
 	public static final float   DEFAULT_FOVY = 90;
@@ -58,19 +58,19 @@ public class Camera extends Component {
 	
 	private void recalculate() {
 		if(perspective) {
-			projectionMatrix.m00 = (float) (1 / Math.tan(Math.toRadians(fovy / 2f))) / aspect;
-			projectionMatrix.m11 = (float) (1 / Math.tan(Math.toRadians(fovy / 2f)));
-			projectionMatrix.m22 = (zNear + zFar) / (zNear - zFar);
-			projectionMatrix.m23 = -1;
-			projectionMatrix.m32 = (2 * zNear * zFar) / (zNear - zFar);
-			projectionMatrix.m33 = 0;
+			projectionMatrix.array[0] = (float) (1 / Math.tan(Math.toRadians(fovy / 2f))) / aspect;
+			projectionMatrix.array[5] = (float) (1 / Math.tan(Math.toRadians(fovy / 2f)));
+			projectionMatrix.array[10] = (zNear + zFar) / (zNear - zFar);
+			projectionMatrix.array[11] = -1;
+			projectionMatrix.array[14] = (2 * zNear * zFar) / (zNear - zFar);
+			projectionMatrix.array[15] = 0;
 		} else {
-			projectionMatrix.m00 = 2 / (right - left);
-			projectionMatrix.m11 = 2 / (top - bottom);
-			projectionMatrix.m22 = -2 / (zFar - zNear);
-			projectionMatrix.m30 = (left - right) / (right - left);
-			projectionMatrix.m31 = (bottom - top) / (top - bottom);
-			projectionMatrix.m32 = (zNear - zFar) / (zFar - zNear);
+			projectionMatrix.array[0] = 2 / (right - left);
+			projectionMatrix.array[5] = 2 / (top - bottom);
+			projectionMatrix.array[10] = -2 / (zFar - zNear);
+			projectionMatrix.array[12] = (left - right) / (right - left);
+			projectionMatrix.array[13] = (bottom - top) / (top - bottom);
+			projectionMatrix.array[14] = (zNear - zFar) / (zFar - zNear);
 		}
 	}
 	

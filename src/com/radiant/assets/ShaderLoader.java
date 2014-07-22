@@ -1,14 +1,7 @@
 package com.radiant.assets;
 
-import static org.lwjgl.opengl.GL20.GL_FRAGMENT_SHADER;
-import static org.lwjgl.opengl.GL20.GL_VERTEX_SHADER;
-import static org.lwjgl.opengl.GL20.glAttachShader;
-import static org.lwjgl.opengl.GL20.glCompileShader;
-import static org.lwjgl.opengl.GL20.glCreateProgram;
-import static org.lwjgl.opengl.GL20.glCreateShader;
-import static org.lwjgl.opengl.GL20.glLinkProgram;
-import static org.lwjgl.opengl.GL20.glShaderSource;
-import static org.lwjgl.opengl.GL20.glValidateProgram;
+import static org.lwjgl.opengl.GL11.GL_FALSE;
+import static org.lwjgl.opengl.GL20.*;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -27,10 +20,10 @@ public class ShaderLoader {
 		
 		int shaderProgram = glCreateProgram();
 		
-		if(GL20.glGetShaderi(vertexShader, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
+		if(GL20.glGetShaderi(vertexShader, GL_COMPILE_STATUS) == GL_FALSE) {
 			Log.error(GL20.glGetShaderInfoLog(vertexShader, LOG_SIZE));
 		}
-		if(GL20.glGetShaderi(fragmentShader, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
+		if(GL20.glGetShaderi(fragmentShader, GL_COMPILE_STATUS) == GL_FALSE) {
 			Log.error(GL20.glGetShaderInfoLog(fragmentShader, LOG_SIZE));
 		}
 		

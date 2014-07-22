@@ -2,8 +2,8 @@ package com.radiant.assets;
 
 import java.util.ArrayList;
 
-import org.lwjgl.util.vector.Vector2f;
-import org.lwjgl.util.vector.Vector3f;
+import com.radiant.util.Vector2f;
+import com.radiant.util.Vector3f;
 
 import com.radiant.geom.Face;
 
@@ -12,6 +12,8 @@ public class MeshData {
 	public ArrayList<Vector3f> vertices = null;
 	public ArrayList<Vector2f> textureCoords = null;
 	public ArrayList<Vector3f> normals = null;
+	public ArrayList<Vector3f> tangents = null;
+	public ArrayList<Vector3f> bitangents = null;
 	public ArrayList<Face> faces = null;
 	public int handle;
 	

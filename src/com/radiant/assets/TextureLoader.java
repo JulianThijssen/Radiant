@@ -1,13 +1,13 @@
 package com.radiant.assets;
 
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL30.glGenerateMipmap;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL30;
 
 import com.radiant.exceptions.AssetLoaderException;
 
@@ -57,11 +57,11 @@ public class TextureLoader {
 	}
 	
 	private static int uploadTexture(TextureData texture) {
-		int handle = GL11.glGenTextures();
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, handle);
-		GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
-		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, texture.width, texture.height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, texture.buffer);
-		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+		int handle = glGenTextures();
+		glBindTexture(GL_TEXTURE_2D, handle);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.width, texture.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture.buffer);
+		glGenerateMipmap(GL_TEXTURE_2D);
 		return handle;
 	}
 }

@@ -1,6 +1,6 @@
 package com.radiant.components;
 
-import org.lwjgl.util.vector.Vector3f;
+import com.radiant.util.Vector3f;
 
 public class Transform extends Component {
 	public Vector3f position = new Vector3f(0, 0, 0);
@@ -26,9 +26,9 @@ public class Transform extends Component {
 		position.y = y;
 		position.z = z;
 		
-		rotation.x = (float) Math.toRadians(pitch);
-		rotation.y = (float) Math.toRadians(yaw);
-		rotation.z = (float) Math.toRadians(roll);
+		rotation.x = pitch;
+		rotation.y = yaw;
+		rotation.z = roll;
 		
 		scale.x = sx;
 		scale.y = sy;
