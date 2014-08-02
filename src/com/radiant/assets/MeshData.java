@@ -13,7 +13,6 @@ public class MeshData {
 	public ArrayList<Vector2f> textureCoords = null;
 	public ArrayList<Vector3f> normals = null;
 	public ArrayList<Vector3f> tangents = null;
-	public ArrayList<Vector3f> bitangents = null;
 	public ArrayList<Face> faces = null;
 	public int handle;
 	

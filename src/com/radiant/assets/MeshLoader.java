@@ -10,8 +10,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
-
 import org.lwjgl.BufferUtils;
 import com.radiant.util.Vector2f;
 import com.radiant.util.Vector3f;
@@ -163,9 +161,11 @@ public class MeshLoader {
 		if(mesh.tangents == null) {
 			mesh.tangents = new ArrayList<Vector3f>();
 		}
-		if(mesh.bitangents == null) {
-			mesh.bitangents = new ArrayList<Vector3f>();
+
+		for(int i = 0; i < mesh.vertices.size(); i++) {
+			mesh.tangents.add(new Vector3f(0, 0, 0));
 		}
+		
 		for(Face face: mesh.faces) {
 			Vector3f v0 = mesh.vertices.get(face.vi[0] - 1);
 			Vector3f v1 = mesh.vertices.get(face.vi[1] - 1);
@@ -175,36 +175,34 @@ public class MeshLoader {
 			Vector2f u1 = mesh.textureCoords.get(face.ti[1] - 1);
 			Vector2f u2 = mesh.textureCoords.get(face.ti[2] - 1);
 			
-			Vector3f dPos1 = Vector3f.sub(v1, v0);
-			Vector3f dPos2 = Vector3f.sub(v2, v0);
+			Vector3f Edge1 = Vector3f.sub(v1, v0);
+			Vector3f Edge2 = Vector3f.sub(v2, v0);
 			
 			Vector2f dUV1 = Vector2f.sub(u1, u0);
 			Vector2f dUV2 = Vector2f.sub(u2, u0);
 			
-			float r = 1.0f / (dUV1.x * dUV2.y - dUV1.y * dUV2.x);
-			Vector3f i1 = new Vector3f(dPos1.x * dUV2.y, dPos1.y * dUV2.y, dPos1.z * dUV2.y);
-			Vector3f i2 = new Vector3f(dPos2.x * dUV1.y, dPos2.y * dUV1.y, dPos2.z * dUV1.y);
-			Vector3f i3 = new Vector3f(dPos2.x * dUV1.x, dPos2.y * dUV1.x, dPos2.z * dUV1.x);
-			Vector3f i4 = new Vector3f(dPos1.x * dUV2.x, dPos1.y * dUV2.x, dPos1.z * dUV2.x);
+			Vector3f tangent = new Vector3f();
 			
-			Vector3f tangent = Vector3f.sub(i1, i2);
-			tangent.scale(r);
-			tangent.normalise();
-			Vector3f bitangent = Vector3f.sub(i3, i4);
-			bitangent.scale(r);
-			bitangent.normalise();
-			face.tai = new int[]{mesh.tangents.size() + 1, mesh.tangents.size() + 2, mesh.tangents.size() + 3};
-			face.bti = new int[]{mesh.bitangents.size() + 1, mesh.bitangents.size() + 2, mesh.bitangents.size() + 3};
-			//tangent = glm::normalize(tangent - normal * Vector3f.dot(normal, tangent));
+			float det = 1.0f / (dUV1.x * dUV2.y - dUV1.y * dUV2.x);
+			
+			tangent.x = (dUV2.y * Edge1.x - dUV1.y * Edge2.x);
+			tangent.y = (dUV2.y * Edge1.y - dUV1.y * Edge2.y);
+			tangent.z = (dUV2.y * Edge1.z - dUV1.y * Edge2.z);
+
+			tangent.scale(det);
+			
+			face.tai = new int[]{face.vi[0], face.vi[1], face.vi[2]};
+			face.bti = new int[]{face.vi[0], face.vi[2], face.vi[2]};			
 			
 			for(int i = 0; i < VERTICES_PER_FACE; i++) {
-				Vector3f normal = mesh.normals.get(face.ni[i] - 1);
-				tangent.sub(normal);
-				tangent.scale(Vector3f.dot(normal, tangent));
-				tangent.normalise();
-				mesh.tangents.add(tangent);
-				mesh.bitangents.add(bitangent);
+				mesh.tangents.get(face.vi[0] - 1).add(tangent);
+				mesh.tangents.get(face.vi[1] - 1).add(tangent);
+				mesh.tangents.get(face.vi[2] - 1).add(tangent);
 			}
+		}
+		
+		for(int i = 0; i < mesh.tangents.size(); i++) {
+			mesh.tangents.get(i).normalise();
 		}
 	}
 	
@@ -307,27 +305,27 @@ public class MeshLoader {
 			glEnableVertexAttribArray(3);
 		}
 		
-		//Bitangents
-		if(mesh.bitangents != null) {
-			bitangentBuffer = BufferUtils.createFloatBuffer(mesh.faces.size() * VERTICES_PER_FACE * 3);
-			
-			//Store the bitangents in the bitangent buffer
-			for(Face face: mesh.faces) {
-				for(int j = 0; j < VERTICES_PER_FACE; j++) {
-					Vector3f bitangent = mesh.bitangents.get(face.bti[j] - 1);
-					bitangent.store(bitangentBuffer);
-				}
-			}
-			bitangentBuffer.flip();
-			
-			//Put the tangent buffer into the VAO
-			int bitangentVBO = glGenBuffers();
-			glBindBuffer(GL_ARRAY_BUFFER, bitangentVBO);
-			glBufferData(GL_ARRAY_BUFFER, bitangentBuffer, GL_STATIC_DRAW);
-			glVertexAttribPointer(4, 3, GL_FLOAT, false, 0, 0);
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			glEnableVertexAttribArray(4);
-		}
+//		//Bitangents
+//		if(mesh.bitangents != null) {
+//			bitangentBuffer = BufferUtils.createFloatBuffer(mesh.faces.size() * VERTICES_PER_FACE * 3);
+//			
+//			//Store the bitangents in the bitangent buffer
+//			for(Face face: mesh.faces) {
+//				for(int j = 0; j < VERTICES_PER_FACE; j++) {
+//					Vector3f bitangent = mesh.bitangents.get(face.bti[j] - 1);
+//					bitangent.store(bitangentBuffer);
+//				}
+//			}
+//			bitangentBuffer.flip();
+//			
+//			//Put the tangent buffer into the VAO
+//			int bitangentVBO = glGenBuffers();
+//			glBindBuffer(GL_ARRAY_BUFFER, bitangentVBO);
+//			glBufferData(GL_ARRAY_BUFFER, bitangentBuffer, GL_STATIC_DRAW);
+//			glVertexAttribPointer(4, 3, GL_FLOAT, false, 0, 0);
+//			glBindBuffer(GL_ARRAY_BUFFER, 0);
+//			glEnableVertexAttribArray(4);
+//		}
 		
 		//Unbind the vao
 		glBindVertexArray(0);

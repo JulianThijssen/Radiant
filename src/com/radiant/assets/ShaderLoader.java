@@ -6,7 +6,6 @@ import static org.lwjgl.opengl.GL20.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
 import com.radiant.util.Log;
@@ -14,7 +13,7 @@ import com.radiant.util.Log;
 public class ShaderLoader {
 	public static final int LOG_SIZE = 1024;
 	
-	public static int loadShaders(String vertpath, String fragpath) {
+	public static Shader loadShaders(String vertpath, String fragpath) {
 		int vertexShader = loadShader(vertpath, GL_VERTEX_SHADER);
 		int fragmentShader = loadShader(fragpath, GL_FRAGMENT_SHADER);
 		
@@ -33,7 +32,10 @@ public class ShaderLoader {
 		glLinkProgram(shaderProgram);
 		glValidateProgram(shaderProgram);
 		
-		return shaderProgram;
+		Shader shader = new Shader();
+		shader.handle = shaderProgram;
+		
+		return shader;
 	}
 	
 	public static int loadShader(String filename, int type) {

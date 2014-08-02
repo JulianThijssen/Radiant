@@ -7,7 +7,7 @@ public class Material extends Component {
 	private Vector3f diffuseColor = new Vector3f(1, 1, 1);
 	private Vector3f specularColor = new Vector3f(1, 1, 1);
 	private Vector3f ambientColor = new Vector3f(0, 0, 0);
-	private int illumination = 0;
+	public String shader;
 
 	public Texture diffuse = null;
 	public Texture normal = null;
@@ -22,6 +22,10 @@ public class Material extends Component {
 		return name;
 	}
 	
+	public void setShader(String shader) {
+		this.shader = shader;
+	}
+	
 	public void setDiffuseColor(float r, float g, float b) {
 		diffuseColor.set(r, g, b);
 	}
@@ -32,10 +36,6 @@ public class Material extends Component {
 	
 	public void setAmbientColor(float r, float g, float b) {
 		ambientColor.set(r, g, b);
-	}
-	
-	public void setIllumination(int illumination) {
-		this.illumination = illumination;
 	}
 	
 	public void setDiffuseTexture(Texture diffuse) {
@@ -53,7 +53,6 @@ public class Material extends Component {
 		sb.append(String.format("Kd %f %f %f\n", diffuseColor.x, diffuseColor.y, diffuseColor.z));
 		sb.append(String.format("Ks %f %f %f\n", specularColor.x, specularColor.y, specularColor.z));
 		sb.append(String.format("Ka %f %f %f\n", ambientColor.x, ambientColor.y, ambientColor.z));
-		sb.append(String.format("illum %d\n", illumination));
 		if(diffuse != null) {
 			sb.append(String.format("%s\n", diffuse.toString()));
 		}

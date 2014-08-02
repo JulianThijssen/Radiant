@@ -93,6 +93,14 @@ public class Vector3f {
 		return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 	}
 	
+	public static Vector3f cross(Vector3f left,	Vector3f right) {
+		Vector3f v = new Vector3f();
+		v.set(left.y * right.z - left.z * right.y,
+			  right.x * left.z - right.z * left.x,
+			  left.x * right.y - left.y * right.x);
+		return v;
+	}
+	
 	public static Vector3f negate(Vector3f v) {
 		return new Vector3f(-v.x, -v.y, -v.z);
 	}

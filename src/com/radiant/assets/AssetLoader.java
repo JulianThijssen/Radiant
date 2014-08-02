@@ -1,10 +1,9 @@
 package com.radiant.assets;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class AssetLoader {
-	protected static ArrayList<String> loadQueue = new ArrayList<String>();
+	protected static HashMap<String, Shader> shaderCache = new HashMap<String, Shader>();
 	protected static HashMap<String, TextureData> textureCache = new HashMap<String, TextureData>();
 	protected static HashMap<String, MeshData> meshCache = new HashMap<String, MeshData>();
 	
@@ -12,6 +11,20 @@ public class AssetLoader {
 	
 	public static int getErrors() {
 		return errors;
+	}
+	
+	public static Shader getShader(String path) {
+		if(shaderCache.containsKey(path)) {
+			return shaderCache.get(path);
+		}
+		try {
+			Shader shader = ShaderLoader.loadShaders("res/shaders/diffuse.vert", path);
+			shaderCache.put(path, shader);
+			return shader;
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	public static TextureData getTexture(String path) {

@@ -9,11 +9,12 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 
 import org.lwjgl.BufferUtils;
+
 import com.radiant.util.Matrix4f;
 import com.radiant.util.Vector3f;
-
 import com.radiant.assets.AssetLoader;
 import com.radiant.assets.MeshData;
+import com.radiant.assets.Shader;
 import com.radiant.assets.ShaderLoader;
 import com.radiant.assets.TextureData;
 import com.radiant.components.Camera;
@@ -24,10 +25,6 @@ import com.radiant.components.Transform;
 import com.radiant.entities.Entity;
 
 public class Renderer {
-	private int shader;
-	private int diffuseShader;
-	private int normalShader;
-	
 	private Matrix4f projectionMatrix;
 	private Matrix4f viewMatrix = new Matrix4f();
 	private Matrix4f modelMatrix = new Matrix4f();
@@ -39,12 +36,6 @@ public class Renderer {
 	private Vector3f clearColor = new Vector3f(0, 0, 0.4f);
 	
 	public Renderer() {
-		//Load all the shaders
-		diffuseShader = ShaderLoader.loadShaders("res/shaders/diffuse.vert", "res/shaders/diffuse.frag");
-		normalShader = ShaderLoader.loadShaders("res/shaders/normal.vert", "res/shaders/normal.frag");
-		
-		shader = diffuseShader;
-		
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
@@ -97,47 +88,48 @@ public class Renderer {
 			Mesh mesh = (Mesh) entity.getComponent("Mesh");
 			Material material = (Material) entity.getComponent("Material");
 			
+			Shader shader = AssetLoader.getShader("res/shaders/diffuse.frag");
+			
 			if(transform != null && mesh != null) {
 				//If the object has a material, upload it to the fragment shader
 				if(material != null) {
+					shader = AssetLoader.getShader(material.shader);
+					glUseProgram(shader.handle);
+					
 					if(material.diffuse != null) {
-						shader = diffuseShader;
-						glUseProgram(shader);
 						TextureData texture = AssetLoader.getTexture(material.diffuse.path);
 						glActiveTexture(GL_TEXTURE0);
 						glBindTexture(GL_TEXTURE_2D, texture.handle);
-						int loc = glGetUniformLocation(shader, "diffuse");
+						int loc = glGetUniformLocation(shader.handle, "diffuseMap");
 						glUniform1i(loc, 0);
-						int tiling = glGetUniformLocation(shader, "tiling");
+						int tiling = glGetUniformLocation(shader.handle, "tiling");
 						glUniform2f(tiling, material.diffuse.tiling.x, material.diffuse.tiling.y);
 					}
 					if(material.diffuse != null && material.normal != null) {
-						shader = normalShader;
-						glUseProgram(shader);
 						TextureData diffuseTexture = AssetLoader.getTexture(material.diffuse.path);
 						TextureData normalTexture = AssetLoader.getTexture(material.normal.path);
 						glActiveTexture(GL_TEXTURE0);
 						glBindTexture(GL_TEXTURE_2D, diffuseTexture.handle);
-						int dloc = glGetUniformLocation(shader, "diffuse");
+						int dloc = glGetUniformLocation(shader.handle, "diffuseMap");
 						glUniform1i(dloc, 0);
 						glActiveTexture(GL_TEXTURE1);
 						glBindTexture(GL_TEXTURE_2D, normalTexture.handle);
-						int nloc = glGetUniformLocation(shader, "normal");
+						int nloc = glGetUniformLocation(shader.handle, "normalMap");
 						glUniform1i(nloc, 1);
-						int tiling = glGetUniformLocation(shader, "tiling");
+						int tiling = glGetUniformLocation(shader.handle, "tiling");
 						glUniform2f(tiling, material.diffuse.tiling.x, material.diffuse.tiling.y);
 					}
 				}
 				
 				//Lights
-				int numLights = glGetUniformLocation(shader, "numLights");
+				int numLights = glGetUniformLocation(shader.handle, "numLights");
 				glUniform1i(numLights, lightspos.size());
 				for(int i = 0; i < lightspos.size(); i++) {	
-					int lightPos = glGetUniformLocation(shader, "lights["+i+"].position");
-					int lightColor = glGetUniformLocation(shader, "lights["+i+"].color");
-					int lightConstantAtt = glGetUniformLocation(shader, "lights["+i+"].constantAtt");
-					int lightLinearAtt = glGetUniformLocation(shader, "lights["+i+"].linearAtt");
-					int lightQuadraticAtt = glGetUniformLocation(shader, "lights["+i+"].quadraticAtt");
+					int lightPos = glGetUniformLocation(shader.handle, "lights["+i+"].position");
+					int lightColor = glGetUniformLocation(shader.handle, "lights["+i+"].color");
+					int lightConstantAtt = glGetUniformLocation(shader.handle, "lights["+i+"].constantAtt");
+					int lightLinearAtt = glGetUniformLocation(shader.handle, "lights["+i+"].linearAtt");
+					int lightQuadraticAtt = glGetUniformLocation(shader.handle, "lights["+i+"].quadraticAtt");
 					Transform  lightT = lightspos.get(i);
 					Light light = lights.get(i);
 					glUniform4f(lightPos, lightT.position.x, lightT.position.y, lightT.position.z, 1);
@@ -159,9 +151,9 @@ public class Renderer {
 				modelBuffer.flip();
 				
 				//Upload matrices to the shader
-				int projectionLocation = glGetUniformLocation(shader, "projectionMatrix");
-				int viewLocation = glGetUniformLocation(shader, "viewMatrix");
-				int modelLocation = glGetUniformLocation(shader, "modelMatrix");
+				int projectionLocation = glGetUniformLocation(shader.handle, "projectionMatrix");
+				int viewLocation = glGetUniformLocation(shader.handle, "viewMatrix");
+				int modelLocation = glGetUniformLocation(shader.handle, "modelMatrix");
 				
 				glUniformMatrix4(modelLocation, false, modelBuffer);
 				glUniformMatrix4(projectionLocation, false, projBuffer);
