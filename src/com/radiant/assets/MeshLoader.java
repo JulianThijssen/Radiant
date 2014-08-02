@@ -76,7 +76,8 @@ public class MeshLoader {
 						if(meshData.textureCoords == null) {
 							meshData.textureCoords = new ArrayList<Vector2f>();
 						}
-						meshData.textureCoords.add(new Vector2f(u, v));
+						//FIXME The v needs to be inverted for the diffuse map to be the right way around, why?
+						meshData.textureCoords.add(new Vector2f(u, -v));
 					}
 					if(type.equals("vn")) {
 						float x = Float.parseFloat(segments[1]);
@@ -109,6 +110,7 @@ public class MeshLoader {
 			}
 			in.close();
 			
+			calculateNormals(meshData);
 			calculateTangents(meshData);
 			
 			long dtime = System.currentTimeMillis();
@@ -155,6 +157,25 @@ public class MeshLoader {
 	private static String[] getSegments(String line) {
 		line = line.trim();
 		return line.split("\\s+");
+	}
+	
+	private static void calculateNormals(MeshData mesh) {
+		ArrayList<Vector3f> normals = new ArrayList<Vector3f>();
+		
+		for(int i = 0; i < mesh.vertices.size(); i++) {
+			normals.add(new Vector3f(0, 0, 0));
+		}
+		
+		for(Face face: mesh.faces) {
+			normals.get(face.vi[0] - 1).add(mesh.normals.get(face.ni[0] - 1));
+			normals.get(face.vi[1] - 1).add(mesh.normals.get(face.ni[1] - 1));
+			normals.get(face.vi[2] - 1).add(mesh.normals.get(face.ni[2] - 1));
+		}
+		
+		for(int i = 0; i < normals.size(); i++) {
+			normals.get(i).normalise();
+		}
+		mesh.normals = normals;
 	}
 	
 	private static void calculateTangents(MeshData mesh) {
@@ -212,7 +233,6 @@ public class MeshLoader {
 		FloatBuffer textureBuffer = null;
 		FloatBuffer normalBuffer = null;
 		FloatBuffer tangentBuffer = null;
-		FloatBuffer bitangentBuffer = null;
 		
 		//Create the vertex array object
 		int vao = glGenVertexArrays();
@@ -268,7 +288,7 @@ public class MeshLoader {
 			//Store the normals in the normal buffer
 			for(Face face: mesh.faces) {
 				for(int j = 0; j < VERTICES_PER_FACE; j++) {
-					Vector3f normal = mesh.normals.get(face.ni[j] - 1);
+					Vector3f normal = mesh.normals.get(face.vi[j] - 1);
 					normal.store(normalBuffer);
 				}
 			}
@@ -304,28 +324,6 @@ public class MeshLoader {
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 			glEnableVertexAttribArray(3);
 		}
-		
-//		//Bitangents
-//		if(mesh.bitangents != null) {
-//			bitangentBuffer = BufferUtils.createFloatBuffer(mesh.faces.size() * VERTICES_PER_FACE * 3);
-//			
-//			//Store the bitangents in the bitangent buffer
-//			for(Face face: mesh.faces) {
-//				for(int j = 0; j < VERTICES_PER_FACE; j++) {
-//					Vector3f bitangent = mesh.bitangents.get(face.bti[j] - 1);
-//					bitangent.store(bitangentBuffer);
-//				}
-//			}
-//			bitangentBuffer.flip();
-//			
-//			//Put the tangent buffer into the VAO
-//			int bitangentVBO = glGenBuffers();
-//			glBindBuffer(GL_ARRAY_BUFFER, bitangentVBO);
-//			glBufferData(GL_ARRAY_BUFFER, bitangentBuffer, GL_STATIC_DRAW);
-//			glVertexAttribPointer(4, 3, GL_FLOAT, false, 0, 0);
-//			glBindBuffer(GL_ARRAY_BUFFER, 0);
-//			glEnableVertexAttribArray(4);
-//		}
 		
 		//Unbind the vao
 		glBindVertexArray(0);
