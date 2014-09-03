@@ -14,25 +14,23 @@ public final class Window {
 	
 	private DisplayMode currentDisplayMode;
 	
-	private Window() {
+	public Window() {
 		
 	}
 	
-	public static Window create() throws RadiantException {
-		return create(DEFAULT_TITLE, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+	public void create() throws RadiantException {
+		create(DEFAULT_TITLE, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 	}
 	
-	public static Window create(String title) throws RadiantException {
-		return create(title, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+	public void create(String title) throws RadiantException {
+		create(title, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 	}
 	
-	public static Window create(String title, int width, int height) throws RadiantException {
+	public void create(String title, int width, int height) throws RadiantException {
 		try {
-			Window window = new Window();
-			window.setTitle(title);
-			window.setSize(width, height);
+			setTitle(title);
+			setSize(width, height);
 			Display.create();
-			return window;
 		} catch(LWJGLException e) {
 			throw new RadiantException("Window context can not be created");
 		}

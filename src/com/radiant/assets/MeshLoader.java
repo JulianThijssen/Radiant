@@ -55,7 +55,7 @@ public class MeshLoader {
 				}
 				
 				String type = segments[0];
-				
+				//FIXME NPE if file doesnt have 'o' or 'g'
 				if(type.equals("g") || type.equals("o")) {
 					String name = (segments.length > 1) ? segments[1] : "Group";
 					meshData = new MeshData(name);
@@ -76,7 +76,6 @@ public class MeshLoader {
 						if(meshData.textureCoords == null) {
 							meshData.textureCoords = new ArrayList<Vector2f>();
 						}
-						//FIXME The v needs to be inverted for the diffuse map to be the right way around, why?
 						meshData.textureCoords.add(new Vector2f(u, -v));
 					}
 					if(type.equals("vn")) {
@@ -157,6 +156,42 @@ public class MeshLoader {
 	private static String[] getSegments(String line) {
 		line = line.trim();
 		return line.split("\\s+");
+	}
+	
+	public static MeshData getPlane() {
+		MeshData meshData = new MeshData("Plane");
+		meshData.vertices = new ArrayList<Vector3f>();
+		meshData.vertices.add(new Vector3f(-0.5f, -0.5f, 0));
+		meshData.vertices.add(new Vector3f(0.5f, -0.5f, 0));
+		meshData.vertices.add(new Vector3f(0.5f, 0.5f, 0));
+		meshData.vertices.add(new Vector3f(-0.5f, 0.5f, 0));
+		
+		meshData.textureCoords = new ArrayList<Vector2f>();
+		meshData.textureCoords.add(new Vector2f(0, 0));
+		meshData.textureCoords.add(new Vector2f(1, 0));
+		meshData.textureCoords.add(new Vector2f(1, 1));
+		meshData.textureCoords.add(new Vector2f(0, 1));
+		
+		meshData.normals = new ArrayList<Vector3f>();
+		meshData.normals.add(new Vector3f(0, 0, 1));
+		
+		meshData.faces = new ArrayList<Face>();
+		Face face1 = new Face();
+		face1.vi = new int[] {0, 1, 2};
+		face1.ti = new int[] {0, 1, 2};
+		face1.ni = new int[] {0, 0, 0};
+		Face face2 = new Face();
+		face2.vi = new int[] {0, 2, 3};
+		face2.ti = new int[] {0, 2, 3};
+		face2.ni = new int[] {0, 0, 0};
+		meshData.faces.add(face1);
+		meshData.faces.add(face2);
+		
+		calculateNormals(meshData);
+		calculateTangents(meshData);
+		
+		meshData.handle = uploadMesh(meshData);
+		return meshData;
 	}
 	
 	private static void calculateNormals(MeshData mesh) {

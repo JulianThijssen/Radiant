@@ -15,7 +15,6 @@ import com.radiant.util.Vector3f;
 import com.radiant.assets.AssetLoader;
 import com.radiant.assets.MeshData;
 import com.radiant.assets.Shader;
-import com.radiant.assets.ShaderLoader;
 import com.radiant.assets.TextureData;
 import com.radiant.components.Camera;
 import com.radiant.components.Light;
@@ -73,7 +72,7 @@ public class Renderer {
 		ArrayList<Transform> lightspos = new ArrayList<Transform>();
 		ArrayList<Light> lights = new ArrayList<Light>();
 		
-		for(Entity entity: scene.entities) {
+		for(Entity entity: scene.getEntities()) {
 			Transform transform = (Transform) entity.getComponent("Transform");
 			Light light = (Light) entity.getComponent("Light");
 			if(transform != null && light != null) {
@@ -83,7 +82,7 @@ public class Renderer {
 		}
 		
 		//Meshes
-		for(Entity entity: scene.entities) {
+		for(Entity entity: scene.getEntities()) {
 			Transform transform = (Transform) entity.getComponent("Transform");
 			Mesh mesh = (Mesh) entity.getComponent("Mesh");
 			Material material = (Material) entity.getComponent("Material");
@@ -108,14 +107,15 @@ public class Renderer {
 					if(material.diffuse != null && material.normal != null) {
 						TextureData diffuseTexture = AssetLoader.getTexture(material.diffuse.path);
 						TextureData normalTexture = AssetLoader.getTexture(material.normal.path);
+						
 						glActiveTexture(GL_TEXTURE0);
 						glBindTexture(GL_TEXTURE_2D, diffuseTexture.handle);
-						int dloc = glGetUniformLocation(shader.handle, "diffuseMap");
-						glUniform1i(dloc, 0);
+						glUniform1i(glGetUniformLocation(shader.handle, "diffuseMap"), 0);
+						
 						glActiveTexture(GL_TEXTURE1);
 						glBindTexture(GL_TEXTURE_2D, normalTexture.handle);
-						int nloc = glGetUniformLocation(shader.handle, "normalMap");
-						glUniform1i(nloc, 1);
+						glUniform1i(glGetUniformLocation(shader.handle, "normalMap"), 1);
+						
 						int tiling = glGetUniformLocation(shader.handle, "tiling");
 						glUniform2f(tiling, material.diffuse.tiling.x, material.diffuse.tiling.y);
 					}
@@ -161,8 +161,8 @@ public class Renderer {
 				
 				MeshData data = AssetLoader.getMesh(mesh.path);
 				glBindVertexArray(data.handle);
-				
 				glDrawArrays(GL_TRIANGLES, 0, data.getNumFaces() * 3);
+				
 				glBindVertexArray(0);
 				glBindTexture(GL_TEXTURE_2D, 0);
 				glUseProgram(0);

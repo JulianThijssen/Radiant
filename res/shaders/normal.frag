@@ -13,6 +13,8 @@ uniform mat4 viewMatrix;
 
 uniform sampler2D diffuseMap;
 uniform sampler2D normalMap;
+uniform sampler2D specularMap;
+
 uniform vec2 tiling;
 
 uniform Light lights[100];

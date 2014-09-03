@@ -48,10 +48,6 @@ public class MaterialLoader {
 					if(prefix.equals("Ka")) {
 						currentMaterial.setAmbientColor(Float.parseFloat(segments[1]), Float.parseFloat(segments[2]), Float.parseFloat(segments[3]));
 					}
-					//Illumination model
-					if(prefix.equals("illum")) {
-						currentMaterial.setIllumination(Integer.parseInt(segments[1]));
-					}
 				} catch(NumberFormatException e) {
 					throw new AssetLoaderException("Invalid number at line: " + line);
 				}

@@ -9,6 +9,7 @@ public class Entity {
 	public ArrayList<Component> components = new ArrayList<Component>();
 	
 	public void addComponent(Component c) {
+		c.parent = this;
 		components.add(c);
 	}
 	

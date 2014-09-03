@@ -1,13 +1,14 @@
 package com.radiant;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.radiant.entities.Entity;
 
 public class Scene {
-	public CopyOnWriteArrayList<Entity> entities = new CopyOnWriteArrayList<Entity>();
-	public ArrayList<Script> scripts = new ArrayList<Script>();
+	private CopyOnWriteArrayList<Entity> entities = new CopyOnWriteArrayList<Entity>();
+	private ArrayList<Script> scripts = new ArrayList<Script>();
 	public Entity mainCamera;
 	
 	public void addEntity(Entity e) {
@@ -21,6 +22,14 @@ public class Scene {
 	public void addCamera(Entity c) {
 		mainCamera = c;
 		entities.add(c);
+	}
+	
+	public List<Entity> getEntities() {
+		return entities;
+	}
+	
+	public List<Script> getScripts() {
+		return scripts;
 	}
 	
 	public void start() {

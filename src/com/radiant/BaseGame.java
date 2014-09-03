@@ -2,15 +2,13 @@ package com.radiant;
 
 import java.util.ArrayList;
 
-import org.lwjgl.Sys;
-
 import com.radiant.assets.AssetLoader;
 import com.radiant.exceptions.RadiantException;
 import com.radiant.util.Log;
 
 public abstract class BaseGame {
 	/* System */
-	private Window window;
+	private Window window = new Window();
 	private Renderer renderer;
 	
 	/* Scene */
@@ -18,17 +16,16 @@ public abstract class BaseGame {
 	protected Scene currentScene = null;
 	
 	/* Game loop */
-	public static final int MAX_SKIP = 15;
-	public static final int SKIP_TIME = 40;
-	
-	/* FPS */
-	public int fps = 0;
+	private int maxSkip = 15;
+	private int skipTime = 40;
+	private int updateRate = 25;
+	private int framesPerSecond = 0;
 	
 	public final void startGame() throws RadiantException {
 		if(AssetLoader.getErrors() > 0) {
 			throw new RadiantException("Can't start game, there are unresolved errors");
 		}
-		window = Window.create();
+		window.create();
 		renderer = new Renderer();
 		
 		update();
@@ -44,25 +41,21 @@ public abstract class BaseGame {
 		
 		int frames = 0;
 		
-		if(currentScene != null) {
-			currentScene.start();
-		
-			while(!window.isClosed()) {
+		while(!window.isClosed()) {
+			if(currentScene != null) {
 				int skipped = 0;
 				
 				//Count the FPS
 			    if (System.currentTimeMillis() - lastFpsCount > 1000) {
 			      lastFpsCount = System.currentTimeMillis();
-			      fps = frames;
-			      Log.debug("FPS: " + fps);
+			      framesPerSecond = frames;
+			      Log.debug("FPS: " + framesPerSecond);
 			      frames = 0;
 			    }
 				
-				while(System.currentTimeMillis() > nextUpdate && skipped < MAX_SKIP) {
-					if(currentScene != null) {
-						currentScene.update();
-					}
-					nextUpdate += SKIP_TIME;
+				while(System.currentTimeMillis() > nextUpdate && skipped < maxSkip) {
+					currentScene.update();
+					nextUpdate += skipTime;
 					skipped++;
 				}
 				renderer.update(currentScene, 0);
@@ -71,6 +64,15 @@ public abstract class BaseGame {
 			}
 		}
 		shutdown();
+	}
+	
+	/* Window */
+	public void setTitle(String title) {
+		window.setTitle(title);
+	}
+	
+	public void setSize(int width, int height) {
+		window.setSize(width, height);
 	}
 	
 	/* Scene */
@@ -86,12 +88,18 @@ public abstract class BaseGame {
 		for(Scene s: scenes) {
 			if(s == scene) {
 				currentScene = s;
+				currentScene.start();
 			}
 		}
 	}
 	
-	/* FPS */
-	private long getTime() {
-	    return (Sys.getTime() * 1000) / Sys.getTimerResolution();
+	/* Game loop */
+	public int getFps() {
+		return framesPerSecond;
+	}
+	
+	public void setUpdateRate(int updatesPerSecond) {
+		updateRate = updatesPerSecond;
+		skipTime = 1000 / updateRate;
 	}
 }

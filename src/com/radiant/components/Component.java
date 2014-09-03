@@ -1,6 +1,9 @@
 package com.radiant.components;
 
+import com.radiant.entities.Entity;
+
 public abstract class Component {
+	public Entity parent;
 	public String name;
 	
 	public Component(String name) {
