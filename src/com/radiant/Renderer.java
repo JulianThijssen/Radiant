@@ -32,6 +32,8 @@ public class Renderer {
 	private FloatBuffer viewBuffer = BufferUtils.createFloatBuffer(16);
 	private FloatBuffer modelBuffer = BufferUtils.createFloatBuffer(16);
 	
+	private Shader shader;
+	
 	private Vector3f clearColor = new Vector3f(0, 0, 0.4f);
 	
 	public Renderer() {
@@ -52,6 +54,9 @@ public class Renderer {
 	public void update(Scene scene, float interp) {
 		//Render all entities
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		shader = AssetLoader.getShader("res/shaders/default.frag");
+		glUseProgram(shader.handle);
 		
 		Camera camera = (Camera) scene.mainCamera.getComponent("Camera");
 		projectionMatrix = camera.getProjectionMatrix();
@@ -81,62 +86,69 @@ public class Renderer {
 			}
 		}
 		
+		//Lights
+		int numLights = glGetUniformLocation(shader.handle, "numLights");
+		glUniform1i(numLights, lightspos.size());
+		for(int i = 0; i < lightspos.size(); i++) {	
+			int lightPos = glGetUniformLocation(shader.handle, "lights["+i+"].position");
+			int lightColor = glGetUniformLocation(shader.handle, "lights["+i+"].color");
+			int lightConstantAtt = glGetUniformLocation(shader.handle, "lights["+i+"].constantAtt");
+			int lightLinearAtt = glGetUniformLocation(shader.handle, "lights["+i+"].linearAtt");
+			int lightQuadraticAtt = glGetUniformLocation(shader.handle, "lights["+i+"].quadraticAtt");
+			Transform  lightT = lightspos.get(i);
+			Light light = lights.get(i);
+			glUniform4f(lightPos, lightT.position.x, lightT.position.y, lightT.position.z, 1);
+			glUniform3f(lightColor, light.color.x, light.color.y, light.color.z);
+			glUniform1f(lightConstantAtt, light.constantAtt);
+			glUniform1f(lightLinearAtt, light.linearAtt);
+			glUniform1f(lightQuadraticAtt, light.quadraticAtt);
+		}
+		
 		//Meshes
 		for(Entity entity: scene.getEntities()) {
 			Transform transform = (Transform) entity.getComponent("Transform");
 			Mesh mesh = (Mesh) entity.getComponent("Mesh");
 			Material material = (Material) entity.getComponent("Material");
 			
-			Shader shader = AssetLoader.getShader("res/shaders/diffuse.frag");
-			
 			if(transform != null && mesh != null) {
 				//If the object has a material, upload it to the fragment shader
 				if(material != null) {
-					shader = AssetLoader.getShader(material.shader);
-					glUseProgram(shader.handle);
+					//Colors
+					glUniform3f(glGetUniformLocation(shader.handle, "diffuseColor"),
+																	material.diffuseColor.x,
+																	material.diffuseColor.y,
+																	material.diffuseColor.z);
 					
+					//Textures
 					if(material.diffuse != null) {
-						TextureData texture = AssetLoader.getTexture(material.diffuse.path);
+						TextureData diffuseMap = AssetLoader.getTexture(material.diffuse.path);
 						glActiveTexture(GL_TEXTURE0);
-						glBindTexture(GL_TEXTURE_2D, texture.handle);
-						int loc = glGetUniformLocation(shader.handle, "diffuseMap");
-						glUniform1i(loc, 0);
-						int tiling = glGetUniformLocation(shader.handle, "tiling");
-						glUniform2f(tiling, material.diffuse.tiling.x, material.diffuse.tiling.y);
-					}
-					if(material.diffuse != null && material.normal != null) {
-						TextureData diffuseTexture = AssetLoader.getTexture(material.diffuse.path);
-						TextureData normalTexture = AssetLoader.getTexture(material.normal.path);
-						
-						glActiveTexture(GL_TEXTURE0);
-						glBindTexture(GL_TEXTURE_2D, diffuseTexture.handle);
+						glBindTexture(GL_TEXTURE_2D, diffuseMap.handle);
 						glUniform1i(glGetUniformLocation(shader.handle, "diffuseMap"), 0);
-						
-						glActiveTexture(GL_TEXTURE1);
-						glBindTexture(GL_TEXTURE_2D, normalTexture.handle);
-						glUniform1i(glGetUniformLocation(shader.handle, "normalMap"), 1);
-						
-						int tiling = glGetUniformLocation(shader.handle, "tiling");
-						glUniform2f(tiling, material.diffuse.tiling.x, material.diffuse.tiling.y);
+						//Tiling
+						glUniform2f(glGetUniformLocation(shader.handle, "tiling"),
+														 material.diffuse.tiling.x,
+														 material.diffuse.tiling.y);
+						//Let the shader know we uploaded a diffuse map
+						glUniform1i(glGetUniformLocation(shader.handle, "hasDiffuseMap"), 1);
+					} else {
+						glUniform1i(glGetUniformLocation(shader.handle, "hasDiffuseMap"), 0);
 					}
-				}
-				
-				//Lights
-				int numLights = glGetUniformLocation(shader.handle, "numLights");
-				glUniform1i(numLights, lightspos.size());
-				for(int i = 0; i < lightspos.size(); i++) {	
-					int lightPos = glGetUniformLocation(shader.handle, "lights["+i+"].position");
-					int lightColor = glGetUniformLocation(shader.handle, "lights["+i+"].color");
-					int lightConstantAtt = glGetUniformLocation(shader.handle, "lights["+i+"].constantAtt");
-					int lightLinearAtt = glGetUniformLocation(shader.handle, "lights["+i+"].linearAtt");
-					int lightQuadraticAtt = glGetUniformLocation(shader.handle, "lights["+i+"].quadraticAtt");
-					Transform  lightT = lightspos.get(i);
-					Light light = lights.get(i);
-					glUniform4f(lightPos, lightT.position.x, lightT.position.y, lightT.position.z, 1);
-					glUniform3f(lightColor, light.color.x, light.color.y, light.color.z);
-					glUniform1f(lightConstantAtt, light.constantAtt);
-					glUniform1f(lightLinearAtt, light.linearAtt);
-					glUniform1f(lightQuadraticAtt, light.quadraticAtt);
+					
+					if(material.normal != null) {
+						TextureData normalMap = AssetLoader.getTexture(material.normal.path);
+						glActiveTexture(GL_TEXTURE1);
+						glBindTexture(GL_TEXTURE_2D, normalMap.handle);
+						glUniform1i(glGetUniformLocation(shader.handle, "normalMap"), 1);
+						//Tiling
+						glUniform2f(glGetUniformLocation(shader.handle, "tiling"),
+														 material.normal.tiling.x,
+														 material.normal.tiling.y);
+						//Let the shader know we uploaded a normal map
+						glUniform1i(glGetUniformLocation(shader.handle, "hasNormalMap"), 1);
+					} else {
+						glUniform1i(glGetUniformLocation(shader.handle, "hasNormalMap"), 0);
+					}
 				}
 				
 				//Calculate model matrix
@@ -165,8 +177,8 @@ public class Renderer {
 				
 				glBindVertexArray(0);
 				glBindTexture(GL_TEXTURE_2D, 0);
-				glUseProgram(0);
 			}
 		}
+		glUseProgram(0);
 	}
 }

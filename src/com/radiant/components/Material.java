@@ -1,14 +1,15 @@
 package com.radiant.components;
 
+import com.radiant.util.MaterialType;
 import com.radiant.util.Vector3f;
 
 public class Material extends Component {
 	private String name;
-	private Vector3f diffuseColor = new Vector3f(1, 1, 1);
-	private Vector3f specularColor = new Vector3f(1, 1, 1);
-	private Vector3f ambientColor = new Vector3f(0, 0, 0);
-	public String shader;
+	public Vector3f diffuseColor = new Vector3f(1, 1, 1);
+	public Vector3f specularColor = new Vector3f(1, 1, 1);
+	public Vector3f ambientColor = new Vector3f(0, 0, 0);
 
+	public MaterialType type;
 	public Texture diffuse = null;
 	public Texture normal = null;
 	public Texture specular = null;
@@ -22,8 +23,8 @@ public class Material extends Component {
 		return name;
 	}
 	
-	public void setShader(String shader) {
-		this.shader = shader;
+	public void setType(MaterialType type) {
+		this.type = type;
 	}
 	
 	public void setDiffuseColor(float r, float g, float b) {
