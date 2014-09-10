@@ -21,6 +21,9 @@ public class MeshLoader {
 	public static final int VERTICES_PER_FACE = 3;
 	
 	protected static MeshData loadMesh(String filepath) throws AssetLoaderException {
+		if(filepath.equals("Plane")) {
+			return getPlane();
+		}
 		String extension = filepath.substring(filepath.lastIndexOf('.'));
 		try {
 			if(".obj".equals(extension)) {

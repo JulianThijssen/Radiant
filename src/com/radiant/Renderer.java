@@ -66,9 +66,7 @@ public class Renderer {
 		//Calculate view matrix
 		viewMatrix.setIdentity();
 		Transform ct = (Transform) scene.mainCamera.getComponent("Transform");
-		viewMatrix.rotate(-ct.rotation.x, 1, 0, 0);
-		viewMatrix.rotate(-ct.rotation.y, 0, 1, 0);
-		viewMatrix.rotate(-ct.rotation.z, 0, 0, 1);
+		viewMatrix.rotate(Vector3f.negate(ct.rotation));
 		viewMatrix.translate(Vector3f.negate(ct.position));
 		viewMatrix.store(viewBuffer);
 		viewBuffer.flip();
