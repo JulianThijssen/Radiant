@@ -170,23 +170,23 @@ public class MeshLoader {
 		meshData.vertices.add(new Vector3f(-0.5f, 0.5f, 0));
 		
 		meshData.textureCoords = new ArrayList<Vector2f>();
-		meshData.textureCoords.add(new Vector2f(0, 0));
-		meshData.textureCoords.add(new Vector2f(1, 0));
-		meshData.textureCoords.add(new Vector2f(1, 1));
 		meshData.textureCoords.add(new Vector2f(0, 1));
+		meshData.textureCoords.add(new Vector2f(1, 1));
+		meshData.textureCoords.add(new Vector2f(1, 0));
+		meshData.textureCoords.add(new Vector2f(0, 0));
 		
 		meshData.normals = new ArrayList<Vector3f>();
 		meshData.normals.add(new Vector3f(0, 0, 1));
 		
 		meshData.faces = new ArrayList<Face>();
 		Face face1 = new Face();
-		face1.vi = new int[] {0, 1, 2};
-		face1.ti = new int[] {0, 1, 2};
-		face1.ni = new int[] {0, 0, 0};
+		face1.vi = new int[] {1, 2, 3};
+		face1.ti = new int[] {1, 2, 3};
+		face1.ni = new int[] {1, 1, 1};
 		Face face2 = new Face();
-		face2.vi = new int[] {0, 2, 3};
-		face2.ti = new int[] {0, 2, 3};
-		face2.ni = new int[] {0, 0, 0};
+		face2.vi = new int[] {1, 3, 4};
+		face2.ti = new int[] {1, 3, 4};
+		face2.ni = new int[] {1, 1, 1};
 		meshData.faces.add(face1);
 		meshData.faces.add(face2);
 		

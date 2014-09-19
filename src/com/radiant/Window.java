@@ -8,9 +8,13 @@ import com.radiant.exceptions.RadiantException;
 import com.radiant.util.Log;
 
 public final class Window {
-	public static final String DEFAULT_TITLE = "Radiant Game";
-	public static final int DEFAULT_WIDTH = 800;
-	public static final int DEFAULT_HEIGHT = 600;
+	private static final String DEFAULT_TITLE = "Radiant Game";
+	private static final int DEFAULT_WIDTH = 800;
+	private static final int DEFAULT_HEIGHT = 600;
+	
+	public static String title = DEFAULT_TITLE;
+	public static int width = DEFAULT_WIDTH;
+	public static int height = DEFAULT_HEIGHT;
 	
 	private DisplayMode currentDisplayMode;
 	
@@ -19,11 +23,11 @@ public final class Window {
 	}
 	
 	public void create() throws RadiantException {
-		create(DEFAULT_TITLE, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+		create(title, width, height);
 	}
 	
 	public void create(String title) throws RadiantException {
-		create(title, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+		create(title, width, height);
 	}
 	
 	public void create(String title, int width, int height) throws RadiantException {
@@ -41,10 +45,13 @@ public final class Window {
 	}
 	
 	public void setTitle(String title) {
+		Window.title = title;
 		Display.setTitle(title);
 	}
 	
 	public void setSize(int width, int height) {
+		Window.width = width;
+		Window.height = height;
 		currentDisplayMode = new DisplayMode(width, height);
 		try {
 			Display.setDisplayMode(currentDisplayMode);

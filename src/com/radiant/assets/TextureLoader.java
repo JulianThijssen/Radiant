@@ -9,27 +9,28 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
+import com.radiant.components.Texture;
 import com.radiant.exceptions.AssetLoaderException;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
 public class TextureLoader {
-	protected static TextureData loadTexture(String filepath) throws AssetLoaderException {
-		String extension = filepath.substring(filepath.lastIndexOf('.'));
+	protected static TextureData loadTexture(Texture texture) throws AssetLoaderException {
+		String extension = texture.path.substring(texture.path.lastIndexOf('.'));
 		if(".png".equals(extension)) {
-			return loadPNG(filepath);
+			return loadPNG(texture);
 		}
 		throw new AssetLoaderException("Can not open texture file with extension: '" + extension + "'");
 	}
 	
-	private static TextureData loadPNG(String filepath) throws AssetLoaderException {
+	private static TextureData loadPNG(Texture texture) throws AssetLoaderException {
 		ByteBuffer buf = null;
 		int width = 0;
 		int height = 0;
 		
 		try {
-			InputStream in = new FileInputStream(filepath);
+			InputStream in = new FileInputStream(texture.path);
 			
 			PNGDecoder decoder = new PNGDecoder(in);
 			
@@ -42,13 +43,13 @@ public class TextureLoader {
 			
 			in.close();
 			
-			TextureData texture = new TextureData();
-			texture.width = width;
-			texture.height = height;
-			texture.buffer = buf;
-			texture.handle = uploadTexture(texture);
+			TextureData textureData = new TextureData();
+			textureData.width = width;
+			textureData.height = height;
+			textureData.buffer = buf;
+			textureData.handle = uploadTexture(textureData, texture.sampling);
 			
-			return texture;
+			return textureData;
 		} catch (FileNotFoundException e) {
 			throw new AssetLoaderException("Image was not found");
 		} catch (IOException e) {
@@ -56,11 +57,18 @@ public class TextureLoader {
 		}
 	}
 	
-	private static int uploadTexture(TextureData texture) {
+	private static int uploadTexture(TextureData texture, int sampling) {
 		int handle = glGenTextures();
 		glBindTexture(GL_TEXTURE_2D, handle);
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.width, texture.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture.buffer);
+		if(sampling == 0) {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		} else {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		}
 		glGenerateMipmap(GL_TEXTURE_2D);
 		return handle;
 	}

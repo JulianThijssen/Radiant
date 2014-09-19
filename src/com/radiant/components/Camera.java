@@ -57,6 +57,7 @@ public class Camera extends Component {
 	}
 	
 	private void recalculate() {
+		projectionMatrix.setIdentity();
 		if(perspective) {
 			projectionMatrix.array[0] = (float) (1 / Math.tan(Math.toRadians(fovy / 2f))) / aspect;
 			projectionMatrix.array[5] = (float) (1 / Math.tan(Math.toRadians(fovy / 2f)));
