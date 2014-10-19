@@ -1,8 +1,9 @@
-package com.radiant.components;
+package com.radiant.assets;
 
+import com.radiant.components.Texture;
 import com.radiant.util.Vector3f;
 
-public class Material extends Component {
+public class Material {
 	private String name;
 	public Vector3f diffuseColor = new Vector3f(1, 1, 1);
 	public Vector3f specularColor = new Vector3f(1, 1, 1);
@@ -14,7 +15,6 @@ public class Material extends Component {
 	public Texture specular = null;
 	
 	public Material(String name) {
-		super("Material");
 		this.name = name;
 	}
 	

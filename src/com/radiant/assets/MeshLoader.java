@@ -20,7 +20,7 @@ import com.radiant.geom.Face;
 public class MeshLoader {
 	public static final int VERTICES_PER_FACE = 3;
 	
-	protected static MeshData loadMesh(String filepath) throws AssetLoaderException {
+	protected static Model loadMesh(String filepath) throws AssetLoaderException {
 		if(filepath.equals("Plane")) {
 			return getPlane();
 		}
@@ -40,9 +40,10 @@ public class MeshLoader {
 	 * Support for vn
 	 * Support for f
 	 * */
-	private static MeshData loadOBJ(String path) throws AssetLoaderException {
+	private static Model loadOBJ(String path) throws AssetLoaderException {
 		long time = System.currentTimeMillis();
 		
+		Model model = new Model();
 		MeshData meshData = null;
 		
 		try {
@@ -60,6 +61,12 @@ public class MeshLoader {
 				String type = segments[0];
 				//FIXME NPE if file doesnt have 'o' or 'g'
 				if(type.equals("g") || type.equals("o")) {
+					if(meshData != null) {
+						calculateNormals(meshData);
+						calculateTangents(meshData);
+						meshData.handle = uploadMesh(meshData);
+						model.addMesh(meshData);
+					}
 					String name = (segments.length > 1) ? segments[1] : "Group";
 					meshData = new MeshData(name);
 				}
@@ -119,7 +126,9 @@ public class MeshLoader {
 			System.out.println(path + " : " + (dtime - time) + "ms");
 			
 			meshData.handle = uploadMesh(meshData);
-			return meshData;
+			model.addMesh(meshData);
+			
+			return model;
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new AssetLoaderException(e.getMessage());
@@ -161,7 +170,7 @@ public class MeshLoader {
 		return line.split("\\s+");
 	}
 	
-	public static MeshData getPlane() {
+	public static Model getPlane() {
 		MeshData meshData = new MeshData("Plane");
 		meshData.vertices = new ArrayList<Vector3f>();
 		meshData.vertices.add(new Vector3f(-0.5f, -0.5f, 0));
@@ -194,7 +203,11 @@ public class MeshLoader {
 		calculateTangents(meshData);
 		
 		meshData.handle = uploadMesh(meshData);
-		return meshData;
+		
+		Model model = new Model();
+		model.addMesh(meshData);
+		
+		return model;
 	}
 	
 	private static void calculateNormals(MeshData mesh) {

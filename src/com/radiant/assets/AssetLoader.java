@@ -7,7 +7,7 @@ import com.radiant.components.Texture;
 public class AssetLoader {
 	protected static HashMap<String, Shader> shaderCache = new HashMap<String, Shader>();
 	protected static HashMap<String, TextureData> textureCache = new HashMap<String, TextureData>();
-	protected static HashMap<String, MeshData> meshCache = new HashMap<String, MeshData>();
+	protected static HashMap<String, Model> meshCache = new HashMap<String, Model>();
 	
 	private static int errors = 0;
 	
@@ -44,14 +44,14 @@ public class AssetLoader {
 		return null;
 	}
 	
-	public static MeshData getMesh(String path) {
+	public static Model getMesh(String path) {
 		if(meshCache.containsKey(path)) {
 			return meshCache.get(path);
 		}
 		try {
-			MeshData meshData = MeshLoader.loadMesh(path);
-			meshCache.put(path, meshData);
-			return meshData;
+			Model model = MeshLoader.loadMesh(path);
+			meshCache.put(path, model);
+			return model;
 		} catch(Exception e) {
 			e.printStackTrace();
 		}

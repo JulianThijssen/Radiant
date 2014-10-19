@@ -15,12 +15,13 @@ import org.lwjgl.BufferUtils;
 import com.radiant.util.Matrix4f;
 import com.radiant.util.Vector3f;
 import com.radiant.assets.AssetLoader;
+import com.radiant.assets.Material;
 import com.radiant.assets.MeshData;
+import com.radiant.assets.Model;
 import com.radiant.assets.Shader;
 import com.radiant.assets.TextureData;
 import com.radiant.components.Camera;
 import com.radiant.components.Light;
-import com.radiant.components.Material;
 import com.radiant.components.Mesh;
 import com.radiant.components.Transform;
 import com.radiant.entities.Entity;
@@ -35,7 +36,7 @@ public class Renderer {
 	private FloatBuffer modelBuffer = BufferUtils.createFloatBuffer(16);
 	
 	private HashMap<String, Shader> shaders = new HashMap<String, Shader>();
-	private HashMap<Shader, List<Entity>> shaderMap = new HashMap<Shader, List<Entity>>();
+	private HashMap<Shader, List<MeshData>> shaderMap = new HashMap<Shader, List<MeshData>>();
 	
 	private Vector3f clearColor = new Vector3f(0, 0, 0.4f);
 	
@@ -60,7 +61,7 @@ public class Renderer {
 		shaders.put("Normal", AssetLoader.getShader("normal"));
 		
 		for(Shader shader: shaders.values()) {
-			shaderMap.put(shader, new ArrayList<Entity>());
+			shaderMap.put(shader, new ArrayList<MeshData>());
 		}
 	}
 
@@ -95,43 +96,39 @@ public class Renderer {
 		}
 		
 		// Divide entities into shader buckets
-		for(List<Entity> entities: shaderMap.values()) {
-			entities.clear();
+		for(List<MeshData> meshes: shaderMap.values()) {
+			meshes.clear();
 		}
 		for(Entity e: scene.getEntities()) {
-			Material material = (Material) e.getComponent("Material");
+			Mesh mesh = (Mesh) e.getComponent("Mesh");
 			
-			if(material != null) {
-				Shader shader = shaders.get(material.shader);
-				shaderMap.get(shader).add(e);
+			if(mesh != null) {
+				Model model = AssetLoader.getMesh(mesh.path);
+				for(MeshData data: model.meshes) {
+					if(data.material != null) {
+						Shader shader = shaders.get(data.material.shader);
+						shaderMap.get(shader).add(data);
+					}
+				}
 			}
 		}
 		
 		Shader shader = shaders.get("Unshaded");
 		glUseProgram(shader.handle);
 		
-		for(Entity e: shaderMap.get(shader)) {
-			Material material = (Material) e.getComponent("Material");
-			Transform transform = (Transform) e.getComponent("Transform");
-			Mesh mesh = (Mesh) e.getComponent("Mesh");
-				
-			if(transform != null && mesh != null) {
-				uploadMaterial(shader, material);
-				uploadMesh(shader, transform, mesh);
-			}
+		for(MeshData data: shaderMap.get(shader)) {
+			uploadMesh(shader, data);
 		}
 		
 		shader = shaders.get("Diffuse");
 		glUseProgram(shader.handle);
 		
 		for(Entity e: shaderMap.get(shader)) {
-			Material material = (Material) e.getComponent("Material");
 			Transform transform = (Transform) e.getComponent("Transform");
 			Mesh mesh = (Mesh) e.getComponent("Mesh");
 				
 			if(transform != null && mesh != null) {
 				uploadLights(shader, lights);
-				uploadMaterial(shader, material);
 				uploadMesh(shader, transform, mesh);
 			}
 		}
@@ -140,13 +137,11 @@ public class Renderer {
 		glUseProgram(shader.handle);
 		
 		for(Entity e: shaderMap.get(shader)) {
-			Material material = (Material) e.getComponent("Material");
 			Transform transform = (Transform) e.getComponent("Transform");
 			Mesh mesh = (Mesh) e.getComponent("Mesh");
 				
 			if(transform != null && mesh != null) {
 				uploadLights(shader, lights);
-				uploadMaterial(shader, material);
 				uploadMesh(shader, transform, mesh);
 			}
 		}
@@ -217,7 +212,8 @@ public class Renderer {
 		}
 	}
 	
-	public void uploadMesh(Shader shader, Transform transform, Mesh mesh) {
+	public void uploadMesh(Shader shader, MeshData mesh) {
+		Transform transform = (Transform) mesh.model.parent.getComponent("Transform");
 		// Calculate model matrix
 		modelMatrix.setIdentity();
 		
@@ -238,11 +234,19 @@ public class Renderer {
 		glUniformMatrix4(projectionLocation, false, projBuffer);
 		glUniformMatrix4(viewLocation, false, viewBuffer);
 		
-		MeshData data = AssetLoader.getMesh(mesh.path);
-		glBindVertexArray(data.handle);
-		glDrawArrays(GL_TRIANGLES, 0, data.getNumFaces() * 3);
-		glBindTexture(GL_TEXTURE_2D, 0);
+		Model model = AssetLoader.getMesh(mesh.path);
 		
-		glBindVertexArray(0);
+		for(MeshData data: model.meshes) {
+			if(data.material != null) {
+				uploadMaterial(shader, data.material);
+			}
+			
+			
+			glBindVertexArray(data.handle);
+			glDrawArrays(GL_TRIANGLES, 0, data.getNumFaces() * 3);
+			glBindTexture(GL_TEXTURE_2D, 0);
+			
+			glBindVertexArray(0);
+		}
 	}
 }
