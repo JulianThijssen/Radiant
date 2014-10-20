@@ -2,12 +2,11 @@ package com.radiant.assets;
 
 import java.util.ArrayList;
 
+import com.radiant.geom.Face;
 import com.radiant.util.Vector2f;
 import com.radiant.util.Vector3f;
-import com.radiant.geom.Face;
 
-public class MeshData {
-	public Model model;
+public class Mesh {
 	public String name;
 	public ArrayList<Vector3f> vertices = null;
 	public ArrayList<Vector2f> textureCoords = null;
@@ -19,7 +18,7 @@ public class MeshData {
 	
 	public int handle;
 	
-	public MeshData(String name) {
+	public Mesh(String name) {
 		this.name = name;
 	}
 	
