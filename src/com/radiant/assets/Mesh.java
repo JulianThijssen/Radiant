@@ -8,12 +8,9 @@ import com.radiant.util.Vector3f;
 
 public class Mesh {
 	public String name;
-	public ArrayList<Vector3f> vertices = null;
-	public ArrayList<Vector2f> textureCoords = null;
-	public ArrayList<Vector3f> normals = null;
-	public ArrayList<Vector3f> tangents = null;
 	public ArrayList<Face> faces = null;
 	
+	public Model parent = null;
 	public Material material = null;
 	
 	public int handle;

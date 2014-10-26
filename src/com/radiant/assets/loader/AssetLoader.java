@@ -1,8 +1,11 @@
-package com.radiant.assets;
+package com.radiant.assets.loader;
 
 import java.util.HashMap;
 
-import com.radiant.components.Texture;
+import com.radiant.assets.Model;
+import com.radiant.assets.Shader;
+import com.radiant.assets.Texture;
+import com.radiant.assets.TextureData;
 
 public class AssetLoader {
 	protected static HashMap<String, Shader> shaderCache = new HashMap<String, Shader>();
@@ -44,12 +47,12 @@ public class AssetLoader {
 		return null;
 	}
 	
-	public static Model getMesh(String path) {
+	public static Model getModel(String path) {
 		if(meshCache.containsKey(path)) {
 			return meshCache.get(path);
 		}
 		try {
-			Model model = MeshLoader.loadMesh(path);
+			Model model = ModelLoader.loadModel(path);
 			meshCache.put(path, model);
 			return model;
 		} catch(Exception e) {

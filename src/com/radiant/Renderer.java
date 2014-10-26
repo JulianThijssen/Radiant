@@ -14,15 +14,17 @@ import org.lwjgl.BufferUtils;
 
 import com.radiant.util.Matrix4f;
 import com.radiant.util.Vector3f;
-import com.radiant.assets.AssetLoader;
+import com.radiant.assets.EntityMeshPair;
 import com.radiant.assets.Material;
-import com.radiant.assets.MeshData;
+import com.radiant.assets.Mesh;
 import com.radiant.assets.Model;
 import com.radiant.assets.Shader;
+import com.radiant.assets.Shading;
 import com.radiant.assets.TextureData;
+import com.radiant.assets.loader.AssetLoader;
 import com.radiant.components.Camera;
 import com.radiant.components.Light;
-import com.radiant.components.Mesh;
+import com.radiant.components.ModelComponent;
 import com.radiant.components.Transform;
 import com.radiant.entities.Entity;
 
@@ -35,8 +37,8 @@ public class Renderer {
 	private FloatBuffer viewBuffer = BufferUtils.createFloatBuffer(16);
 	private FloatBuffer modelBuffer = BufferUtils.createFloatBuffer(16);
 	
-	private HashMap<String, Shader> shaders = new HashMap<String, Shader>();
-	private HashMap<Shader, List<MeshData>> shaderMap = new HashMap<Shader, List<MeshData>>();
+	private HashMap<Shading, Shader> shaders = new HashMap<Shading, Shader>();
+	private HashMap<Shader, List<EntityMeshPair>> shaderMap = new HashMap<Shader, List<EntityMeshPair>>();
 	
 	private Vector3f clearColor = new Vector3f(0, 0, 0.4f);
 	
@@ -55,13 +57,13 @@ public class Renderer {
 		glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
 		
 		// Load shaders
-		shaders.put("None", null);
-		shaders.put("Unshaded", AssetLoader.getShader("unshaded"));
-		shaders.put("Diffuse", AssetLoader.getShader("diffuse"));
-		shaders.put("Normal", AssetLoader.getShader("normal"));
+		shaders.put(Shading.NONE, null);
+		shaders.put(Shading.UNSHADED, AssetLoader.getShader("unshaded"));
+		shaders.put(Shading.DIFFUSE, AssetLoader.getShader("diffuse"));
+		shaders.put(Shading.NORMAL, AssetLoader.getShader("normal"));
 		
 		for(Shader shader: shaders.values()) {
-			shaderMap.put(shader, new ArrayList<MeshData>());
+			shaderMap.put(shader, new ArrayList<EntityMeshPair>());
 		}
 	}
 
@@ -69,81 +71,72 @@ public class Renderer {
 		// Render all entities
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		Camera camera = (Camera) scene.mainCamera.getComponent("Camera");
+		Camera camera = (Camera) scene.mainCamera.getComponent(Camera.class);
 		projectionMatrix = camera.getProjectionMatrix();
 		projectionMatrix.store(projBuffer);
 		projBuffer.flip();
 		
 		// Calculate view matrix
 		viewMatrix.setIdentity();
-		Transform ct = (Transform) scene.mainCamera.getComponent("Transform");
+		Transform ct = (Transform) scene.mainCamera.getComponent(Transform.class);
 		viewMatrix.rotate(Vector3f.negate(ct.rotation));
 		viewMatrix.translate(Vector3f.negate(ct.position));
 		viewMatrix.store(viewBuffer);
 		viewBuffer.flip();
 		
-		
-		
 		// Divide entities into light buckets
 		ArrayList<Entity> lights = new ArrayList<Entity>();
 		
 		for(Entity e: scene.getEntities()) {
-			Transform transform = (Transform) e.getComponent("Transform");
-			Light light = (Light) e.getComponent("Light");
+			Transform transform = (Transform) e.getComponent(Transform.class);
+			Light light = (Light) e.getComponent(Light.class);
 			if(transform != null && light != null) {
 				lights.add(e);
 			}
 		}
 		
 		// Divide entities into shader buckets
-		for(List<MeshData> meshes: shaderMap.values()) {
+		for(List<EntityMeshPair> meshes: shaderMap.values()) {
 			meshes.clear();
 		}
 		for(Entity e: scene.getEntities()) {
-			Mesh mesh = (Mesh) e.getComponent("Mesh");
+			ModelComponent modelcomp = (ModelComponent) e.getComponent(ModelComponent.class);
+			if(modelcomp == null) {
+				continue;
+			}
 			
-			if(mesh != null) {
-				Model model = AssetLoader.getMesh(mesh.path);
-				for(MeshData data: model.meshes) {
-					if(data.material != null) {
-						Shader shader = shaders.get(data.material.shader);
-						shaderMap.get(shader).add(data);
-					}
+			//FIXME wrong way to handle this
+			Model model = AssetLoader.getModel(modelcomp.path);
+			
+			for(Mesh mesh: model.meshes) {
+				if(mesh.material != null) {
+					Shader shader = shaders.get(mesh.material.shading);
+					shaderMap.get(shader).add(new EntityMeshPair(e, mesh));
 				}
 			}
 		}
 		
-		Shader shader = shaders.get("Unshaded");
+		Shader shader = shaders.get(Shading.UNSHADED);
 		glUseProgram(shader.handle);
 		
-		for(MeshData data: shaderMap.get(shader)) {
-			uploadMesh(shader, data);
+		for(EntityMeshPair emp: shaderMap.get(shader)) {
+			uploadMesh(shader, emp.entity, emp.mesh);
 		}
 		
-		shader = shaders.get("Diffuse");
+		shader = shaders.get(Shading.DIFFUSE);
 		glUseProgram(shader.handle);
 		
-		for(Entity e: shaderMap.get(shader)) {
-			Transform transform = (Transform) e.getComponent("Transform");
-			Mesh mesh = (Mesh) e.getComponent("Mesh");
-				
-			if(transform != null && mesh != null) {
-				uploadLights(shader, lights);
-				uploadMesh(shader, transform, mesh);
-			}
+		for(EntityMeshPair emp: shaderMap.get(shader)) {
+			uploadLights(shader, lights);
+			uploadMesh(shader, emp.entity, emp.mesh);
 		}
 		
-		shader = shaders.get("Normal");
+		shader = shaders.get(Shading.NORMAL);
 		glUseProgram(shader.handle);
 		
-		for(Entity e: shaderMap.get(shader)) {
-			Transform transform = (Transform) e.getComponent("Transform");
-			Mesh mesh = (Mesh) e.getComponent("Mesh");
-				
-			if(transform != null && mesh != null) {
-				uploadLights(shader, lights);
-				uploadMesh(shader, transform, mesh);
-			}
+		for(EntityMeshPair emp: shaderMap.get(shader)) {
+			uploadLights(shader, lights);
+			uploadMesh(shader, emp.entity, emp.mesh);
 		}
 	}
 	
@@ -152,8 +145,8 @@ public class Renderer {
 		glUniform1i(numLights, lights.size());
 		for(int i = 0; i < lights.size(); i++) {
 			Entity e = lights.get(i);
-			Transform  transform = (Transform) e.getComponent("Transform");
-			Light light = (Light) e.getComponent("Light");
+			Transform  transform = (Transform) e.getComponent(Transform.class);
+			Light light = (Light) e.getComponent(Light.class);
 			
 			int lightPos = glGetUniformLocation(shader.handle, "lights["+i+"].position");
 			int lightColor = glGetUniformLocation(shader.handle, "lights["+i+"].color");
@@ -212,8 +205,13 @@ public class Renderer {
 		}
 	}
 	
-	public void uploadMesh(Shader shader, MeshData mesh) {
-		Transform transform = (Transform) mesh.model.parent.getComponent("Transform");
+	public void uploadMesh(Shader shader, Entity entity, Mesh mesh) {
+		Transform transform = (Transform) entity.getComponent(Transform.class);
+		
+		if(transform == null) {
+			return;
+		}
+		
 		// Calculate model matrix
 		modelMatrix.setIdentity();
 		
@@ -234,19 +232,15 @@ public class Renderer {
 		glUniformMatrix4(projectionLocation, false, projBuffer);
 		glUniformMatrix4(viewLocation, false, viewBuffer);
 		
-		Model model = AssetLoader.getMesh(mesh.path);
-		
-		for(MeshData data: model.meshes) {
-			if(data.material != null) {
-				uploadMaterial(shader, data.material);
-			}
-			
-			
-			glBindVertexArray(data.handle);
-			glDrawArrays(GL_TRIANGLES, 0, data.getNumFaces() * 3);
-			glBindTexture(GL_TEXTURE_2D, 0);
-			
-			glBindVertexArray(0);
+
+		if(mesh.material != null) {
+			uploadMaterial(shader, mesh.material);
 		}
+		
+		glBindVertexArray(mesh.handle);
+		glDrawArrays(GL_TRIANGLES, 0, mesh.getNumFaces() * 3);
+		
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glBindVertexArray(0);
 	}
 }

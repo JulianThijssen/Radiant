@@ -8,7 +8,7 @@ public class Transform extends Component {
 	public Vector3f scale = new Vector3f(1, 1, 1);
 	
 	public Transform() {
-		super("Transform");
+		
 	}
 	
 	// 3D Transform
@@ -21,7 +21,6 @@ public class Transform extends Component {
 	}
 	
 	public Transform(float x, float y, float z, float pitch, float yaw, float roll, float sx, float sy, float sz) {
-		super("Transform");
 		position.x = x;
 		position.y = y;
 		position.z = z;

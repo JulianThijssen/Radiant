@@ -1,4 +1,4 @@
-package com.radiant.assets;
+package com.radiant.assets.loader;
 
 import static org.lwjgl.opengl.GL11.GL_FALSE;
 import static org.lwjgl.opengl.GL20.*;
@@ -6,8 +6,10 @@ import static org.lwjgl.opengl.GL20.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+
 import org.lwjgl.opengl.GL20;
 
+import com.radiant.assets.Shader;
 import com.radiant.util.Log;
 
 public class ShaderLoader {

@@ -7,8 +7,4 @@ public class Light extends Component {
 	public float constantAtt;
 	public float linearAtt;
 	public float quadraticAtt;
-	
-	public Light() {
-		super("Light");
-	}
 }

@@ -2,7 +2,7 @@ package com.radiant;
 
 import java.util.ArrayList;
 
-import com.radiant.assets.AssetLoader;
+import com.radiant.assets.loader.AssetLoader;
 import com.radiant.exceptions.RadiantException;
 import com.radiant.util.Log;
 

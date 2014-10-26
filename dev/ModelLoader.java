@@ -1,4 +1,4 @@
-package com.radiant.assets;
+package com.radiant.assets.loader;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
@@ -10,17 +10,22 @@ import java.io.File;
 import java.io.FileReader;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
+
 import org.lwjgl.BufferUtils;
+
 import com.radiant.util.Vector2f;
 import com.radiant.util.Vector3f;
-
+import com.radiant.assets.Material;
+import com.radiant.assets.Mesh;
+import com.radiant.assets.Model;
 import com.radiant.exceptions.AssetLoaderException;
 import com.radiant.geom.Face;
 
-public class MeshLoader {
+public class ModelLoader {
 	public static final int VERTICES_PER_FACE = 3;
 	
-	protected static Model loadMesh(String filepath) throws AssetLoaderException {
+	protected static Model loadModel(String filepath) throws AssetLoaderException {
 		if(filepath.equals("Plane")) {
 			return getPlane();
 		}
@@ -43,12 +48,13 @@ public class MeshLoader {
 	private static Model loadOBJ(String path) throws AssetLoaderException {
 		long time = System.currentTimeMillis();
 		
+		HashMap<String, Material> materials = null;
 		Model model = new Model();
-		MeshData meshData = null;
+		Mesh mesh = null;
 		
 		try {
 			BufferedReader in = new BufferedReader(new FileReader(new File(path)));
-			
+
 			String line = null;
 			while((line = in.readLine()) != null) {
 				String[] segments = getSegments(line);
@@ -59,58 +65,70 @@ public class MeshLoader {
 				}
 				
 				String type = segments[0];
+				
+				if(type.equals("mtllib")) {
+					String mtlpath = segments[1];
+					materials = MaterialLoader.loadMTL(getCurrentPath(path) + mtlpath);
+				}
 				//FIXME NPE if file doesnt have 'o' or 'g'
 				if(type.equals("g") || type.equals("o")) {
-					if(meshData != null) {
-						calculateNormals(meshData);
-						calculateTangents(meshData);
-						meshData.handle = uploadMesh(meshData);
-						model.addMesh(meshData);
+					if(mesh != null) {
+						calculateNormals(model, mesh);
+						calculateTangents(model, mesh);
+						mesh.handle = uploadMesh(model, mesh);
+						model.addMesh(mesh);
 					}
 					String name = (segments.length > 1) ? segments[1] : "Group";
-					meshData = new MeshData(name);
+					mesh = new Mesh(name);
 				}
 				try {
 					if(type.equals("v")) {
 						float x = Float.parseFloat(segments[1]);
 						float y = Float.parseFloat(segments[2]);
 						float z = Float.parseFloat(segments[3]);
-						if(meshData.vertices == null) {
-							meshData.vertices = new ArrayList<Vector3f>();
+						if(model.vertices == null) {
+							model.vertices = new ArrayList<Vector3f>();
 						}
-						meshData.vertices.add(new Vector3f(x, y, z));
+						model.vertices.add(new Vector3f(x, y, z));
 					}
 					if(type.equals("vt")) {
 						float u = Float.parseFloat(segments[1]);
 						float v = Float.parseFloat(segments[2]);
-						if(meshData.textureCoords == null) {
-							meshData.textureCoords = new ArrayList<Vector2f>();
+						if(model.textureCoords == null) {
+							model.textureCoords = new ArrayList<Vector2f>();
 						}
-						meshData.textureCoords.add(new Vector2f(u, -v));
+						model.textureCoords.add(new Vector2f(u, -v));
 					}
 					if(type.equals("vn")) {
 						float x = Float.parseFloat(segments[1]);
 						float y = Float.parseFloat(segments[2]);
 						float z = Float.parseFloat(segments[3]);
-						if(meshData.normals == null) {
-							meshData.normals = new ArrayList<Vector3f>();
+						if(model.normals == null) {
+							model.normals = new ArrayList<Vector3f>();
 						}
-						meshData.normals.add(new Vector3f(x, y, z));
+						model.normals.add(new Vector3f(x, y, z));
 					}
 				} catch(NumberFormatException e) {
 					in.close();
 					throw new AssetLoaderException("Invalid coordinate at line: " + line);
 				}
-				
-				if(type.equals("f")) {
-					if(meshData == null) {
-						meshData = new MeshData("Mesh");
+				if(type.equals("usemtl")) {
+					if(mesh == null) {
+						mesh = new Mesh("Mesh");
 					}
-					if(meshData.faces == null) {
-						meshData.faces = new ArrayList<Face>();
+					String mtlname = segments[1];
+					Material material = materials.get(mtlname);
+					mesh.material = material;
+				}
+				if(type.equals("f")) {
+					if(mesh == null) {
+						mesh = new Mesh("Mesh");
+					}
+					if(mesh.faces == null) {
+						mesh.faces = new ArrayList<Face>();
 					}
 					try {
-						meshData.faces.add(readFace(segments));
+						mesh.faces.add(readFace(segments));
 					} catch(Exception e) {
 						in.close();
 						throw new AssetLoaderException(line + ": " + e.getMessage());
@@ -119,14 +137,13 @@ public class MeshLoader {
 			}
 			in.close();
 			
-			calculateNormals(meshData);
-			calculateTangents(meshData);
+			calculateNormals(model, mesh);
+			calculateTangents(model, mesh);
+			mesh.handle = uploadMesh(model, mesh);
+			model.addMesh(mesh);
 			
 			long dtime = System.currentTimeMillis();
 			System.out.println(path + " : " + (dtime - time) + "ms");
-			
-			meshData.handle = uploadMesh(meshData);
-			model.addMesh(meshData);
 			
 			return model;
 		} catch (Exception e) {
@@ -171,23 +188,24 @@ public class MeshLoader {
 	}
 	
 	public static Model getPlane() {
-		MeshData meshData = new MeshData("Plane");
-		meshData.vertices = new ArrayList<Vector3f>();
-		meshData.vertices.add(new Vector3f(-0.5f, -0.5f, 0));
-		meshData.vertices.add(new Vector3f(0.5f, -0.5f, 0));
-		meshData.vertices.add(new Vector3f(0.5f, 0.5f, 0));
-		meshData.vertices.add(new Vector3f(-0.5f, 0.5f, 0));
+		Model model = new Model();
+		Mesh mesh = new Mesh("Plane");
+		model.vertices = new ArrayList<Vector3f>();
+		model.vertices.add(new Vector3f(-0.5f, -0.5f, 0));
+		model.vertices.add(new Vector3f(0.5f, -0.5f, 0));
+		model.vertices.add(new Vector3f(0.5f, 0.5f, 0));
+		model.vertices.add(new Vector3f(-0.5f, 0.5f, 0));
 		
-		meshData.textureCoords = new ArrayList<Vector2f>();
-		meshData.textureCoords.add(new Vector2f(0, 1));
-		meshData.textureCoords.add(new Vector2f(1, 1));
-		meshData.textureCoords.add(new Vector2f(1, 0));
-		meshData.textureCoords.add(new Vector2f(0, 0));
+		model.textureCoords = new ArrayList<Vector2f>();
+		model.textureCoords.add(new Vector2f(0, 1));
+		model.textureCoords.add(new Vector2f(1, 1));
+		model.textureCoords.add(new Vector2f(1, 0));
+		model.textureCoords.add(new Vector2f(0, 0));
 		
-		meshData.normals = new ArrayList<Vector3f>();
-		meshData.normals.add(new Vector3f(0, 0, 1));
+		model.normals = new ArrayList<Vector3f>();
+		model.normals.add(new Vector3f(0, 0, 1));
 		
-		meshData.faces = new ArrayList<Face>();
+		mesh.faces = new ArrayList<Face>();
 		Face face1 = new Face();
 		face1.vi = new int[] {1, 2, 3};
 		face1.ti = new int[] {1, 2, 3};
@@ -196,56 +214,57 @@ public class MeshLoader {
 		face2.vi = new int[] {1, 3, 4};
 		face2.ti = new int[] {1, 3, 4};
 		face2.ni = new int[] {1, 1, 1};
-		meshData.faces.add(face1);
-		meshData.faces.add(face2);
+		mesh.faces.add(face1);
+		mesh.faces.add(face2);
 		
-		calculateNormals(meshData);
-		calculateTangents(meshData);
+		calculateNormals(model, mesh);
+		calculateTangents(model, mesh);
 		
-		meshData.handle = uploadMesh(meshData);
-		
-		Model model = new Model();
-		model.addMesh(meshData);
+		mesh.handle = uploadMesh(model, mesh);
+		model.addMesh(mesh);
 		
 		return model;
 	}
 	
-	private static void calculateNormals(MeshData mesh) {
+	private static void calculateNormals(Model model, Mesh mesh) {
 		ArrayList<Vector3f> normals = new ArrayList<Vector3f>();
 		
-		for(int i = 0; i < mesh.vertices.size(); i++) {
+		for(int i = 0; i < model.vertices.size(); i++) {
 			normals.add(new Vector3f(0, 0, 0));
 		}
 		
 		for(Face face: mesh.faces) {
-			normals.get(face.vi[0] - 1).add(mesh.normals.get(face.ni[0] - 1));
-			normals.get(face.vi[1] - 1).add(mesh.normals.get(face.ni[1] - 1));
-			normals.get(face.vi[2] - 1).add(mesh.normals.get(face.ni[2] - 1));
+			normals.get(face.vi[0] - 1);
+			System.out.println(face.ni[0]);
+			model.normals.get(face.ni[0] - 1);
+			normals.get(face.vi[0] - 1).add(model.normals.get(face.ni[0] - 1));
+			normals.get(face.vi[1] - 1).add(model.normals.get(face.ni[1] - 1));
+			normals.get(face.vi[2] - 1).add(model.normals.get(face.ni[2] - 1));
 		}
 		
 		for(int i = 0; i < normals.size(); i++) {
 			normals.get(i).normalise();
 		}
-		mesh.normals = normals;
+		model.normals = normals;
 	}
 	
-	private static void calculateTangents(MeshData mesh) {
-		if(mesh.tangents == null) {
-			mesh.tangents = new ArrayList<Vector3f>();
+	private static void calculateTangents(Model model, Mesh mesh) {
+		if(model.tangents == null) {
+			model.tangents = new ArrayList<Vector3f>();
 		}
 
-		for(int i = 0; i < mesh.vertices.size(); i++) {
-			mesh.tangents.add(new Vector3f(0, 0, 0));
+		for(int i = 0; i < model.vertices.size(); i++) {
+			model.tangents.add(new Vector3f(0, 0, 0));
 		}
 		
 		for(Face face: mesh.faces) {
-			Vector3f v0 = mesh.vertices.get(face.vi[0] - 1);
-			Vector3f v1 = mesh.vertices.get(face.vi[1] - 1);
-			Vector3f v2 = mesh.vertices.get(face.vi[2] - 1);
+			Vector3f v0 = model.vertices.get(face.vi[0] - 1);
+			Vector3f v1 = model.vertices.get(face.vi[1] - 1);
+			Vector3f v2 = model.vertices.get(face.vi[2] - 1);
 			
-			Vector2f u0 = mesh.textureCoords.get(face.ti[0] - 1);
-			Vector2f u1 = mesh.textureCoords.get(face.ti[1] - 1);
-			Vector2f u2 = mesh.textureCoords.get(face.ti[2] - 1);
+			Vector2f u0 = model.textureCoords.get(face.ti[0] - 1);
+			Vector2f u1 = model.textureCoords.get(face.ti[1] - 1);
+			Vector2f u2 = model.textureCoords.get(face.ti[2] - 1);
 			
 			Vector3f Edge1 = Vector3f.sub(v1, v0);
 			Vector3f Edge2 = Vector3f.sub(v2, v0);
@@ -267,18 +286,18 @@ public class MeshLoader {
 			face.bti = new int[]{face.vi[0], face.vi[2], face.vi[2]};			
 			
 			for(int i = 0; i < VERTICES_PER_FACE; i++) {
-				mesh.tangents.get(face.vi[0] - 1).add(tangent);
-				mesh.tangents.get(face.vi[1] - 1).add(tangent);
-				mesh.tangents.get(face.vi[2] - 1).add(tangent);
+				model.tangents.get(face.vi[0] - 1).add(tangent);
+				model.tangents.get(face.vi[1] - 1).add(tangent);
+				model.tangents.get(face.vi[2] - 1).add(tangent);
 			}
 		}
 		
-		for(int i = 0; i < mesh.tangents.size(); i++) {
-			mesh.tangents.get(i).normalise();
+		for(int i = 0; i < model.tangents.size(); i++) {
+			model.tangents.get(i).normalise();
 		}
 	}
 	
-	private static int uploadMesh(MeshData mesh) {
+	private static int uploadMesh(Model model, Mesh mesh) {
 		//Declare some variables
 		FloatBuffer vertexBuffer = null;
 		FloatBuffer textureBuffer = null;
@@ -289,13 +308,13 @@ public class MeshLoader {
 		int vao = glGenVertexArrays();
 		glBindVertexArray(vao);
 		//Vertices
-		if(mesh.vertices != null) {
+		if(model.vertices != null) {
 			vertexBuffer = BufferUtils.createFloatBuffer(mesh.faces.size() * VERTICES_PER_FACE * 3);
 			
 			//Store vertices in the vertex buffer
 			for(Face face: mesh.faces) {
 				for(int j = 0; j < VERTICES_PER_FACE; j++) {
-					Vector3f vertex = mesh.vertices.get(face.vi[j] - 1);
+					Vector3f vertex = model.vertices.get(face.vi[j] - 1);
 					vertex.store(vertexBuffer);
 				}
 			}
@@ -311,13 +330,13 @@ public class MeshLoader {
 		}
 		
 		//Textures
-		if(mesh.textureCoords != null) {
+		if(model.textureCoords != null) {
 			textureBuffer = BufferUtils.createFloatBuffer(mesh.faces.size() * VERTICES_PER_FACE * 2);
 			
 			//Store the texture coordinates in the texcoord buffer
 			for(Face face: mesh.faces) {
 				for(int j = 0; j < VERTICES_PER_FACE; j++) {
-					Vector2f texture = mesh.textureCoords.get(face.ti[j] - 1);
+					Vector2f texture = model.textureCoords.get(face.ti[j] - 1);
 					texture.store(textureBuffer);
 				}
 			}
@@ -333,13 +352,13 @@ public class MeshLoader {
 		}
 		
 		//Normals
-		if(mesh.normals != null) {
+		if(model.normals != null) {
 			normalBuffer = BufferUtils.createFloatBuffer(mesh.faces.size() * VERTICES_PER_FACE * 3);
 			
 			//Store the normals in the normal buffer
 			for(Face face: mesh.faces) {
 				for(int j = 0; j < VERTICES_PER_FACE; j++) {
-					Vector3f normal = mesh.normals.get(face.vi[j] - 1);
+					Vector3f normal = model.normals.get(face.vi[j] - 1);
 					normal.store(normalBuffer);
 				}
 			}
@@ -355,13 +374,13 @@ public class MeshLoader {
 		}
 		
 		//Tangents
-		if(mesh.tangents != null) {
+		if(model.tangents != null) {
 			tangentBuffer = BufferUtils.createFloatBuffer(mesh.faces.size() * VERTICES_PER_FACE * 3);
 			
 			//Store the tangents in the tangent buffer
 			for(Face face: mesh.faces) {
 				for(int j = 0; j < VERTICES_PER_FACE; j++) {
-					Vector3f tangent = mesh.tangents.get(face.tai[j] - 1);
+					Vector3f tangent = model.tangents.get(face.tai[j] - 1);
 					tangent.store(tangentBuffer);
 				}
 			}
@@ -380,5 +399,14 @@ public class MeshLoader {
 		glBindVertexArray(0);
 		
 		return vao;
+	}
+	
+	private static String getCurrentPath(String filepath) {
+		String path = "";
+		int index = filepath.lastIndexOf('/');
+		if(index != -1) {
+			path += filepath.substring(0, index+1);
+		}
+		return path;
 	}
 }

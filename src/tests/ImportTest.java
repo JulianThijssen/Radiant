@@ -5,14 +5,14 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import org.lwjgl.opengl.Display;
 
-import com.radiant.assets.MeshLoader;
+import com.radiant.assets.loader.ModelLoader;
 
 public class ImportTest {
 	@Test
 	public void standard() {
 		try {
 			Display.create();
-			MeshLoader.loadOBJ("res/unit_OBJ_standard.obj");
+			ModelLoader.loadOBJ("res/unit_OBJ_standard.obj");
 			Display.destroy();
 			assertTrue("OBJ loaded without exceptions", true);
 		} catch(Exception e) {
@@ -26,7 +26,7 @@ public class ImportTest {
 	public void full() {
 		try {
 			Display.create();
-			MeshLoader.loadOBJ("res/Lightning/lightning.obj");
+			ModelLoader.loadOBJ("res/Lightning/lightning.obj");
 			Display.destroy();
 			assertTrue("OBJ loaded without exceptions", true);
 		} catch(Exception e) {
@@ -40,7 +40,7 @@ public class ImportTest {
 	public void badVertex() {
 		try {
 			Display.create();
-			MeshLoader.loadOBJ("res/unit_OBJ_bad_vertex.obj");
+			ModelLoader.loadOBJ("res/unit_OBJ_bad_vertex.obj");
 			Display.destroy();
 			fail("OBJ Loader didn't throw an exception for a wrong vertex");
 		} catch(Exception e) {
@@ -54,7 +54,7 @@ public class ImportTest {
 	public void badNormal() {
 		try {
 			Display.create();
-			MeshLoader.loadOBJ("res/unit_OBJ_bad_normal.obj");
+			ModelLoader.loadOBJ("res/unit_OBJ_bad_normal.obj");
 			Display.destroy();
 			fail("OBJ Loader didn't throw an exception for a wrong normal");
 		} catch(Exception e) {
@@ -68,7 +68,7 @@ public class ImportTest {
 	public void badFace() {
 		try {
 			Display.create();
-			MeshLoader.loadOBJ("res/unit_OBJ_bad_face.obj");
+			ModelLoader.loadOBJ("res/unit_OBJ_bad_face.obj");
 			Display.destroy();
 			fail("OBJ Loader didn't throw an exception for a wrong face");
 		} catch(Exception e) {

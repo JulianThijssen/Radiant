@@ -9,13 +9,17 @@ public class Entity {
 	public ArrayList<Component> components = new ArrayList<Component>();
 	
 	public void addComponent(Component c) {
-		c.parent = this;
+//		if(getComponent(c.getClass()) != null) {
+//			//FIXME make new component already added exception
+//			throw new Exception("This component is already added");
+//		}
+		c.owner = this;
 		components.add(c);
 	}
-	
-	public Component getComponent(String name) {
+
+	public Component getComponent(Class<?> type) {
 		for(Component c: components) {
-			if(c.name.equals(name)) {
+			if(c.getClass() == type) {
 				return c;
 			}
 		}

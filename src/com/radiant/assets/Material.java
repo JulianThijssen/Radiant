@@ -1,6 +1,5 @@
 package com.radiant.assets;
 
-import com.radiant.components.Texture;
 import com.radiant.util.Vector3f;
 
 public class Material {
@@ -9,7 +8,7 @@ public class Material {
 	public Vector3f specularColor = new Vector3f(1, 1, 1);
 	public Vector3f ambientColor = new Vector3f(0, 0, 0);
 
-	public String shader = null;
+	public Shading shading = Shading.DIFFUSE;
 	public Texture diffuse = null;
 	public Texture normal = null;
 	public Texture specular = null;
@@ -22,8 +21,8 @@ public class Material {
 		return name;
 	}
 	
-	public void setShader(String shader) {
-		this.shader = shader;
+	public void setShading(Shading shading) {
+		this.shading = shading;
 	}
 	
 	public void setDiffuseColor(float r, float g, float b) {

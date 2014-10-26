@@ -1,4 +1,4 @@
-package com.radiant.assets;
+package com.radiant.assets.loader;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.glGenerateMipmap;
@@ -9,7 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-import com.radiant.components.Texture;
+import com.radiant.assets.Texture;
+import com.radiant.assets.TextureData;
 import com.radiant.exceptions.AssetLoaderException;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
@@ -51,9 +52,9 @@ public class TextureLoader {
 			
 			return textureData;
 		} catch (FileNotFoundException e) {
-			throw new AssetLoaderException("Image was not found");
+			throw new AssetLoaderException("Image was not found: " + texture.path);
 		} catch (IOException e) {
-			throw new AssetLoaderException("An error occurred while loading the image");
+			throw new AssetLoaderException("An error occurred while loading the image: " + texture.path);
 		}
 	}
 	

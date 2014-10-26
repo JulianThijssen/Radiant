@@ -7,15 +7,11 @@ public class BoxCollider extends Component {
 	public Vector3f center = new Vector3f(0, 0, 0);
 	public Vector3f size = new Vector3f(1, 1, 1);
 	
-	public BoxCollider() {
-		super("BoxCollider");
-	}
-	
 	public boolean collidesWith(BoxCollider collider) {
-		Entity other = collider.parent;
+		Entity other = collider.owner;
 		
-		Transform t1 = (Transform) parent.getComponent("Transform");
-		Transform t2 = (Transform) other.getComponent("Transform");
+		Transform t1 = (Transform) owner.getComponent(Transform.class);
+		Transform t2 = (Transform) other.getComponent(Transform.class);
 		
 		if(t1 == null || t2 == null) {
 			return false;
