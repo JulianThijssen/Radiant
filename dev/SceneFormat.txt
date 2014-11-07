@@ -1,0 +1,44 @@
+Entity #1:
+	name: "Player"
+	components:
+		Transform:
+			x: 0
+			y: 0
+			z: 0
+			rotX: 0
+			rotY: 0
+			rotZ: 0
+			scaleX: 0.04
+			scaleY: 0.04
+			scaleZ: 0.04
+		Model:
+			path: "res/Lightning/Lightning.obj"
+
+Entity #2:
+	name: "Camera"
+	components:
+		Transform:
+			x: 0
+			y: 2
+			z: 0
+		Body:
+		Camera:
+			fovy: 90
+			aspect: 1.33
+			zNear: 0.1
+			zFar: 500
+		MouseLook:
+
+Entity #3:
+	name: "Light"
+	components:
+		Transform:
+			x: 4
+			y: 6
+			z: 0
+		Light:
+			r: 1
+			g: 0
+			b: 0
+
+mainCamera: 2

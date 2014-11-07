@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import org.lwjgl.opengl.Display;
 
-import com.radiant.assets.loader.ModelLoader;
+import radiant.assets.model.ModelLoader;
 
 public class ImportTest {
 	@Test
