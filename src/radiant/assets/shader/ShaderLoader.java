@@ -43,9 +43,8 @@ public class ShaderLoader {
 		glLinkProgram(shaderProgram);
 		glValidateProgram(shaderProgram);
 		
-		Shader shader = new Shader();
-		shader.handle = shaderProgram;
-		
+		Shader shader = new Shader(shaderProgram);
+	
 		return shader;
 	}
 	

@@ -37,10 +37,6 @@ public class Renderer implements ISystem {
 	private Matrix4f viewMatrix = new Matrix4f();
 	private Matrix4f modelMatrix = new Matrix4f();
 	
-	private FloatBuffer projBuffer = BufferUtils.createFloatBuffer(16);
-	private FloatBuffer viewBuffer = BufferUtils.createFloatBuffer(16);
-	private FloatBuffer modelBuffer = BufferUtils.createFloatBuffer(16);
-	
 	private HashMap<Shading, Shader> shaders = new HashMap<Shading, Shader>();
 	private HashMap<Shader, List<Entity>> shaderMap = new HashMap<Shader, List<Entity>>();
 	
@@ -61,7 +57,7 @@ public class Renderer implements ISystem {
 	 * Sets the basic OpenGL parameters concerning back face culling,
 	 * texture wrapping and alpha handling.
 	 */
-	public void setGlParameters() {
+	private void setGlParameters() {
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
@@ -79,7 +75,7 @@ public class Renderer implements ISystem {
 	/**
 	 * Initialise all the shader buckets
 	 */
-	public void loadShaders() {
+	private void loadShaders() {
 		shaders.put(Shading.NONE, null);
 		shaders.put(Shading.UNSHADED, AssetLoader.loadShader(new Path("shaders/unshaded")));
 		shaders.put(Shading.DIFFUSE, AssetLoader.loadShader(new Path("shaders/diffuse")));
@@ -112,16 +108,12 @@ public class Renderer implements ISystem {
 		
 		Camera camera = (Camera) scene.mainCamera.getComponent(Camera.class);
 		projectionMatrix = camera.getProjectionMatrix();
-		projectionMatrix.store(projBuffer);
-		projBuffer.flip();
 		
 		// Calculate view matrix
 		viewMatrix.setIdentity();
 		Transform ct = (Transform) scene.mainCamera.getComponent(Transform.class);
 		viewMatrix.rotate(Vector3f.negate(ct.rotation));
 		viewMatrix.translate(Vector3f.negate(ct.position));
-		viewMatrix.store(viewBuffer);
-		viewBuffer.flip();
 		
 		// Divide entities into light buckets
 		List<Entity> pointLights = scene.getPointLights();
@@ -156,16 +148,15 @@ public class Renderer implements ISystem {
 		glUseProgram(shader.handle);
 		
 		for(Entity entity: shaderMap.get(shader)) {
-			int camLoc = glGetUniformLocation(shader.handle, "camera_position");
 			Transform camT = (Transform) scene.mainCamera.getComponent(Transform.class);
-			glUniform3f(camLoc, camT.position.x, camT.position.y, camT.position.z);
+			glUniform3f(shader.cameraPositionLoc, camT.position.x, camT.position.y, camT.position.z);
 			
 			uploadLights(shader, pointLights, dirLights);
 			drawMesh(shader, entity);
 		}
 	}
 
-	public void renderShadowMap() {
+	private void renderShadowMap() {
 		int frameBuffer = 0;
 		frameBuffer = glGenFramebuffers();
 		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
@@ -191,7 +182,7 @@ public class Renderer implements ISystem {
 	/**
 	 * Divide the meshes in the scene into their appropriate shader buckets
 	 */
-	public void divideMeshes() {
+	private void divideMeshes() {
 		// Divide entities into shader buckets
 		for(List<Entity> meshes: shaderMap.values()) {
 			meshes.clear();
@@ -219,20 +210,16 @@ public class Renderer implements ISystem {
 	 * @param lights The list of entities that have a point light component
 	 */
 	private void uploadPointLights(Shader shader, List<Entity> pointLights) {
-		int numLights = glGetUniformLocation(shader.handle, "numPointLights");
-		glUniform1i(numLights, pointLights.size());
+		glUniform1i(shader.numPointLightsLoc, pointLights.size());
+		
 		for(int i = 0; i < pointLights.size(); i++) {
 			Entity e = pointLights.get(i);
 			Transform  transform = (Transform) e.getComponent(Transform.class);
 			PointLight light = (PointLight) e.getComponent(PointLight.class);
 
-			int lightPos = glGetUniformLocation(shader.handle, "pointLights["+i+"].position");
-			int lightColor = glGetUniformLocation(shader.handle, "pointLights["+i+"].color");
-			int lightAtt = glGetUniformLocation(shader.handle, "pointLights["+i+"].attenuation");
-
-			glUniform3f(lightPos, transform.position.x, transform.position.y, transform.position.z);
-			glUniform3f(lightColor, light.color.x, light.color.y, light.color.z);
-			glUniform3f(lightAtt, light.attenuation.x, light.attenuation.y, light.attenuation.z);
+			glUniform3f(shader.plPositionLocs[i], transform.position.x, transform.position.y, transform.position.z);
+			glUniform3f(shader.plColorLocs[i], light.color.x, light.color.y, light.color.z);
+			glUniform3f(shader.plAttenuationLocs[i], light.attenuation.x, light.attenuation.y, light.attenuation.z);
 		}
 	}
 	
@@ -242,25 +229,20 @@ public class Renderer implements ISystem {
 	 * @param lights The list of entities that have a directional light component
 	 */
 	private void uploadDirectionalLights(Shader shader, List<Entity> dirLights) {
-		int numLights = glGetUniformLocation(shader.handle, "numDirLights");
-		glUniform1i(numLights, dirLights.size());
+		glUniform1i(shader.numDirLightsLoc, dirLights.size());
+		
 		for(int i = 0; i < dirLights.size(); i++) {
 			Entity e = dirLights.get(i);
 			Transform  transform = (Transform) e.getComponent(Transform.class);
 			DirectionalLight light = (DirectionalLight) e.getComponent(DirectionalLight.class);
-
-			int lightPos = glGetUniformLocation(shader.handle, "dirLights["+i+"].position");
-			int lightColor = glGetUniformLocation(shader.handle, "dirLights["+i+"].color");
-			int lightDir = glGetUniformLocation(shader.handle, "dirLights["+i+"].direction");
 
 			Matrix4f m = new Matrix4f();
 			m.rotate(transform.rotation);
 			Vector3f dir = new Vector3f(0, -1, 0);
 			dir = m.transform(dir, 0);
 			
-			glUniform3f(lightPos, transform.position.x, transform.position.y, transform.position.z);
-			glUniform3f(lightColor, light.color.x, light.color.y, light.color.z);
-			glUniform3f(lightDir, dir.x, dir.y, dir.z);
+			glUniform3f(shader.dlDirectionLocs[i], dir.x, dir.y, dir.z);
+			glUniform3f(shader.dlColorLocs[i], light.color.x, light.color.y, light.color.z);
 		}
 	}
 	
@@ -269,13 +251,11 @@ public class Renderer implements ISystem {
 	 * @param shader The shader currently in use
 	 * @param mat    The material to be uploaded
 	 */
-	public void uploadMaterial(Shader shader, Material mat) {
+	private void uploadMaterial(Shader shader, Material mat) {
 		// Colors
-		glUniform3f(glGetUniformLocation(shader.handle, "diffuseColor"),
-			mat.diffuseColor.x, mat.diffuseColor.y, mat.diffuseColor.z);
+		glUniform3f(shader.diffuseColorLoc,	mat.diffuseColor.x, mat.diffuseColor.y, mat.diffuseColor.z);
 		
-		glUniform2f(glGetUniformLocation(shader.handle, "tiling"),
-				    					mat.tiling.x, mat.tiling.y);
+		glUniform2f(shader.tilingLoc, mat.tiling.x, mat.tiling.y);
 				
 		// Diffuse texture
 		if(mat.diffuseMap != null) {
@@ -283,16 +263,12 @@ public class Renderer implements ISystem {
 
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, diffuseMap.handle);
-			glUniform1i(glGetUniformLocation(shader.handle, "diffuseMap"), 0);
-			
-			// Tiling
-			//glUniform2f(glGetUniformLocation(shader.handle, "tiling"),
-			//			  mat.diffuseMap.tiling.x, mat.diffuseMap.tiling.y);
-			
+			glUniform1i(shader.diffuseMapLoc, 0);
+
 			// Let the shader know we uploaded a diffuse map
-			glUniform1i(glGetUniformLocation(shader.handle, "hasDiffuseMap"), 1);
+			glUniform1i(shader.hasDiffuseMapLoc, 1);
 		} else {
-			glUniform1i(glGetUniformLocation(shader.handle, "hasDiffuseMap"), 0);
+			glUniform1i(shader.hasDiffuseMapLoc, 0);
 		}
 		// Normal texture
 		if(mat.normalMap != null) {
@@ -300,16 +276,12 @@ public class Renderer implements ISystem {
 
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, normalMap.handle);
-			glUniform1i(glGetUniformLocation(shader.handle, "normalMap"), 1);
-			
-			// Tiling
-			//glUniform2f(glGetUniformLocation(shader.handle, "tiling"),
-			//			    mat.normalMap.tiling.x, mat.normalMap.tiling.y);
+			glUniform1i(shader.normalMapLoc, 1);
 			
 			// Let the shader know we uploaded a normal map
-			glUniform1i(glGetUniformLocation(shader.handle, "hasNormalMap"), 1);
+			glUniform1i(shader.hasNormalMapLoc, 1);
 		} else {
-			glUniform1i(glGetUniformLocation(shader.handle, "hasNormalMap"), 0);
+			glUniform1i(shader.hasNormalMapLoc, 0);
 		}
 		// Specular texture
 		if(mat.specularMap != null) {
@@ -317,15 +289,12 @@ public class Renderer implements ISystem {
 
 			glActiveTexture(GL_TEXTURE2);
 			glBindTexture(GL_TEXTURE_2D, specularMap.handle);
-			glUniform1i(glGetUniformLocation(shader.handle, "specularMap"), 2);
-			
-			// Tiling
-			//glUniform2f(glGetUniformLocation(shader.handle, "tiling"),
-			//		mat.specularMap.tiling.x, mat.specularMap.tiling.y);
+			glUniform1i(shader.specularMapLoc, 2);
+
 			// Let the shader know we uploaded a specular map
-			glUniform1i(glGetUniformLocation(shader.handle, "hasSpecularMap"), 1);
+			glUniform1i(shader.hasSpecularMapLoc, 1);
 		} else {
-			glUniform1i(glGetUniformLocation(shader.handle, "hasSpecularMap"), 0);
+			glUniform1i(shader.hasSpecularMapLoc, 0);
 		}
 	}
 	
@@ -334,7 +303,7 @@ public class Renderer implements ISystem {
 	 * @param shader The shader currently in use
 	 * @param entity The entity that has the mesh component to be drawn
 	 */
-	public void drawMesh(Shader shader, Entity entity) {
+	private void drawMesh(Shader shader, Entity entity) {
 		Transform transform = (Transform) entity.getComponent(Transform.class);
 		Mesh mesh = (Mesh) entity.getComponent(Mesh.class);
 		MeshRenderer mr = (MeshRenderer) entity.getComponent(MeshRenderer.class);
@@ -360,18 +329,10 @@ public class Renderer implements ISystem {
 		modelMatrix.rotate(transform.rotation);
 		modelMatrix.scale(transform.scale);
 		
-		modelBuffer.clear();
-		modelMatrix.store(modelBuffer);
-		modelBuffer.flip();
-		
 		// Upload matrices to the shader
-		int projectionLocation = glGetUniformLocation(shader.handle, "projectionMatrix");
-		int viewLocation = glGetUniformLocation(shader.handle, "viewMatrix");
-		int modelLocation = glGetUniformLocation(shader.handle, "modelMatrix");
-		
-		glUniformMatrix4(modelLocation, false, modelBuffer);
-		glUniformMatrix4(projectionLocation, false, projBuffer);
-		glUniformMatrix4(viewLocation, false, viewBuffer);
+		glUniformMatrix4(shader.projectionMatrixLoc, false, projectionMatrix.getBuffer());
+		glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
+		glUniformMatrix4(shader.modelMatrixLoc, false, modelMatrix.getBuffer());
 
 		if(mr.material != null) {
 			uploadMaterial(shader, mr.material);

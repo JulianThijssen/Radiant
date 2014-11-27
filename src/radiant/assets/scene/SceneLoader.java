@@ -13,7 +13,6 @@ import org.xml.sax.SAXException;
 
 import radiant.assets.AssetLoader;
 import radiant.assets.material.Material;
-import radiant.assets.material.MaterialLoader;
 import radiant.assets.material.Shading;
 import radiant.assets.model.Model;
 import radiant.engine.Entity;
@@ -26,7 +25,6 @@ import radiant.engine.components.MeshRenderer;
 import radiant.engine.components.MouseLook;
 import radiant.engine.components.Transform;
 import radiant.engine.core.diag.Log;
-import radiant.engine.core.errors.AssetLoaderException;
 import radiant.engine.core.file.Path;
 
 public class SceneLoader {

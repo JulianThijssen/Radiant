@@ -2,8 +2,11 @@ package radiant.engine.core.math;
 
 import java.nio.FloatBuffer;
 
+import org.lwjgl.BufferUtils;
+
 public class Matrix4f {
 	public float[] array = new float[16];
+	private FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
 	
 	public Matrix4f() {
 		setIdentity();
@@ -25,10 +28,13 @@ public class Matrix4f {
 		}
 	}
 	
-	public void store(FloatBuffer buf) {
+	public FloatBuffer getBuffer() {
 		for(int i = 0; i < 16; i++) {
-			buf.put(array[i]);
+			buffer.put(array[i]);
 		}
+		buffer.flip();
+		
+		return buffer;
 	}
 	
 	public void translate(Vector3f v) {
