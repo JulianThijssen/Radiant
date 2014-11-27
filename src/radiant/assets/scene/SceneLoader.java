@@ -13,18 +13,20 @@ import org.xml.sax.SAXException;
 
 import radiant.assets.AssetLoader;
 import radiant.assets.material.Material;
+import radiant.assets.material.MaterialLoader;
 import radiant.assets.material.Shading;
 import radiant.assets.model.Model;
 import radiant.engine.Entity;
-import radiant.engine.Scene;
 import radiant.engine.components.AttachedTo;
 import radiant.engine.components.Camera;
-import radiant.engine.components.Light;
+import radiant.engine.components.DirectionalLight;
+import radiant.engine.components.PointLight;
 import radiant.engine.components.Mesh;
 import radiant.engine.components.MeshRenderer;
 import radiant.engine.components.MouseLook;
 import radiant.engine.components.Transform;
 import radiant.engine.core.diag.Log;
+import radiant.engine.core.errors.AssetLoaderException;
 import radiant.engine.core.file.Path;
 
 public class SceneLoader {
@@ -89,6 +91,7 @@ public class SceneLoader {
 										transform.scale.z = Float.parseFloat(transNode.getAttributes().getNamedItem("z").getNodeValue());
 									}
 								}
+								scene.transforms.add(transform);
 								entity.addComponent(transform);
 							}
 							
@@ -113,20 +116,49 @@ public class SceneLoader {
 											mat.shading = Shading.DIFFUSE;
 											MeshRenderer mr = new MeshRenderer(mat);
 											
+											scene.meshRenderers.add(mr);
 											child.addComponent(mr);
 										}
 										scene.addEntity(child);
 									}
 								} else {
-									entity.addComponent(model.getMeshes().get(0));
+									Mesh mesh = model.getMeshes().get(0);
+									scene.meshes.add(mesh);
+									entity.addComponent(mesh);
 									if(model.getMaterials().size() > 0) {
 										entity.addComponent(new MeshRenderer(model.getMaterials().get(0)));
 									} else {
 										Material mat = new Material("Empty");
 										mat.shading = Shading.DIFFUSE;
 										MeshRenderer mr = new MeshRenderer(mat);
+										
+										//scene.meshRenderers.add(mr);
+										//entity.addComponent(mr);
+									}
+								}
+							}
+							
+							if (compNode.getNodeName().equals("Material")) {
+								for (int l = 0; l < compNode.getChildNodes().getLength(); l++) {
+									Node matNode = compNode.getChildNodes().item(l);
+									
+									if (matNode.getNodeName().equals("Path")) {
+										Path materialPath = new Path(matNode.getTextContent());
+										Material material = AssetLoader.loadMaterials(materialPath).get(0);
+										
+										if(material != null) {
+											MeshRenderer mr = new MeshRenderer(material);
 											
-										entity.addComponent(mr);
+											scene.meshRenderers.add(mr);
+											entity.addComponent(mr);
+										}
+									}
+									if (matNode.getNodeName().equals("Tiling")) {
+										MeshRenderer mr = (MeshRenderer) entity.getComponent(MeshRenderer.class);
+										
+										float xTiling = Float.parseFloat(matNode.getAttributes().getNamedItem("x").getNodeValue());
+										float yTiling = Float.parseFloat(matNode.getAttributes().getNamedItem("y").getNodeValue());
+										mr.material.tiling.set(xTiling, yTiling);
 									}
 								}
 							}
@@ -137,13 +169,15 @@ public class SceneLoader {
 								camera.setAspectRatio(Float.parseFloat(compNode.getAttributes().getNamedItem("aspect").getNodeValue()));
 								camera.setZNear(Float.parseFloat(compNode.getAttributes().getNamedItem("zNear").getNodeValue()));
 								camera.setZFar(Float.parseFloat(compNode.getAttributes().getNamedItem("zFar").getNodeValue()));
+								
+								scene.cameras.add(camera);
 								entity.addComponent(camera);
 								//FIXME allow main camera to be assigned
 								scene.mainCamera = entity;
 							}
 							
-							if(compNode.getNodeName().equals("Light")) {
-								Light light = new Light();
+							if(compNode.getNodeName().equals("PointLight")) {
+								PointLight light = new PointLight();
 								
 								for(int l = 0; l < compNode.getChildNodes().getLength(); l++) {
 									Node lightNode = compNode.getChildNodes().item(l);
@@ -155,11 +189,30 @@ public class SceneLoader {
 									}
 									
 									if(lightNode.getNodeName().equals("Attenuation")) {
-										light.constantAtt = Float.parseFloat(lightNode.getAttributes().getNamedItem("c").getNodeValue());
-										light.linearAtt = Float.parseFloat(lightNode.getAttributes().getNamedItem("l").getNodeValue());
-										light.quadraticAtt = Float.parseFloat(lightNode.getAttributes().getNamedItem("q").getNodeValue());
+										light.attenuation.x = Float.parseFloat(lightNode.getAttributes().getNamedItem("c").getNodeValue());
+										light.attenuation.y = Float.parseFloat(lightNode.getAttributes().getNamedItem("l").getNodeValue());
+										light.attenuation.z = Float.parseFloat(lightNode.getAttributes().getNamedItem("q").getNodeValue());
 									}
 								}
+								
+								scene.pointLights.add(light);
+								entity.addComponent(light);
+							}
+							
+							if(compNode.getNodeName().equals("DirectionalLight")) {
+								DirectionalLight light = new DirectionalLight();
+								
+								for(int l = 0; l < compNode.getChildNodes().getLength(); l++) {
+									Node dLightNode = compNode.getChildNodes().item(l);
+									
+									if(dLightNode.getNodeName().equals("Color")) {
+										light.color.x = Float.parseFloat(dLightNode.getAttributes().getNamedItem("r").getNodeValue());
+										light.color.y = Float.parseFloat(dLightNode.getAttributes().getNamedItem("g").getNodeValue());
+										light.color.z = Float.parseFloat(dLightNode.getAttributes().getNamedItem("b").getNodeValue());
+									}
+								}
+								
+								scene.dirLights.add(light);
 								entity.addComponent(light);
 							}
 							

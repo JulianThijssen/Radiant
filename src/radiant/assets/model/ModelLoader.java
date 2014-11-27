@@ -35,10 +35,6 @@ public class ModelLoader {
 	public static final int VERTICES_PER_FACE = 3;
 	
 	public static Model loadModel(Path path) throws AssetLoaderException {
-		if("Plane".equals(path.toString())) {
-			return getPlane();
-		}
-		
 		String extension = path.getExtension();
 
 		if(".obj".equals(extension)) {
@@ -148,6 +144,7 @@ public class ModelLoader {
 						loadVertices(vertices, currentMesh);
 						loadTexCoords(texCoords, currentMesh);
 						loadNormals(normals, currentMesh);
+						calculateNormals(currentMesh);
 						loadTangents(currentMesh);
 						model.addMesh(currentMesh);
 					}
@@ -192,6 +189,7 @@ public class ModelLoader {
 		loadVertices(vertices, currentMesh);
 		loadTexCoords(texCoords, currentMesh);
 		loadNormals(normals, currentMesh);
+		calculateNormals(currentMesh);
 		loadTangents(currentMesh);
 		model.addMesh(currentMesh);
 		
@@ -269,10 +267,7 @@ public class ModelLoader {
 	
 	private static Face readFace(String[] segments) throws AssetLoaderException {
 		Face face = new Face();
-		
-		face.vi = new int[VERTICES_PER_FACE];
-		face.ti = new int[VERTICES_PER_FACE];
-		face.ni = new int[VERTICES_PER_FACE];
+
 		for(int i = 0; i < VERTICES_PER_FACE; i++) {
 			String[] elements = segments[i+1].split("/");
 			if(elements.length >= 1) {
@@ -302,46 +297,8 @@ public class ModelLoader {
 		return line.split("\\s+");
 	}
 	
-	public static Model getPlane() {
-		Model model = new Model();
-		Mesh mesh = new Mesh("Plane");
-		mesh.vertices = new ArrayList<Vector3f>();
-		mesh.vertices.add(new Vector3f(-0.5f, -0.5f, 0));
-		mesh.vertices.add(new Vector3f(0.5f, -0.5f, 0));
-		mesh.vertices.add(new Vector3f(0.5f, 0.5f, 0));
-		mesh.vertices.add(new Vector3f(-0.5f, 0.5f, 0));
-		
-		mesh.texCoords = new ArrayList<Vector2f>();
-		mesh.texCoords.add(new Vector2f(0, 1));
-		mesh.texCoords.add(new Vector2f(1, 1));
-		mesh.texCoords.add(new Vector2f(1, 0));
-		mesh.texCoords.add(new Vector2f(0, 0));
-		
-		mesh.normals = new ArrayList<Vector3f>();
-		mesh.normals.add(new Vector3f(0, 0, 1));
-		
-		mesh.faces = new ArrayList<Face>();
-		Face face1 = new Face();
-		face1.vi = new int[] {1, 2, 3};
-		face1.ti = new int[] {1, 2, 3};
-		face1.ni = new int[] {1, 1, 1};
-		Face face2 = new Face();
-		face2.vi = new int[] {1, 3, 4};
-		face2.ti = new int[] {1, 3, 4};
-		face2.ni = new int[] {1, 1, 1};
-		mesh.faces.add(face1);
-		mesh.faces.add(face2);
-		
-		loadTangents(mesh);
-		model.addMesh(mesh);
-
-		uploadModel(model);
-
-		return model;
-	}
-	
 	private static void calculateNormals(Mesh mesh) {
-		ArrayList<Vector3f> normals = new ArrayList<Vector3f>();
+		List<Vector3f> normals = new ArrayList<Vector3f>();
 		
 		for(int i = 0; i < mesh.vertices.size(); i++) {
 			normals.add(new Vector3f(0, 0, 0));
@@ -356,6 +313,7 @@ public class ModelLoader {
 		for(int i = 0; i < normals.size(); i++) {
 			normals.get(i).normalise();
 		}
+		
 		mesh.normals = normals;
 	}
 	
@@ -469,7 +427,7 @@ public class ModelLoader {
 				//Store the normals in the normal buffer
 				for(Face face: mesh.faces) {
 					for(int j = 0; j < VERTICES_PER_FACE; j++) {
-						Vector3f normal = mesh.normals.get(face.ni[j] - 1);
+						Vector3f normal = mesh.normals.get(face.vi[j] - 1);
 						normal.store(normalBuffer);
 					}
 				}

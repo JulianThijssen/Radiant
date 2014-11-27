@@ -4,13 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import radiant.assets.AssetLoader;
+import radiant.assets.scene.Scene;
 import radiant.engine.core.diag.Log;
 import radiant.engine.core.errors.RadiantException;
 
 public abstract class BaseGame {
 	/* System */
 	private Window window = new Window();
-	private Renderer renderer;
+	private Renderer renderer = new Renderer();
 	
 	/* Scene */
 	private List<Scene> scenes = new ArrayList<Scene>();
@@ -26,13 +27,13 @@ public abstract class BaseGame {
 		if(AssetLoader.getErrors() > 0) {
 			throw new RadiantException("Can't start game, there are unresolved errors");
 		}
-		renderer = new Renderer();
+		renderer.create();
 		
 		update();
 	}
 	
-	public final void loadWindow() throws RadiantException {
-		window.create();
+	public final void loadWindow(String title, int width, int height) throws RadiantException {
+		window.create(title, width, height);
 	}
 	
 	public void shutdown() {
@@ -62,7 +63,7 @@ public abstract class BaseGame {
 					nextUpdate += skipTime;
 					skipped++;
 				}
-				renderer.update(currentScene, 0);
+				renderer.update();
 				window.update();
 				frames++;
 			}
@@ -96,6 +97,7 @@ public abstract class BaseGame {
 		for(Scene s: scenes) {
 			if(s == scene) {
 				currentScene = s;
+				renderer.setScene(currentScene);
 				currentScene.start();
 			}
 		}

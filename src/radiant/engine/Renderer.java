@@ -1,45 +1,9 @@
 package radiant.engine;
 
-import static org.lwjgl.opengl.GL11.GL_BACK;
-import static org.lwjgl.opengl.GL11.GL_BLEND;
-import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_CULL_FACE;
-import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_DEPTH_TEST;
-import static org.lwjgl.opengl.GL11.GL_LINEAR_MIPMAP_LINEAR;
-import static org.lwjgl.opengl.GL11.GL_NEAREST;
-import static org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA;
-import static org.lwjgl.opengl.GL11.GL_REPEAT;
-import static org.lwjgl.opengl.GL11.GL_SRC_ALPHA;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_ENV;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_ENV_MODE;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_S;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_T;
-import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
-import static org.lwjgl.opengl.GL11.glBindTexture;
-import static org.lwjgl.opengl.GL11.glBlendFunc;
-import static org.lwjgl.opengl.GL11.glClear;
-import static org.lwjgl.opengl.GL11.glClearColor;
-import static org.lwjgl.opengl.GL11.glCullFace;
-import static org.lwjgl.opengl.GL11.glDrawArrays;
-import static org.lwjgl.opengl.GL11.glEnable;
-import static org.lwjgl.opengl.GL11.glTexEnvi;
-import static org.lwjgl.opengl.GL11.glTexParameteri;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE1;
-import static org.lwjgl.opengl.GL13.glActiveTexture;
-import static org.lwjgl.opengl.GL20.glGetUniformLocation;
-import static org.lwjgl.opengl.GL20.glUniform1f;
-import static org.lwjgl.opengl.GL20.glUniform1i;
-import static org.lwjgl.opengl.GL20.glUniform2f;
-import static org.lwjgl.opengl.GL20.glUniform3f;
-import static org.lwjgl.opengl.GL20.glUniform4f;
-import static org.lwjgl.opengl.GL20.glUniformMatrix4;
-import static org.lwjgl.opengl.GL20.glUseProgram;
-import static org.lwjgl.opengl.GL30.glBindVertexArray;
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL30.*;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
@@ -51,19 +15,24 @@ import org.lwjgl.BufferUtils;
 import radiant.assets.AssetLoader;
 import radiant.assets.material.Material;
 import radiant.assets.material.Shading;
+import radiant.assets.scene.Scene;
 import radiant.assets.shader.Shader;
 import radiant.assets.texture.TextureData;
 import radiant.engine.components.AttachedTo;
 import radiant.engine.components.Camera;
-import radiant.engine.components.Light;
+import radiant.engine.components.DirectionalLight;
 import radiant.engine.components.Mesh;
 import radiant.engine.components.MeshRenderer;
+import radiant.engine.components.PointLight;
 import radiant.engine.components.Transform;
+import radiant.engine.core.diag.Log;
 import radiant.engine.core.file.Path;
 import radiant.engine.core.math.Matrix4f;
 import radiant.engine.core.math.Vector3f;
 
-public class Renderer {
+public class Renderer implements ISystem {
+	private Scene scene;
+	
 	private Matrix4f projectionMatrix;
 	private Matrix4f viewMatrix = new Matrix4f();
 	private Matrix4f modelMatrix = new Matrix4f();
@@ -77,21 +46,40 @@ public class Renderer {
 	
 	private Vector3f clearColor = new Vector3f(0, 0, 0.4f);
 	
-	public Renderer() {
+	@Override
+	public void create() {
+		setGlParameters();
+		loadShaders();
+	}
+	
+	@Override
+	public void destroy() {
+		
+	}
+	
+	/**
+	 * Sets the basic OpenGL parameters concerning back face culling,
+	 * texture wrapping and alpha handling.
+	 */
+	public void setGlParameters() {
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		
 		glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
-		
-		// Load shaders
+	}
+	
+	/**
+	 * Initialise all the shader buckets
+	 */
+	public void loadShaders() {
 		shaders.put(Shading.NONE, null);
 		shaders.put(Shading.UNSHADED, AssetLoader.loadShader(new Path("shaders/unshaded")));
 		shaders.put(Shading.DIFFUSE, AssetLoader.loadShader(new Path("shaders/diffuse")));
@@ -103,8 +91,19 @@ public class Renderer {
 		}
 	}
 
-	public void update(Scene scene, float interp) {
-		// Render all entities
+	/**
+	 * Sets the scene that needs to be rendered
+	 * @param scene The scene to be rendered
+	 */
+	public void setScene(Scene scene) {
+		this.scene = scene;
+	}
+	
+	/**
+	 * Renders the current complete scene graph
+	 */
+	@Override
+	public void update() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		if(scene.mainCamera == null) {
@@ -125,15 +124,74 @@ public class Renderer {
 		viewBuffer.flip();
 		
 		// Divide entities into light buckets
-		ArrayList<Entity> lights = new ArrayList<Entity>();
-		for(Entity e: scene.getEntities()) {
-			Transform transform = (Transform) e.getComponent(Transform.class);
-			Light light = (Light) e.getComponent(Light.class);
-			if(transform != null && light != null) {
-				lights.add(e);
-			}
+		List<Entity> pointLights = scene.getPointLights();
+		List<Entity> dirLights = scene.getDirectionalLights();
+		divideMeshes();
+		
+		// Render all the meshes associated with a shader
+		Shader shader = shaders.get(Shading.UNSHADED);
+		glUseProgram(shader.handle);
+		
+		for(Entity entity: shaderMap.get(shader)) {
+			drawMesh(shader, entity);
 		}
 		
+		shader = shaders.get(Shading.DIFFUSE);
+		glUseProgram(shader.handle);
+
+		for(Entity entity: shaderMap.get(shader)) {
+			uploadLights(shader, pointLights, dirLights);
+			drawMesh(shader, entity);
+		}
+		
+		shader = shaders.get(Shading.NORMAL);
+		glUseProgram(shader.handle);
+		
+		for(Entity entity: shaderMap.get(shader)) {
+			uploadLights(shader, pointLights, dirLights);
+			drawMesh(shader, entity);
+		}
+		
+		shader = shaders.get(Shading.SPECULAR);
+		glUseProgram(shader.handle);
+		
+		for(Entity entity: shaderMap.get(shader)) {
+			int camLoc = glGetUniformLocation(shader.handle, "camera_position");
+			Transform camT = (Transform) scene.mainCamera.getComponent(Transform.class);
+			glUniform3f(camLoc, camT.position.x, camT.position.y, camT.position.z);
+			
+			uploadLights(shader, pointLights, dirLights);
+			drawMesh(shader, entity);
+		}
+	}
+
+	public void renderShadowMap() {
+		int frameBuffer = 0;
+		frameBuffer = glGenFramebuffers();
+		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+		
+		int shadowMap;
+		shadowMap = glGenTextures();
+		
+		glBindTexture(GL_TEXTURE_2D, shadowMap);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, Window.width, Window.height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowMap, 0);
+		glDrawBuffer(GL_NONE);
+		
+		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			Log.debug("The framebuffer is not happy");
+		}
+	}
+	
+	/**
+	 * Divide the meshes in the scene into their appropriate shader buckets
+	 */
+	public void divideMeshes() {
 		// Divide entities into shader buckets
 		for(List<Entity> meshes: shaderMap.values()) {
 			meshes.clear();
@@ -148,125 +206,134 @@ public class Renderer {
 			Shader shader = shaders.get(mr.material.shading);
 			shaderMap.get(shader).add(e);
 		}
-		
-		Shader shader = shaders.get(Shading.UNSHADED);
-		glUseProgram(shader.handle);
-		
-		for(Entity entity: shaderMap.get(shader)) {
-			drawMesh(shader, entity);
-		}
-		
-		shader = shaders.get(Shading.DIFFUSE);
-		glUseProgram(shader.handle);
+	}
+	
+	private void uploadLights(Shader shader, List<Entity> pointLights, List<Entity> dirLights) {
+		uploadPointLights(shader, pointLights);
+		uploadDirectionalLights(shader, dirLights);
+	}
+	
+	/**
+	 * Uploads all the point lights in the scene to the shaders
+	 * @param shader The shader currently in use
+	 * @param lights The list of entities that have a point light component
+	 */
+	private void uploadPointLights(Shader shader, List<Entity> pointLights) {
+		int numLights = glGetUniformLocation(shader.handle, "numPointLights");
+		glUniform1i(numLights, pointLights.size());
+		for(int i = 0; i < pointLights.size(); i++) {
+			Entity e = pointLights.get(i);
+			Transform  transform = (Transform) e.getComponent(Transform.class);
+			PointLight light = (PointLight) e.getComponent(PointLight.class);
 
-		for(Entity entity: shaderMap.get(shader)) {
-			uploadLights(shader, lights);
-			drawMesh(shader, entity);
-		}
-		
-		shader = shaders.get(Shading.NORMAL);
-		glUseProgram(shader.handle);
-		
-		for(Entity entity: shaderMap.get(shader)) {
-			uploadLights(shader, lights);
-			drawMesh(shader, entity);
-		}
-		
-		shader = shaders.get(Shading.SPECULAR);
-		glUseProgram(shader.handle);
-		
-		for(Entity entity: shaderMap.get(shader)) {
-			int camLoc = glGetUniformLocation(shader.handle, "camera_position");
-			Transform camT = (Transform) scene.mainCamera.getComponent(Transform.class);
-			glUniform3f(camLoc, camT.position.x, camT.position.y, camT.position.z);
-			
-			uploadLights(shader, lights);
-			drawMesh(shader, entity);
+			int lightPos = glGetUniformLocation(shader.handle, "pointLights["+i+"].position");
+			int lightColor = glGetUniformLocation(shader.handle, "pointLights["+i+"].color");
+			int lightAtt = glGetUniformLocation(shader.handle, "pointLights["+i+"].attenuation");
+
+			glUniform3f(lightPos, transform.position.x, transform.position.y, transform.position.z);
+			glUniform3f(lightColor, light.color.x, light.color.y, light.color.z);
+			glUniform3f(lightAtt, light.attenuation.x, light.attenuation.y, light.attenuation.z);
 		}
 	}
 	
-	public void uploadLights(Shader shader, ArrayList<Entity> lights) {
-		int numLights = glGetUniformLocation(shader.handle, "numLights");
-		glUniform1i(numLights, lights.size());
-		for(int i = 0; i < lights.size(); i++) {
-			Entity e = lights.get(i);
+	/**
+	 * Uploads all the directional lights in the scene to the shaders
+	 * @param shader The shader currently in use
+	 * @param lights The list of entities that have a directional light component
+	 */
+	private void uploadDirectionalLights(Shader shader, List<Entity> dirLights) {
+		int numLights = glGetUniformLocation(shader.handle, "numDirLights");
+		glUniform1i(numLights, dirLights.size());
+		for(int i = 0; i < dirLights.size(); i++) {
+			Entity e = dirLights.get(i);
 			Transform  transform = (Transform) e.getComponent(Transform.class);
-			Light light = (Light) e.getComponent(Light.class);
+			DirectionalLight light = (DirectionalLight) e.getComponent(DirectionalLight.class);
 
-			int lightPos = glGetUniformLocation(shader.handle, "lights["+i+"].position");
-			int lightColor = glGetUniformLocation(shader.handle, "lights["+i+"].color");
-			int lightConstantAtt = glGetUniformLocation(shader.handle, "lights["+i+"].constantAtt");
-			int lightLinearAtt = glGetUniformLocation(shader.handle, "lights["+i+"].linearAtt");
-			int lightQuadraticAtt = glGetUniformLocation(shader.handle, "lights["+i+"].quadraticAtt");
+			int lightPos = glGetUniformLocation(shader.handle, "dirLights["+i+"].position");
+			int lightColor = glGetUniformLocation(shader.handle, "dirLights["+i+"].color");
+			int lightDir = glGetUniformLocation(shader.handle, "dirLights["+i+"].direction");
 
-			glUniform4f(lightPos, transform.position.x, transform.position.y, transform.position.z, 1);
+			Matrix4f m = new Matrix4f();
+			m.rotate(transform.rotation);
+			Vector3f dir = new Vector3f(0, -1, 0);
+			dir = m.transform(dir, 0);
+			
+			glUniform3f(lightPos, transform.position.x, transform.position.y, transform.position.z);
 			glUniform3f(lightColor, light.color.x, light.color.y, light.color.z);
-			glUniform1f(lightConstantAtt, light.constantAtt);
-			glUniform1f(lightLinearAtt, light.linearAtt);
-			glUniform1f(lightQuadraticAtt, light.quadraticAtt);
+			glUniform3f(lightDir, dir.x, dir.y, dir.z);
 		}
 	}
-
+	
+	/**
+	 * Uploads the specified material to the shaders
+	 * @param shader The shader currently in use
+	 * @param mat    The material to be uploaded
+	 */
 	public void uploadMaterial(Shader shader, Material mat) {
 		// Colors
 		glUniform3f(glGetUniformLocation(shader.handle, "diffuseColor"),
-													mat.diffuseColor.x,
-													mat.diffuseColor.y,
-													mat.diffuseColor.z);
+			mat.diffuseColor.x, mat.diffuseColor.y, mat.diffuseColor.z);
 		
+		glUniform2f(glGetUniformLocation(shader.handle, "tiling"),
+				    					mat.tiling.x, mat.tiling.y);
+				
 		// Diffuse texture
-		if(mat.diffuse != null) {
-			TextureData diffuseMap = AssetLoader.loadTexture(mat.diffuse);
+		if(mat.diffuseMap != null) {
+			TextureData diffuseMap = AssetLoader.loadTexture(mat.diffuseMap);
 
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, diffuseMap.handle);
 			glUniform1i(glGetUniformLocation(shader.handle, "diffuseMap"), 0);
 			
 			// Tiling
-			glUniform2f(glGetUniformLocation(shader.handle, "tiling"),
-											 mat.diffuse.tiling.x,
-											 mat.diffuse.tiling.y);
+			//glUniform2f(glGetUniformLocation(shader.handle, "tiling"),
+			//			  mat.diffuseMap.tiling.x, mat.diffuseMap.tiling.y);
+			
 			// Let the shader know we uploaded a diffuse map
 			glUniform1i(glGetUniformLocation(shader.handle, "hasDiffuseMap"), 1);
 		} else {
 			glUniform1i(glGetUniformLocation(shader.handle, "hasDiffuseMap"), 0);
 		}
 		// Normal texture
-		if(mat.normal != null) {
-			TextureData normalMap = AssetLoader.loadTexture(mat.normal);
+		if(mat.normalMap != null) {
+			TextureData normalMap = AssetLoader.loadTexture(mat.normalMap);
 
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, normalMap.handle);
 			glUniform1i(glGetUniformLocation(shader.handle, "normalMap"), 1);
 			
 			// Tiling
-			glUniform2f(glGetUniformLocation(shader.handle, "tiling"),
-											 mat.normal.tiling.x,
-											 mat.normal.tiling.y);
+			//glUniform2f(glGetUniformLocation(shader.handle, "tiling"),
+			//			    mat.normalMap.tiling.x, mat.normalMap.tiling.y);
+			
 			// Let the shader know we uploaded a normal map
 			glUniform1i(glGetUniformLocation(shader.handle, "hasNormalMap"), 1);
 		} else {
 			glUniform1i(glGetUniformLocation(shader.handle, "hasNormalMap"), 0);
 		}
 		// Specular texture
-		if(mat.specular != null) {
-			TextureData specularMap = AssetLoader.loadTexture(mat.specular);
+		if(mat.specularMap != null) {
+			TextureData specularMap = AssetLoader.loadTexture(mat.specularMap);
 
-			glActiveTexture(GL_TEXTURE1);
+			glActiveTexture(GL_TEXTURE2);
 			glBindTexture(GL_TEXTURE_2D, specularMap.handle);
-			glUniform1i(glGetUniformLocation(shader.handle, "specularMap"), 1);
+			glUniform1i(glGetUniformLocation(shader.handle, "specularMap"), 2);
 			
 			// Tiling
-			glUniform2f(glGetUniformLocation(shader.handle, "tiling"),
-											 mat.specular.tiling.x,
-											 mat.specular.tiling.y);
-			// Let the shader know we uploaded a normal map
+			//glUniform2f(glGetUniformLocation(shader.handle, "tiling"),
+			//		mat.specularMap.tiling.x, mat.specularMap.tiling.y);
+			// Let the shader know we uploaded a specular map
 			glUniform1i(glGetUniformLocation(shader.handle, "hasSpecularMap"), 1);
 		} else {
 			glUniform1i(glGetUniformLocation(shader.handle, "hasSpecularMap"), 0);
 		}
 	}
 	
+	/**
+	 * Draws the mesh associated with the given entity
+	 * @param shader The shader currently in use
+	 * @param entity The entity that has the mesh component to be drawn
+	 */
 	public void drawMesh(Shader shader, Entity entity) {
 		Transform transform = (Transform) entity.getComponent(Transform.class);
 		Mesh mesh = (Mesh) entity.getComponent(Mesh.class);
@@ -277,9 +344,9 @@ public class Renderer {
 			return;
 		}
 		
-		// Calculate model matrix
 		modelMatrix.setIdentity();
 		
+		// Go up the hierarchy and stack transformations if this entity has a parent
 		if(attached != null) {
 			Entity parent = attached.parent;
 			Transform parentT = (Transform) parent.getComponent(Transform.class);

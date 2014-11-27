@@ -25,49 +25,49 @@ public class MaterialLoader {
 			Material currentMaterial = null;
 			
 			String line = null;
-			while((line = in.readLine()) != null) {
+			while ((line = in.readLine()) != null) {
 				String[] segments = getSegments(line);
 				
-				if(segments.length < 1) {
+				if (segments.length < 1) {
 					continue;
 				}
 				
 				String prefix = segments[0];
 				
-				if(prefix.equals("newmtl")) {
+				if (prefix.equals("newmtl")) {
 					String name = segments[1];
 					currentMaterial = new Material(name);
 					materials.add(currentMaterial);
 				}
 				
-				//If no material has been made yet, continue parsing till one has
-				if(currentMaterial == null) {
+				// If no material has been made yet, continue parsing till one has
+				if (currentMaterial == null) {
 					continue;
 				}
 				try {
-					//Diffuse color
+					// Diffuse color
 					if(prefix.equals("Kd")) {
 						currentMaterial.diffuseColor.x = Float.parseFloat(segments[1]);
 						currentMaterial.diffuseColor.y = Float.parseFloat(segments[2]);
 						currentMaterial.diffuseColor.z = Float.parseFloat(segments[3]);
 					}
-					//Specular color
+					// Specular color
 					if(prefix.equals("Ks")) {
 						currentMaterial.specularColor.x = Float.parseFloat(segments[1]);
 						currentMaterial.specularColor.y = Float.parseFloat(segments[2]);
 						currentMaterial.specularColor.z = Float.parseFloat(segments[3]);
 					}
-					//Ambient color
+					// Ambient color
 					if(prefix.equals("Ka")) {
 						currentMaterial.ambientColor.x = Float.parseFloat(segments[1]);
 						currentMaterial.ambientColor.y = Float.parseFloat(segments[2]);
 						currentMaterial.ambientColor.z = Float.parseFloat(segments[3]);
 					}
-					//Specular hardness
+					// Specular hardness
 					if(prefix.equals("Ns")) {
 						currentMaterial.hardness = Float.parseFloat(segments[1]);
 					}
-					//Transparency
+					// Transparency
 					if(prefix.equals("d")) {
 						currentMaterial.transparency = Float.parseFloat(segments[1]);
 					}
@@ -75,20 +75,54 @@ public class MaterialLoader {
 					throw new AssetLoaderException("Invalid number at line: " + line);
 				}
 				
-				//Diffuse texture
-				if(prefix.equals("map_Kd")) {
+				// Diffuse texture
+				if (prefix.equals("map_Kd")) {
 					Path texpath = new Path(path.getCurrentFolder() + segments[1]);
-					currentMaterial.diffuse = new Texture(texpath, Sampling.NEAREST);
+					currentMaterial.diffuseMap = new Texture(texpath, Sampling.NEAREST);
 				}
 				
-				//Tiling
+				// Normal texture
+				if (prefix.equals("map_Kn")) {
+					Path texpath = new Path(path.getCurrentFolder() + segments[1]);
+					currentMaterial.normalMap = new Texture(texpath, Sampling.NEAREST);
+				}
+				
+				// Specular texture
+				if (prefix.equals("map_Ks")) {
+					Path texpath = new Path(path.getCurrentFolder() + segments[1]);
+					currentMaterial.specularMap = new Texture(texpath, Sampling.NEAREST);
+				}
+				
+				// Tiling
 				if(prefix.equals("tiling")) {
-					currentMaterial.diffuse.tiling = new Vector2f(Float.parseFloat(segments[1]), Float.parseFloat(segments[2]));
+					if(currentMaterial.diffuseMap != null) {
+						currentMaterial.diffuseMap.tiling = new Vector2f(Float.parseFloat(segments[1]), Float.parseFloat(segments[2]));
+					}
+					if(currentMaterial.diffuseMap != null) {
+						currentMaterial.normalMap.tiling = new Vector2f(Float.parseFloat(segments[1]), Float.parseFloat(segments[2]));
+					}
+					if(currentMaterial.diffuseMap != null) {
+						currentMaterial.specularMap.tiling = new Vector2f(Float.parseFloat(segments[1]), Float.parseFloat(segments[2]));
+					}
 				}
 				
-				//Shading
+				// Sampling
+				if(prefix.equals("sampling")) {
+					String sampling = segments[1];
+					if(sampling.equals("nearest")) {
+						currentMaterial.diffuseMap.sampling = Sampling.NEAREST;
+					}
+					if(sampling.equals("linear")) {
+						currentMaterial.diffuseMap.sampling = Sampling.LINEAR;
+					}
+				}
+				
+				// Shading
 				if(prefix.equals("shading")) {
 					String shading = segments[1];
+					if(shading.equals("unshaded")) {
+						currentMaterial.shading = Shading.UNSHADED;
+					}
 					if(shading.equals("diffuse")) {
 						currentMaterial.shading = Shading.DIFFUSE;
 					}
@@ -100,6 +134,8 @@ public class MaterialLoader {
 					}
 				}
 			}
+			materials.add(currentMaterial);
+			
 			return materials;
 		} catch(FileNotFoundException fe) {
 			throw new AssetLoaderException("Could not find file: " + path);

@@ -90,6 +90,14 @@ public class Matrix4f {
 		array[10] = array[10] * scale.z;
 		array[11] = array[11] * scale.z;
 	}
+	
+	public Vector3f transform(Vector3f v, float w) {
+		Vector3f dest = new Vector3f();
+		dest.x = array[0] * v.x + array[4] * v.y + array[8] * v.z + array[12] * w;
+		dest.y = array[1] * v.x + array[5] * v.y + array[9] * v.z + array[13] * w;
+		dest.z = array[2] * v.x + array[6] * v.y + array[10] * v.z + array[14] * w;
+		return dest;
+	}
 
 	@Override
 	public String toString() {

@@ -1,5 +1,6 @@
 package radiant.engine.components;
 
+import radiant.engine.Window;
 import radiant.engine.core.math.Matrix4f;
 
 public class Camera extends Component {
@@ -54,6 +55,8 @@ public class Camera extends Component {
 	}
 	
 	private void recalculate() {
+		aspect = (float) Window.width / Window.height;
+		
 		projectionMatrix.setIdentity();
 		if(perspective) {
 			projectionMatrix.array[0] = (float) (1 / Math.tan(Math.toRadians(fovy / 2f))) / aspect;
@@ -66,9 +69,9 @@ public class Camera extends Component {
 			projectionMatrix.array[0] = 2 / (right - left);
 			projectionMatrix.array[5] = 2 / (top - bottom);
 			projectionMatrix.array[10] = -2 / (zFar - zNear);
-			projectionMatrix.array[12] = (left - right) / (right - left);
-			projectionMatrix.array[13] = (bottom - top) / (top - bottom);
-			projectionMatrix.array[14] = (zNear - zFar) / (zFar - zNear);
+			projectionMatrix.array[12] = (-right - left) / (right - left);
+			projectionMatrix.array[13] = (-top - bottom) / (top - bottom);
+			projectionMatrix.array[14] = (-zFar - zNear) / (zFar - zNear);
 		}
 	}
 	

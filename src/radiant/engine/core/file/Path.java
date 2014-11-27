@@ -43,4 +43,24 @@ public class Path {
 	public String toString() {
 		return path;
 	}
+	
+	@Override
+	public boolean equals(Object object) {
+		Path path = (Path) object;
+		if(path.toString().equals(this.path)) {
+			return true;
+		}
+		return false;
+	}
+	
+	@Override
+	public int hashCode() {
+		int hashCode = 0;
+		
+		for(int i = 0; i < path.length(); i++) {
+			hashCode += path.charAt(i);
+		}
+		
+		return hashCode;
+	}
 }

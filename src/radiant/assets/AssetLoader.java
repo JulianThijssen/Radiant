@@ -1,7 +1,10 @@
 package radiant.assets;
 
 import java.util.HashMap;
+import java.util.List;
 
+import radiant.assets.material.Material;
+import radiant.assets.material.MaterialLoader;
 import radiant.assets.model.Model;
 import radiant.assets.model.ModelLoader;
 import radiant.assets.shader.Shader;
@@ -54,6 +57,17 @@ public class AssetLoader {
 		return null;
 	}
 	
+	public static List<Material> loadMaterials(Path path) {
+		path = Path.concat(basePath, path);
+		try {
+			List<Material> materials = MaterialLoader.loadMTL(path);
+			return materials;
+		} catch(AssetLoaderException e) {
+			Log.error(e.getMessage());
+		}
+		return null;
+	}
+
 	public static Model loadModel(Path path) {
 		path = Path.concat(basePath, path);
 		if(meshCache.containsKey(path)) {
@@ -62,7 +76,6 @@ public class AssetLoader {
 		try {
 			Model model = ModelLoader.loadModel(path);
 			meshCache.put(path, model);
-
 			return model;
 		} catch(AssetLoaderException e) {
 			Log.error(e.getMessage());
