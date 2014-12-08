@@ -2,39 +2,28 @@ package radiant.engine.core.diag;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.PrintStream;
 
 public class Log {
+	private static PrintStream out = System.out;
 	
 	public static void info(String info) {
-		System.out.println(info);
+		out.println(info);
 	}
 	
 	public static void debug(String debug) {
-		System.out.println(debug);
+		out.println(debug);
 	}
 	
 	public static void error(String error) {
-		System.out.println(error);
+		out.println(error);
 	}
 	
-	public static void log(String log) {
-		File file = new File("log.txt");
-		
-		PrintWriter out = null;
-		try {
-			out = new PrintWriter(new FileWriter(file, true));
-			out.println(log);
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			out.close();
-		}
+	public static void setOutput(PrintStream output) {
+		out = output;
+	}
+	
+	public static void setOutput(File file) throws FileNotFoundException {
+		out = new PrintStream(file);
 	}
 }
