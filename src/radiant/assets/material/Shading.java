@@ -1,5 +1,5 @@
 package radiant.assets.material;
 
 public enum Shading {
-	NONE, UNSHADED, DIFFUSE, NORMAL, SPECULAR;
+	NONE, UNSHADED, DIFFUSE, NORMAL, SPECULAR, SHADOW;
 }

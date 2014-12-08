@@ -25,6 +25,7 @@ import org.lwjgl.BufferUtils;
 import radiant.assets.material.Material;
 import radiant.assets.material.MaterialLoader;
 import radiant.engine.components.Mesh;
+import radiant.engine.core.diag.Clock;
 import radiant.engine.core.diag.Log;
 import radiant.engine.core.errors.AssetLoaderException;
 import radiant.engine.core.file.Path;
@@ -60,7 +61,8 @@ public class ModelLoader {
 		ArrayList<Vector2f> texCoords = null;
 		ArrayList<Vector3f> normals = null;
 		
-		long time = System.currentTimeMillis();
+		Clock clock = new Clock();
+		clock.start();
 		
 		try {
 			in = new BufferedReader(new FileReader(new File(path.toString())));
@@ -196,8 +198,8 @@ public class ModelLoader {
 		// Third phase, upload the whole model
 		uploadModel(model);
 		
-		long dtime = System.currentTimeMillis();
-		Log.info(path + " loaded in: " + (dtime - time) + "ms");
+		clock.end();
+		Log.info(path + " loaded in: " + clock.getMilliseconds() + "ms");
 		
 		return model;
 	}

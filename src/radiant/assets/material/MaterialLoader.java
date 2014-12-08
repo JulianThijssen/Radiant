@@ -95,15 +95,16 @@ public class MaterialLoader {
 				
 				// Tiling
 				if(prefix.equals("tiling")) {
-					if(currentMaterial.diffuseMap != null) {
-						currentMaterial.diffuseMap.tiling = new Vector2f(Float.parseFloat(segments[1]), Float.parseFloat(segments[2]));
-					}
-					if(currentMaterial.diffuseMap != null) {
-						currentMaterial.normalMap.tiling = new Vector2f(Float.parseFloat(segments[1]), Float.parseFloat(segments[2]));
-					}
-					if(currentMaterial.diffuseMap != null) {
-						currentMaterial.specularMap.tiling = new Vector2f(Float.parseFloat(segments[1]), Float.parseFloat(segments[2]));
-					}
+					currentMaterial.tiling = new Vector2f(Float.parseFloat(segments[1]), Float.parseFloat(segments[2]));
+//					if(currentMaterial.diffuseMap != null) {
+//						currentMaterial.diffuseMap.tiling = new Vector2f(Float.parseFloat(segments[1]), Float.parseFloat(segments[2]));
+//					}
+//					if(currentMaterial.diffuseMap != null) {
+//						currentMaterial.normalMap.tiling = new Vector2f(Float.parseFloat(segments[1]), Float.parseFloat(segments[2]));
+//					}
+//					if(currentMaterial.diffuseMap != null) {
+//						currentMaterial.specularMap.tiling = new Vector2f(Float.parseFloat(segments[1]), Float.parseFloat(segments[2]));
+//					}
 				}
 				
 				// Sampling

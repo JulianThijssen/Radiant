@@ -14,6 +14,9 @@ public class Shader {
 	public int viewMatrixLoc;
 	public int modelMatrixLoc;
 	
+	public int sprojectionMatrixLoc;
+	public int sviewMatrixLoc;
+	
 	public int[] plPositionLocs    = new int[MAX_POINT_LIGHTS];
 	public int[] plAttenuationLocs = new int[MAX_POINT_LIGHTS];
 	public int[] plColorLocs       = new int[MAX_POINT_LIGHTS];
@@ -25,8 +28,12 @@ public class Shader {
 	public int numPointLightsLoc;
 	public int numDirLightsLoc;
 	
+	public int shadowMapLoc;
+	
+	public int materialLoc;
 	public int diffuseColorLoc;
 	public int tilingLoc;
+	public int hardnessLoc;
 	
 	public int diffuseMapLoc;
 	public int normalMapLoc;
@@ -54,6 +61,9 @@ public class Shader {
 		viewMatrixLoc = glGetUniformLocation(handle, "viewMatrix");
 		modelMatrixLoc = glGetUniformLocation(handle, "modelMatrix");
 		
+		sprojectionMatrixLoc = glGetUniformLocation(handle, "sprojectionMatrix");
+		sviewMatrixLoc = glGetUniformLocation(handle, "sviewMatrix");
+		
 		// Point lights
 		for(int i = 0; i < MAX_POINT_LIGHTS; i++) {
 			plPositionLocs[i]    = glGetUniformLocation(handle, "pointLights["+i+"].position");
@@ -70,18 +80,22 @@ public class Shader {
 		numPointLightsLoc = glGetUniformLocation(handle, "numPointLights");
 		numDirLightsLoc   = glGetUniformLocation(handle, "numDirLights");
 
+		shadowMapLoc = glGetUniformLocation(handle, "shadowMap");
+		
 		// Material
-		diffuseColorLoc = glGetUniformLocation(handle, "diffuseColor");
-		tilingLoc = glGetUniformLocation(handle, "tiling");
+		materialLoc = glGetUniformLocation(handle, "material");
+		diffuseColorLoc = glGetUniformLocation(handle, "material.diffuseColor");
+		hardnessLoc = glGetUniformLocation(handle, "material.hardness");
+		tilingLoc = glGetUniformLocation(handle, "material.tiling");
 		
-		diffuseMapLoc = glGetUniformLocation(handle, "diffuseMap");
-		normalMapLoc = glGetUniformLocation(handle, "normalMap");
-		specularMapLoc = glGetUniformLocation(handle, "specularMap");
+		diffuseMapLoc = glGetUniformLocation(handle, "material.diffuseMap");
+		normalMapLoc = glGetUniformLocation(handle, "material.normalMap");
+		specularMapLoc = glGetUniformLocation(handle, "material.specularMap");
 		
-		hasDiffuseMapLoc = glGetUniformLocation(handle, "hasDiffuseMap");
-		hasNormalMapLoc = glGetUniformLocation(handle, "hasNormalMap");
-		hasSpecularMapLoc = glGetUniformLocation(handle, "hasSpecularMap");
+		hasDiffuseMapLoc = glGetUniformLocation(handle, "material.hasDiffuseMap");
+		hasNormalMapLoc = glGetUniformLocation(handle, "material.hasNormalMap");
+		hasSpecularMapLoc = glGetUniformLocation(handle, "material.hasSpecularMap");
 		
-		cameraPositionLoc = glGetUniformLocation(handle, "camera_position");
+		cameraPositionLoc = glGetUniformLocation(handle, "cameraPosition");
 	}
 }

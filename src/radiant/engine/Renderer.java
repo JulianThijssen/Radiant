@@ -3,14 +3,14 @@ package radiant.engine;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL14.GL_DEPTH_COMPONENT16;
 import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.opengl.GL32.glFramebufferTexture;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import org.lwjgl.BufferUtils;
 
 import radiant.assets.AssetLoader;
 import radiant.assets.material.Material;
@@ -37,10 +37,16 @@ public class Renderer implements ISystem {
 	private Matrix4f viewMatrix = new Matrix4f();
 	private Matrix4f modelMatrix = new Matrix4f();
 	
+	private Matrix4f sprojectionMatrix;
+	private Matrix4f sviewMatrix = new Matrix4f();
+	
 	private HashMap<Shading, Shader> shaders = new HashMap<Shading, Shader>();
 	private HashMap<Shader, List<Entity>> shaderMap = new HashMap<Shader, List<Entity>>();
 	
 	private Vector3f clearColor = new Vector3f(0, 0, 0.4f);
+	
+	private int shadowBuffer = 0;
+	private int shadowMap = 0;
 	
 	@Override
 	public void create() {
@@ -62,14 +68,13 @@ public class Renderer implements ISystem {
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		
 		glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
+		
+		shadowBuffer = glGenFramebuffers();
+		shadowMap = glGenTextures();
 	}
 	
 	/**
@@ -81,6 +86,7 @@ public class Renderer implements ISystem {
 		shaders.put(Shading.DIFFUSE, AssetLoader.loadShader(new Path("shaders/diffuse")));
 		shaders.put(Shading.NORMAL, AssetLoader.loadShader(new Path("shaders/normal")));
 		shaders.put(Shading.SPECULAR, AssetLoader.loadShader(new Path("shaders/specular")));
+		shaders.put(Shading.SHADOW, AssetLoader.loadShader(new Path("shaders/shadow")));
 		
 		for(Shader shader: shaders.values()) {
 			shaderMap.put(shader, new ArrayList<Entity>());
@@ -107,19 +113,28 @@ public class Renderer implements ISystem {
 		}
 		
 		Camera camera = (Camera) scene.mainCamera.getComponent(Camera.class);
+		Transform ct = (Transform) scene.mainCamera.getComponent(Transform.class);
+
+		renderScene(ct, camera);
+	}
+	
+	private void renderScene(Transform transform, Camera camera) {
+		glViewport(0, 0, Window.width, Window.height);
+
 		projectionMatrix = camera.getProjectionMatrix();
 		
 		// Calculate view matrix
 		viewMatrix.setIdentity();
-		Transform ct = (Transform) scene.mainCamera.getComponent(Transform.class);
-		viewMatrix.rotate(Vector3f.negate(ct.rotation));
-		viewMatrix.translate(Vector3f.negate(ct.position));
+		viewMatrix.rotate(Vector3f.negate(transform.rotation));
+		viewMatrix.translate(Vector3f.negate(transform.position));
+		
+		shadowMap = renderShadowMap();
 		
 		// Divide entities into light buckets
 		List<Entity> pointLights = scene.getPointLights();
 		List<Entity> dirLights = scene.getDirectionalLights();
 		divideMeshes();
-		
+
 		// Render all the meshes associated with a shader
 		Shader shader = shaders.get(Shading.UNSHADED);
 		glUseProgram(shader.handle);
@@ -155,28 +170,68 @@ public class Renderer implements ISystem {
 			drawMesh(shader, entity);
 		}
 	}
-
-	private void renderShadowMap() {
-		int frameBuffer = 0;
-		frameBuffer = glGenFramebuffers();
-		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-		
-		int shadowMap;
-		shadowMap = glGenTextures();
+	
+	private int renderShadowMap() {
+		// Render the scene for the shadow map
+		Shader shader = shaders.get(Shading.SHADOW);
+		glUseProgram(shader.handle);
 		
 		glBindTexture(GL_TEXTURE_2D, shadowMap);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, Window.width, Window.height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, Window.width, Window.height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, (FloatBuffer) null);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glBindTexture(GL_TEXTURE_2D, 0);
 		
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowMap, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, shadowBuffer);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowMap, 0);
+		glReadBuffer(GL_NONE);
 		glDrawBuffer(GL_NONE);
+		
+		glClear(GL_DEPTH_BUFFER_BIT);
 		
 		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 			Log.debug("The framebuffer is not happy");
+			int error = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+			
+			if(error == GL_FRAMEBUFFER_UNDEFINED) { System.out.println("UNDEFINED"); }
+			if(error == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); }
+			if(error == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); }
+			if(error == GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); }
+			if(error == GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); }
+			if(error == GL_FRAMEBUFFER_UNSUPPORTED) { System.out.println("GL_FRAMEBUFFER_UNSUPPORTED"); }
+			if(error == GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); }
+			if(error == GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); }
 		}
+		
+		//FIXME multiple or no lights
+		Transform transform = (Transform) scene.dirLights.get(0).owner.getComponent(Transform.class);
+		Camera camera = new Camera(-10, 10, -10, 10, -20, 20);
+		
+		sprojectionMatrix = camera.getProjectionMatrix();
+
+		// Calculate view matrix
+		sviewMatrix.setIdentity();
+		sviewMatrix.rotate(Vector3f.negate(transform.rotation));
+		
+		glDisable(GL_CULL_FACE);
+		
+		for(Entity entity: scene.getEntities()) {
+			Mesh mesh = (Mesh) entity.getComponent(Mesh.class);
+			
+			if(mesh != null) {
+				drawMesh(shader, entity);
+			}
+		}
+		
+		glEnable(GL_CULL_FACE);
+		//glCullFace(GL_BACK);
+		
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		return shadowMap;
 	}
 	
 	/**
@@ -238,7 +293,7 @@ public class Renderer implements ISystem {
 
 			Matrix4f m = new Matrix4f();
 			m.rotate(transform.rotation);
-			Vector3f dir = new Vector3f(0, -1, 0);
+			Vector3f dir = new Vector3f(0, 0, -1);
 			dir = m.transform(dir, 0);
 			
 			glUniform3f(shader.dlDirectionLocs[i], dir.x, dir.y, dir.z);
@@ -254,8 +309,8 @@ public class Renderer implements ISystem {
 	private void uploadMaterial(Shader shader, Material mat) {
 		// Colors
 		glUniform3f(shader.diffuseColorLoc,	mat.diffuseColor.x, mat.diffuseColor.y, mat.diffuseColor.z);
-		
 		glUniform2f(shader.tilingLoc, mat.tiling.x, mat.tiling.y);
+		glUniform1f(shader.hardnessLoc, mat.hardness);
 				
 		// Diffuse texture
 		if(mat.diffuseMap != null) {
@@ -303,7 +358,7 @@ public class Renderer implements ISystem {
 	 * @param shader The shader currently in use
 	 * @param entity The entity that has the mesh component to be drawn
 	 */
-	private void drawMesh(Shader shader, Entity entity) {
+	private void drawMesh(Shader shader, Entity entity) {		
 		Transform transform = (Transform) entity.getComponent(Transform.class);
 		Mesh mesh = (Mesh) entity.getComponent(Mesh.class);
 		MeshRenderer mr = (MeshRenderer) entity.getComponent(MeshRenderer.class);
@@ -312,7 +367,7 @@ public class Renderer implements ISystem {
 		if(transform == null) {
 			return;
 		}
-		
+
 		modelMatrix.setIdentity();
 		
 		// Go up the hierarchy and stack transformations if this entity has a parent
@@ -333,15 +388,29 @@ public class Renderer implements ISystem {
 		glUniformMatrix4(shader.projectionMatrixLoc, false, projectionMatrix.getBuffer());
 		glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
 		glUniformMatrix4(shader.modelMatrixLoc, false, modelMatrix.getBuffer());
+		
+		glUniformMatrix4(shader.sprojectionMatrixLoc, false, sprojectionMatrix.getBuffer());
+		glUniformMatrix4(shader.sviewMatrixLoc, false, sviewMatrix.getBuffer());
 
 		if(mr.material != null) {
 			uploadMaterial(shader, mr.material);
 		}
 		
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, shadowMap);
+		glUniform1i(shader.shadowMapLoc, 3);
+		
 		glBindVertexArray(mesh.handle);
 		glDrawArrays(GL_TRIANGLES, 0, mesh.getNumFaces() * 3);
-		
-		glBindTexture(GL_TEXTURE_2D, 0);
 		glBindVertexArray(0);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 }

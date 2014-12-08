@@ -16,6 +16,7 @@ public class Material {
 
 	public Shading shading = DEFAULT_SHADING;
 	public Vector2f tiling = new Vector2f(1, 1);
+	
 	public Texture diffuseMap = null;
 	public Texture normalMap = null;
 	public Texture specularMap = null;
