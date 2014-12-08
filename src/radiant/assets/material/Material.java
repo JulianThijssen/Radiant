@@ -13,6 +13,8 @@ public class Material {
 	public Vector3f diffuseColor = new Vector3f(1, 1, 1);
 	public Vector3f specularColor = new Vector3f(1, 1, 1);
 	public Vector3f ambientColor = new Vector3f(0, 0, 0);
+	
+	public float specularIntensity = 1.0f;
 
 	public Shading shading = DEFAULT_SHADING;
 	public Vector2f tiling = new Vector2f(1, 1);

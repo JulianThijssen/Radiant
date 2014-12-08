@@ -32,6 +32,8 @@ public class Shader {
 	
 	public int materialLoc;
 	public int diffuseColorLoc;
+	public int specularIntensityLoc;
+	
 	public int tilingLoc;
 	public int hardnessLoc;
 	
@@ -85,6 +87,7 @@ public class Shader {
 		// Material
 		materialLoc = glGetUniformLocation(handle, "material");
 		diffuseColorLoc = glGetUniformLocation(handle, "material.diffuseColor");
+		specularIntensityLoc = glGetUniformLocation(handle, "material.specularIntensity");
 		hardnessLoc = glGetUniformLocation(handle, "material.hardness");
 		tilingLoc = glGetUniformLocation(handle, "material.tiling");
 		

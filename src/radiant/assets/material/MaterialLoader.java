@@ -46,25 +46,29 @@ public class MaterialLoader {
 				}
 				try {
 					// Diffuse color
-					if(prefix.equals("Kd")) {
+					if (prefix.equals("Kd")) {
 						currentMaterial.diffuseColor.x = Float.parseFloat(segments[1]);
 						currentMaterial.diffuseColor.y = Float.parseFloat(segments[2]);
 						currentMaterial.diffuseColor.z = Float.parseFloat(segments[3]);
 					}
 					// Specular color
-					if(prefix.equals("Ks")) {
+					if (prefix.equals("Ks")) {
 						currentMaterial.specularColor.x = Float.parseFloat(segments[1]);
 						currentMaterial.specularColor.y = Float.parseFloat(segments[2]);
 						currentMaterial.specularColor.z = Float.parseFloat(segments[3]);
 					}
 					// Ambient color
-					if(prefix.equals("Ka")) {
+					if (prefix.equals("Ka")) {
 						currentMaterial.ambientColor.x = Float.parseFloat(segments[1]);
 						currentMaterial.ambientColor.y = Float.parseFloat(segments[2]);
 						currentMaterial.ambientColor.z = Float.parseFloat(segments[3]);
 					}
+					// Specular intensity
+					if (prefix.equals("Is")) {
+						currentMaterial.specularIntensity = Float.parseFloat(segments[1]);
+					}
 					// Specular hardness
-					if(prefix.equals("Ns")) {
+					if (prefix.equals("Ns")) {
 						currentMaterial.hardness = Float.parseFloat(segments[1]);
 					}
 					// Transparency
