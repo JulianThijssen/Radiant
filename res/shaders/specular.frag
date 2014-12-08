@@ -18,11 +18,14 @@ uniform DirectionalLight dirLights[10];
 uniform int numPointLights;
 uniform int numDirLights;
 
-uniform sampler2D shadowMap;
+uniform sampler2DShadow shadowMap;
 
 // Material
 struct Material {
 	vec3 diffuseColor;
+	vec3 specularColor;
+	
+	float specularIntensity;
 	vec2 tiling;
 	
 	float hardness;
@@ -31,9 +34,11 @@ struct Material {
 	sampler2D normalMap;
 	sampler2D specularMap;
 	
-	int hasDiffuseMap;
-	int hasNormalMap;
-	int hasSpecularMap;
+	bool hasDiffuseMap;
+	bool hasNormalMap;
+	bool hasSpecularMap;
+	
+	bool receiveShadows;
 };
 
 uniform Material material;
@@ -72,7 +77,7 @@ void main(void) {
 	mat3 normalMatrix = transpose(inverse(mat3(modelMatrix)));
     vec3 normal = normalize(normalMatrix * pass_normal);
     
-    if(material.hasNormalMap == 1) {
+    if(material.hasNormalMap) {
     	normal = calcNormal(normal);
     	normal = normal;
     }
@@ -88,32 +93,24 @@ void main(void) {
 
 	    float length = length(lightDir);
 	    
-	    // Calculate the cosine of the angle of incidence (brightness)
-	    float fDiffuse = dot(normal, normalize(lightDir));
-	    
-	    // Calculate specular intensity
-	    vec3 half = (normalize(lightDir) + normalize(camDir))/2;
-	    float fPhong = pow(max(dot(normal, normalize(half)), 0), material.hardness);
-	    if(material.hasSpecularMap == 1) {
-	    	fPhong *= texture(material.specularMap, pass_texCoord * material.tiling).xyz;
-	    }
-	    
 	    float constantAtt  = light.attenuation.x;
 	    float linearAtt    = light.attenuation.y;
 	    float quadraticAtt = light.attenuation.z;
 	    float fAttTotal = 1 / (constantAtt + linearAtt * length + quadraticAtt * length * length);
 	    
-	    refl.r += light.color.r * fAttTotal * fDiffuse + light.color.r * fPhong * 5;
-	    refl.g += light.color.g * fAttTotal * fDiffuse + light.color.g * fPhong * 5;
-	    refl.b += light.color.b * fAttTotal * fDiffuse + light.color.b * fPhong * 5;
-	}
-
-	float cosTheta = dot(normal, normalize(-dirLights[0].direction));
-	float bias = 0.01 * tan(acos(cosTheta));
-	bias = 0.005;
-	float visibility = 1.0;
-	if (texture(shadowMap, pass_shadowCoord.xy).z < pass_shadowCoord.z - bias) {
-		visibility = 0.5;
+	    // Calculate diffuse lighting
+	    float fDiffuse = dot(normal, normalize(lightDir));
+	    
+		refl += material.diffuseColor * light.color * fDiffuse * fAttTotal;
+	    
+	    // Calculate specular lighting
+	    vec3 half = (normalize(lightDir) + normalize(camDir))/2;
+	    float fPhong = pow(max(dot(normal, normalize(half)), 0), material.hardness);
+	    if(material.hasSpecularMap) {
+	    	fPhong *= texture(material.specularMap, pass_texCoord * material.tiling).xyz;
+	    }
+	    
+		refl += material.specularColor * light.color * fPhong * material.specularIntensity;
 	}
 	
 	// Directional lighting
@@ -123,24 +120,36 @@ void main(void) {
 		// Calculate the vector from this pixels surface to the light source
 		vec3 lightDir = -light.direction;
 		vec3 lightColor = light.color;
+	
 		
-		// Calculate the cosine of the angle of incidence (brightness)
+		// Calculate diffuse lighting
 		float fDiffuse = dot(normal, normalize(lightDir));
 		
-		// Calculate specular intensity
+		refl += material.diffuseColor * light.color * fDiffuse;
+
+		// Calculate specular lighting
 	    vec3 half = (normalize(lightDir) + normalize(camDir))/2;
 	    float fPhong = pow(max(dot(normal, normalize(half)), 0), material.hardness);
-	    if(material.hasSpecularMap == 1) {
+	    if(material.hasSpecularMap) {
 	    	fPhong *= texture(material.specularMap, pass_texCoord * material.tiling).xyz;
 	    }
 		
-		refl.r += light.color.r * fDiffuse + light.color.r * fPhong * 5;
-		refl.g += light.color.g * fDiffuse + light.color.g * fPhong * 5;
-		refl.b += light.color.b * fDiffuse + light.color.b * fPhong * 5;
+		refl += material.specularColor * light.color * fPhong * material.specularIntensity;
+	}
+	
+	// Shadows
+	float visibility = 1.0;
+	if (material.receiveShadows) {
+		float cosTheta = dot(normal, normalize(-dirLights[0].direction));
+		float bias = 0.01 * tan(acos(cosTheta));
+		bias = 0.005;
+		
+		float shadowAtt = texture(shadowMap, vec3(pass_shadowCoord.xy, pass_shadowCoord.z - bias)) + 1;
+		visibility -= 0.5/shadowAtt;
 	}
 	
 	out_Color = vec4(material.diffuseColor * refl, 1);
-	if(material.hasDiffuseMap == 1) {
+	if(material.hasDiffuseMap) {
 		out_Color *= texture(material.diffuseMap, pass_texCoord * material.tiling);
 	}
 	

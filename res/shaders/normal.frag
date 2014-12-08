@@ -21,6 +21,7 @@ uniform int numDirLights;
 // Material
 struct Material {
 	vec3 diffuseColor;
+	float specularIntensity;
 	vec2 tiling;
 	
 	float hardness;

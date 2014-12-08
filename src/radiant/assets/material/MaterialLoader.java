@@ -112,7 +112,7 @@ public class MaterialLoader {
 				}
 				
 				// Sampling
-				if(prefix.equals("sampling")) {
+				if (prefix.equals("sampling")) {
 					String sampling = segments[1];
 					if(sampling.equals("nearest")) {
 						currentMaterial.diffuseMap.sampling = Sampling.NEAREST;
@@ -122,8 +122,19 @@ public class MaterialLoader {
 					}
 				}
 				
+				// Shadows
+				if (prefix.equals("ReceiveShadows")) {
+					String shadows = segments[1];
+					if("off".equals(shadows)) {
+						currentMaterial.receiveShadows = false;
+					}
+					if("on".equals(shadows)) {
+						currentMaterial.receiveShadows = true;
+					}
+				}
+				
 				// Shading
-				if(prefix.equals("shading")) {
+				if (prefix.equals("shading")) {
 					String shading = segments[1];
 					if(shading.equals("unshaded")) {
 						currentMaterial.shading = Shading.UNSHADED;

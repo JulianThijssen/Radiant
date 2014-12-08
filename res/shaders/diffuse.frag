@@ -23,6 +23,7 @@ uniform sampler2D shadowMap;
 // Material
 struct Material {
 	vec3 diffuseColor;
+	float specularIntensity;
 	vec2 tiling;
 	
 	float hardness;

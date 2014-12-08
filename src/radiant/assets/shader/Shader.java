@@ -32,6 +32,8 @@ public class Shader {
 	
 	public int materialLoc;
 	public int diffuseColorLoc;
+	public int specularColorLoc;
+	
 	public int specularIntensityLoc;
 	
 	public int tilingLoc;
@@ -45,6 +47,7 @@ public class Shader {
 	public int hasNormalMapLoc;
 	public int hasSpecularMapLoc;
 	
+	public int receiveShadowsLoc;
 	
 	public int cameraPositionLoc;
 	
@@ -87,6 +90,7 @@ public class Shader {
 		// Material
 		materialLoc = glGetUniformLocation(handle, "material");
 		diffuseColorLoc = glGetUniformLocation(handle, "material.diffuseColor");
+		specularColorLoc = glGetUniformLocation(handle, "material.specularColor");
 		specularIntensityLoc = glGetUniformLocation(handle, "material.specularIntensity");
 		hardnessLoc = glGetUniformLocation(handle, "material.hardness");
 		tilingLoc = glGetUniformLocation(handle, "material.tiling");
@@ -98,6 +102,8 @@ public class Shader {
 		hasDiffuseMapLoc = glGetUniformLocation(handle, "material.hasDiffuseMap");
 		hasNormalMapLoc = glGetUniformLocation(handle, "material.hasNormalMap");
 		hasSpecularMapLoc = glGetUniformLocation(handle, "material.hasSpecularMap");
+		
+		receiveShadowsLoc = glGetUniformLocation(handle, "material.receiveShadows");
 		
 		cameraPositionLoc = glGetUniformLocation(handle, "cameraPosition");
 	}

@@ -10,21 +10,24 @@ public class Material {
 	public static final float DEFAULT_TRANSPARENCY = 1;
 	
 	private String name;
+	
+	public Shading shading = DEFAULT_SHADING;
+	
 	public Vector3f diffuseColor = new Vector3f(1, 1, 1);
 	public Vector3f specularColor = new Vector3f(1, 1, 1);
 	public Vector3f ambientColor = new Vector3f(0, 0, 0);
 	
 	public float specularIntensity = 1.0f;
+	public float hardness = DEFAULT_HARDNESS;
 
-	public Shading shading = DEFAULT_SHADING;
 	public Vector2f tiling = new Vector2f(1, 1);
-	
 	public Texture diffuseMap = null;
 	public Texture normalMap = null;
 	public Texture specularMap = null;
 	
-	public float hardness = DEFAULT_HARDNESS;
 	public float transparency = DEFAULT_TRANSPARENCY;
+	
+	public boolean receiveShadows = true;
 	
 	public Material(String name) {
 		this.name = name;

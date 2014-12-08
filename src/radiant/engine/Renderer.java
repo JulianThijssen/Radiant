@@ -4,6 +4,9 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL14.GL_DEPTH_COMPONENT16;
+import static org.lwjgl.opengl.GL14.GL_TEXTURE_COMPARE_MODE;
+import static org.lwjgl.opengl.GL14.GL_TEXTURE_COMPARE_FUNC;
+import static org.lwjgl.opengl.GL30.GL_COMPARE_REF_TO_TEXTURE;
 import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.GL32.glFramebufferTexture;
@@ -184,6 +187,8 @@ public class Renderer implements ISystem {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		
 		glBindFramebuffer(GL_FRAMEBUFFER, shadowBuffer);
@@ -310,9 +315,17 @@ public class Renderer implements ISystem {
 	private void uploadMaterial(Shader shader, Material mat) {
 		// Colors
 		glUniform3f(shader.diffuseColorLoc,	mat.diffuseColor.x, mat.diffuseColor.y, mat.diffuseColor.z);
+		glUniform3f(shader.specularColorLoc, mat.specularColor.x, mat.specularColor.y, mat.specularColor.z);
+		
 		glUniform1f(shader.specularIntensityLoc, mat.specularIntensity);
 		glUniform2f(shader.tilingLoc, mat.tiling.x, mat.tiling.y);
 		glUniform1f(shader.hardnessLoc, mat.hardness);
+		
+		if(mat.receiveShadows) {
+			glUniform1i(shader.receiveShadowsLoc, 1);
+		} else {
+			glUniform1i(shader.receiveShadowsLoc, 0);
+		}
 		
 		// Diffuse texture
 		if(mat.diffuseMap != null) {
