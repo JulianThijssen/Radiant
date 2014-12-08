@@ -20,7 +20,6 @@ public abstract class BaseGame {
 	/* Game loop */
 	private int maxSkip = 15;
 	private int skipTime = 40;
-	private int updateRate = 25;
 	private int framesPerSecond = 0;
 	
 	public final void startGame() throws RadiantException {
@@ -71,6 +70,10 @@ public abstract class BaseGame {
 		shutdown();
 	}
 	
+	public void setUpdateRate(int updateRate) {
+		skipTime = 1000 / updateRate;
+	}
+	
 	/* Window */
 	public void setTitle(String title) {
 		window.setTitle(title);
@@ -106,10 +109,5 @@ public abstract class BaseGame {
 	/* Game loop */
 	public int getFps() {
 		return framesPerSecond;
-	}
-	
-	public void setUpdateRate(int updatesPerSecond) {
-		updateRate = updatesPerSecond;
-		skipTime = 1000 / updateRate;
 	}
 }
