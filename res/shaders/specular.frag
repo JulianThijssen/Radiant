@@ -103,7 +103,7 @@ void main(void) {
 	    }
 	    
 	    // Calculate diffuse lighting
-	    float fDiffuse = dot(normal, normalize(lightDir));
+	    float fDiffuse = clamp(dot(normal, normalize(lightDir)), 0, 1);
 	    
 		refl += material.diffuseColor * light.color * fDiffuse * fAtt * light.energy;
 	    
@@ -127,7 +127,7 @@ void main(void) {
 	
 		
 		// Calculate diffuse lighting
-		float fDiffuse = dot(normal, normalize(lightDir));
+		float fDiffuse = clamp(dot(normal, normalize(lightDir)), 0, 1);
 		
 		refl += material.diffuseColor * light.color * fDiffuse * light.energy;
 
