@@ -55,8 +55,9 @@ void main(void) {
     vec3 position = (modelMatrix * vec4(pass_position, 1)).xyz;
     
 	// Normals
-	mat3 normalMatrix = transpose(inverse(mat3(modelMatrix)));
-    vec3 normal = normalize(normalMatrix * pass_normal);
+	//mat3 normalMatrix = transpose(inverse(mat3(modelMatrix)));
+    //vec3 normal = normalize(normalMatrix * pass_normal);
+    vec3 normal = pass_normal;
     
     // Point lighting
     for(int i = 0; i < numPointLights; i++) {

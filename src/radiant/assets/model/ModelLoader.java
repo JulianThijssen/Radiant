@@ -146,7 +146,7 @@ public class ModelLoader {
 						loadVertices(vertices, currentMesh);
 						loadTexCoords(texCoords, currentMesh);
 						loadNormals(normals, currentMesh);
-						calculateNormals(currentMesh);
+						//calculateNormals(currentMesh);
 						loadTangents(currentMesh);
 						model.addMesh(currentMesh);
 					}
@@ -191,7 +191,7 @@ public class ModelLoader {
 		loadVertices(vertices, currentMesh);
 		loadTexCoords(texCoords, currentMesh);
 		loadNormals(normals, currentMesh);
-		calculateNormals(currentMesh);
+		//calculateNormals(currentMesh);
 		loadTangents(currentMesh);
 		model.addMesh(currentMesh);
 		

@@ -74,8 +74,9 @@ void main(void) {
     vec3 position = (modelMatrix * vec4(pass_position, 1)).xyz;
     
     //Normals
-	mat3 normalMatrix = transpose(inverse(mat3(modelMatrix)));
-    vec3 normal = normalize(normalMatrix * pass_normal);
+	//mat3 normalMatrix = transpose(inverse(mat3(modelMatrix)));
+    //vec3 normal = normalize(normalMatrix * pass_normal);
+    vec3 normal = pass_normal;
     
     if(material.hasNormalMap) {
     	normal = calcNormal(normal);
@@ -94,7 +95,7 @@ void main(void) {
 	    float length = length(lightDir);
 	    
 	    float x = length / light.distance;
-	    float fAtt = 1 - pow(x, 2);
+	    float fAtt = 1 - pow(x, 4);
 	    if (fAtt < 0) {
 	    	fAtt = 0;
 	    }
