@@ -4,7 +4,7 @@
 struct PointLight {
 	vec3 position;
 	vec3 color;
-	vec3 attenuation;
+	float distance;
 };
 
 struct DirectionalLight {
@@ -93,15 +93,16 @@ void main(void) {
 
 	    float length = length(lightDir);
 	    
-	    float constantAtt  = light.attenuation.x;
-	    float linearAtt    = light.attenuation.y;
-	    float quadraticAtt = light.attenuation.z;
-	    float fAttTotal = 1 / (constantAtt + linearAtt * length + quadraticAtt * length * length);
+	    float x = length / light.distance;
+	    float fAtt = 1 - pow(x, 2);
+	    if (fAtt < 0) {
+	    	fAtt = 0;
+	    }
 	    
 	    // Calculate diffuse lighting
 	    float fDiffuse = dot(normal, normalize(lightDir));
 	    
-		refl += material.diffuseColor * light.color * fDiffuse * fAttTotal;
+		refl += material.diffuseColor * light.color * fDiffuse * fAtt;
 	    
 	    // Calculate specular lighting
 	    vec3 half = (normalize(lightDir) + normalize(camDir))/2;

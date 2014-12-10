@@ -4,7 +4,7 @@
 struct PointLight {
 	vec3 position;
 	vec3 color;
-	vec3 attenuation;
+	float distance;
 };
 
 struct DirectionalLight {
@@ -67,16 +67,16 @@ void main(void) {
 	    
 	    float length = length(lightDir);
 	    
+	    float x = length / light.distance;
+	    float fAtt = 1 - pow(x, 2);
+	    if (fAtt < 0) {
+	    	fAtt = 0;
+	    }
+	    
 	    // Calculate the cosine of the angle of incidence (brightness)
 	    float fDiffuse = dot(normal, normalize(lightDir));
 	    
-	    float constantAtt  = light.attenuation.x;
-	    float linearAtt    = light.attenuation.y;
-	    float quadraticAtt = light.attenuation.z;
-	    float fAttTotal = 1 / (constantAtt + linearAtt * length + quadraticAtt * length * length);
-	    refl.r += light.color.r * fAttTotal * fDiffuse;
-	    refl.g += light.color.g * fAttTotal * fDiffuse;
-	    refl.b += light.color.b * fAttTotal * fDiffuse;
+	    refl += material.diffuseColor * light.color * fDiffuse * fAtt;
 	}
 	
 	float bias = 0.005;
@@ -96,9 +96,7 @@ void main(void) {
 		// Calculate the cosine of the angle of incidence (brightness)
 		float fDiffuse = dot(normal, normalize(lightDir));
 		
-		refl.r += light.color.r * fDiffuse;
-		refl.g += light.color.g * fDiffuse;
-		refl.b += light.color.b * fDiffuse;
+		refl += material.diffuseColor * light.color * fDiffuse;
 	}
 	
 	out_Color = vec4(material.diffuseColor * refl, 1);

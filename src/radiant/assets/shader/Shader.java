@@ -19,6 +19,7 @@ public class Shader {
 	
 	public int[] plPositionLocs    = new int[MAX_POINT_LIGHTS];
 	public int[] plAttenuationLocs = new int[MAX_POINT_LIGHTS];
+	public int[] plDistanceLocs    = new int[MAX_POINT_LIGHTS];
 	public int[] plColorLocs       = new int[MAX_POINT_LIGHTS];
 	
 	public int[] dlColorLocs     = new int[MAX_DIRECTIONAL_LIGHTS];
@@ -73,6 +74,7 @@ public class Shader {
 		for(int i = 0; i < MAX_POINT_LIGHTS; i++) {
 			plPositionLocs[i]    = glGetUniformLocation(handle, "pointLights["+i+"].position");
 			plAttenuationLocs[i] = glGetUniformLocation(handle, "pointLights["+i+"].attenuation");
+			plDistanceLocs[i]    = glGetUniformLocation(handle, "pointLights["+i+"].distance");
 			plColorLocs[i]       = glGetUniformLocation(handle, "pointLights["+i+"].color");
 		}
 		

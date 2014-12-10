@@ -177,6 +177,8 @@ public class SceneLoader {
 							if(compNode.getNodeName().equals("PointLight")) {
 								PointLight light = new PointLight();
 								
+								light.distance = Float.parseFloat(compNode.getAttributes().getNamedItem("distance").getNodeValue());
+								
 								for(int l = 0; l < compNode.getChildNodes().getLength(); l++) {
 									Node lightNode = compNode.getChildNodes().item(l);
 									
@@ -184,12 +186,6 @@ public class SceneLoader {
 										light.color.x = Float.parseFloat(lightNode.getAttributes().getNamedItem("r").getNodeValue());
 										light.color.y = Float.parseFloat(lightNode.getAttributes().getNamedItem("g").getNodeValue());
 										light.color.z = Float.parseFloat(lightNode.getAttributes().getNamedItem("b").getNodeValue());
-									}
-									
-									if(lightNode.getNodeName().equals("Attenuation")) {
-										light.attenuation.x = Float.parseFloat(lightNode.getAttributes().getNamedItem("c").getNodeValue());
-										light.attenuation.y = Float.parseFloat(lightNode.getAttributes().getNamedItem("l").getNodeValue());
-										light.attenuation.z = Float.parseFloat(lightNode.getAttributes().getNamedItem("q").getNodeValue());
 									}
 								}
 								
