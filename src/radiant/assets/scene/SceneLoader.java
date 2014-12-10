@@ -177,6 +177,7 @@ public class SceneLoader {
 							if(compNode.getNodeName().equals("PointLight")) {
 								PointLight light = new PointLight();
 								
+								light.energy   = Float.parseFloat(compNode.getAttributes().getNamedItem("energy").getNodeValue());
 								light.distance = Float.parseFloat(compNode.getAttributes().getNamedItem("distance").getNodeValue());
 								
 								for(int l = 0; l < compNode.getChildNodes().getLength(); l++) {
@@ -195,6 +196,8 @@ public class SceneLoader {
 							
 							if(compNode.getNodeName().equals("DirectionalLight")) {
 								DirectionalLight light = new DirectionalLight();
+								
+								light.energy   = Float.parseFloat(compNode.getAttributes().getNamedItem("energy").getNodeValue());
 								
 								for(int l = 0; l < compNode.getChildNodes().getLength(); l++) {
 									Node dLightNode = compNode.getChildNodes().item(l);

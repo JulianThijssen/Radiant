@@ -4,12 +4,14 @@
 struct PointLight {
 	vec3 position;
 	vec3 color;
+	float energy;
 	float distance;
 };
 
 struct DirectionalLight {
 	vec3 direction;
 	vec3 color;
+	float energy;
 };
 
 uniform PointLight pointLights[80];
@@ -103,7 +105,7 @@ void main(void) {
 	    // Calculate diffuse lighting
 	    float fDiffuse = dot(normal, normalize(lightDir));
 	    
-		refl += material.diffuseColor * light.color * fDiffuse * fAtt;
+		refl += material.diffuseColor * light.color * fDiffuse * fAtt * light.energy;
 	    
 	    // Calculate specular lighting
 	    vec3 half = (normalize(lightDir) + normalize(camDir))/2;
@@ -127,7 +129,7 @@ void main(void) {
 		// Calculate diffuse lighting
 		float fDiffuse = dot(normal, normalize(lightDir));
 		
-		refl += material.diffuseColor * light.color * fDiffuse;
+		refl += material.diffuseColor * light.color * fDiffuse * light.energy;
 
 		// Calculate specular lighting
 	    vec3 half = (normalize(lightDir) + normalize(camDir))/2;

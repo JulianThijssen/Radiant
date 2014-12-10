@@ -282,6 +282,7 @@ public class Renderer implements ISystem {
 
 			glUniform3f(shader.plPositionLocs[i], transform.position.x, transform.position.y, transform.position.z);
 			glUniform3f(shader.plColorLocs[i], light.color.x, light.color.y, light.color.z);
+			glUniform1f(shader.plEnergyLocs[i], light.energy);
 			glUniform1f(shader.plDistanceLocs[i], light.distance);
 		}
 	}
@@ -306,6 +307,7 @@ public class Renderer implements ISystem {
 			
 			glUniform3f(shader.dlDirectionLocs[i], dir.x, dir.y, dir.z);
 			glUniform3f(shader.dlColorLocs[i], light.color.x, light.color.y, light.color.z);
+			glUniform1f(shader.dlEnergyLocs[i], light.energy);
 		}
 	}
 	

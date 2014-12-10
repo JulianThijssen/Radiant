@@ -4,12 +4,14 @@
 struct PointLight {
 	vec3 position;
 	vec3 color;
+	float energy;
 	float distance;
 };
 
 struct DirectionalLight {
 	vec3 direction;
 	vec3 color;
+	float energy;
 };
 
 uniform PointLight pointLights[80];
@@ -77,7 +79,7 @@ void main(void) {
 	    // Calculate the cosine of the angle of incidence (brightness)
 	    float fDiffuse = dot(normal, normalize(lightDir));
 	    
-	    refl += material.diffuseColor * light.color * fDiffuse * fAtt;
+	    refl += material.diffuseColor * light.color * fDiffuse * fAtt * light.energy;
 	}
 	
 	float bias = 0.005;
@@ -97,7 +99,7 @@ void main(void) {
 		// Calculate the cosine of the angle of incidence (brightness)
 		float fDiffuse = dot(normal, normalize(lightDir));
 		
-		refl += material.diffuseColor * light.color * fDiffuse;
+		refl += material.diffuseColor * light.color * fDiffuse * light.energy;
 	}
 	
 	out_Color = vec4(material.diffuseColor * refl, 1);
