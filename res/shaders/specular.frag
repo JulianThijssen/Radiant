@@ -76,13 +76,10 @@ void main(void) {
     vec3 position = (modelMatrix * vec4(pass_position, 1)).xyz;
     
     //Normals
-	//mat3 normalMatrix = transpose(inverse(mat3(modelMatrix)));
-    //vec3 normal = normalize(normalMatrix * pass_normal);
-    vec3 normal = pass_normal;
+    vec3 normal = normalize(transpose(inverse(mat3(modelMatrix))) * pass_normal);
     
     if(material.hasNormalMap) {
     	normal = calcNormal(normal);
-    	normal = normal;
     }
     
     vec3 camDir = normalize(cameraPosition - position);

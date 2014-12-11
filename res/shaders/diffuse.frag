@@ -56,10 +56,8 @@ void main(void) {
 	// Calculate the location of this fragment (pixel) in world coordinates
     vec3 position = (modelMatrix * vec4(pass_position, 1)).xyz;
     
-	// Normals
-	//mat3 normalMatrix = transpose(inverse(mat3(modelMatrix)));
-    //vec3 normal = normalize(normalMatrix * pass_normal);
-    vec3 normal = pass_normal;
+	//Normals
+    vec3 normal = normalize(transpose(inverse(mat3(modelMatrix))) * pass_normal);
     
     // Point lighting
     for(int i = 0; i < numPointLights; i++) {
