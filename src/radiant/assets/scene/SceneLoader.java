@@ -93,6 +93,31 @@ public class SceneLoader {
 								entity.addComponent(transform);
 							}
 							
+							if (compNode.getNodeName().equals("Material")) {
+								for (int l = 0; l < compNode.getChildNodes().getLength(); l++) {
+									Node matNode = compNode.getChildNodes().item(l);
+									
+									if (matNode.getNodeName().equals("Path")) {
+										Path materialPath = new Path(matNode.getTextContent());
+										Material material = AssetLoader.loadMaterials(materialPath).get(0);
+										
+										if(material != null) {
+											MeshRenderer mr = new MeshRenderer(material);
+											
+											scene.meshRenderers.add(mr);
+											entity.addComponent(mr);
+										}
+									}
+									if (matNode.getNodeName().equals("Tiling")) {
+										MeshRenderer mr = (MeshRenderer) entity.getComponent(MeshRenderer.class);
+										
+										float xTiling = Float.parseFloat(matNode.getAttributes().getNamedItem("x").getNodeValue());
+										float yTiling = Float.parseFloat(matNode.getAttributes().getNamedItem("y").getNodeValue());
+										mr.material.tiling.set(xTiling, yTiling);
+									}
+								}
+							}
+							
 							if(compNode.getNodeName().equals("Model")) {
 								//FIXME item 1
 								Node pathNode = compNode.getChildNodes().item(1);
@@ -123,41 +148,6 @@ public class SceneLoader {
 									Mesh mesh = model.getMeshes().get(0);
 									scene.meshes.add(mesh);
 									entity.addComponent(mesh);
-									if(model.getMaterials().size() > 0) {
-										entity.addComponent(new MeshRenderer(model.getMaterials().get(0)));
-									} else {
-										Material mat = new Material("Empty");
-										mat.shading = Shading.DIFFUSE;
-										MeshRenderer mr = new MeshRenderer(mat);
-										
-										//scene.meshRenderers.add(mr);
-										//entity.addComponent(mr);
-									}
-								}
-							}
-							
-							if (compNode.getNodeName().equals("Material")) {
-								for (int l = 0; l < compNode.getChildNodes().getLength(); l++) {
-									Node matNode = compNode.getChildNodes().item(l);
-									
-									if (matNode.getNodeName().equals("Path")) {
-										Path materialPath = new Path(matNode.getTextContent());
-										Material material = AssetLoader.loadMaterials(materialPath).get(0);
-										
-										if(material != null) {
-											MeshRenderer mr = new MeshRenderer(material);
-											
-											scene.meshRenderers.add(mr);
-											entity.addComponent(mr);
-										}
-									}
-									if (matNode.getNodeName().equals("Tiling")) {
-										MeshRenderer mr = (MeshRenderer) entity.getComponent(MeshRenderer.class);
-										
-										float xTiling = Float.parseFloat(matNode.getAttributes().getNamedItem("x").getNodeValue());
-										float yTiling = Float.parseFloat(matNode.getAttributes().getNamedItem("y").getNodeValue());
-										mr.material.tiling.set(xTiling, yTiling);
-									}
 								}
 							}
 							
@@ -219,6 +209,16 @@ public class SceneLoader {
 						}
 					}
 				}
+				MeshRenderer mr = (MeshRenderer) entity.getComponent(MeshRenderer.class);
+				if(mr == null) {
+					Material mat = new Material("Empty");
+					mat.shading = Shading.DIFFUSE;
+					MeshRenderer empty = new MeshRenderer(mat);
+					
+					scene.meshRenderers.add(empty);
+					entity.addComponent(empty);
+				}
+				
 				scene.addEntity(entity);
 			}
 
