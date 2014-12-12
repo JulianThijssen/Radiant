@@ -107,13 +107,24 @@ void main(void) {
 	
 	// Shadows
 	float visibility = 1.0;
+	float bias = 0.005;
+	float factor = 0;
+	float xOffset = 1.0 / 1024;
+	float yOffset = 1.0 / 800;
+	
 	if (material.receiveShadows) {
-		float cosTheta = dot(normal, normalize(-dirLights[0].direction));
-		float bias = 0.01 * tan(acos(cosTheta));
-		bias = 0.005;
+		//float cosTheta = dot(normal, normalize(-dirLights[0].direction));
+		//float bias = 0.01 * tan(acos(cosTheta));
 		
-		float shadowAtt = texture(shadowInfo.shadowMap, vec3(pass_shadowCoord.xy, pass_shadowCoord.z - bias)) + 1;
-		visibility -= 0.5/shadowAtt;
+		for (int y = -2; y <= 2; y++) {
+			for (int x = -2; x <= 2; x++) {
+				float sx = pass_shadowCoord.x + x * xOffset;
+				float sy = pass_shadowCoord.y + y * yOffset;
+				factor += texture(shadowInfo.shadowMap, vec3(sx, sy, pass_shadowCoord.z - bias));
+			}
+ 		}
+		
+		visibility = 0.5 + (factor / 50.0);
 	}
 	
 	out_Color = vec4(material.diffuseColor * refl, 1);
