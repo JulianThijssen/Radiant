@@ -41,16 +41,12 @@ public class Renderer implements ISystem {
 	private Matrix4f viewMatrix = new Matrix4f();
 	private Matrix4f modelMatrix = new Matrix4f();
 	
-	private Matrix4f sprojectionMatrix = new Matrix4f();
-	private Matrix4f sviewMatrix = new Matrix4f();
-	
 	private HashMap<Shading, Shader> shaders = new HashMap<Shading, Shader>();
 	private HashMap<Shader, List<Entity>> shaderMap = new HashMap<Shader, List<Entity>>();
 	
 	private Vector3f clearColor = new Vector3f(0, 0, 0.4f);
 	
 	private int shadowBuffer = 0;
-	private int shadowMap = 0;
 	
 	@Override
 	public void create() {
@@ -78,7 +74,6 @@ public class Renderer implements ISystem {
 		glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
 		
 		shadowBuffer = glGenFramebuffers();
-		shadowMap = glGenTextures();
 	}
 	
 	/**
@@ -132,7 +127,15 @@ public class Renderer implements ISystem {
 		viewMatrix.rotate(Vector3f.negate(transform.rotation));
 		viewMatrix.translate(Vector3f.negate(transform.position));
 		
-		shadowMap = renderShadowMap();
+		// Calculate shadow info
+		for (DirectionalLight light: scene.dirLights) {
+			Transform lightT = (Transform) light.owner.getComponent(Transform.class);
+			Camera lightC = new Camera(-10, 10, -10, 10, -10, 20);
+			
+			if(light.shadowInfo == null) {
+				light.shadowInfo = getShadowInfo(lightT, lightC);
+			}
+		}
 		
 		// Divide entities into light buckets
 		List<Entity> pointLights = scene.getPointLights();
@@ -171,75 +174,73 @@ public class Renderer implements ISystem {
 			glUniform3f(shader.cameraPositionLoc, camT.position.x, camT.position.y, camT.position.z);
 			
 			uploadLights(shader, pointLights, dirLights);
+			uploadShadowInfo(shader);
 			drawMesh(shader, entity);
 		}
 	}
 	
-	private int renderShadowMap() {
-		for (DirectionalLight light: scene.dirLights) {
-			// Render the scene for the shadow map
-			Shader shader = shaders.get(Shading.SHADOW);
-			glUseProgram(shader.handle);
-			
-			glBindTexture(GL_TEXTURE_2D, shadowMap);
-	
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, Window.width, Window.height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, (FloatBuffer) null);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-			glBindTexture(GL_TEXTURE_2D, 0);
-			
-			glBindFramebuffer(GL_FRAMEBUFFER, shadowBuffer);
-			glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowMap, 0);
-			glReadBuffer(GL_NONE);
-			glDrawBuffer(GL_NONE);
-			
-			glClear(GL_DEPTH_BUFFER_BIT);
-			
-			if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-				Log.debug("The framebuffer is not happy");
-				int error = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-				
-				if(error == GL_FRAMEBUFFER_UNDEFINED) { System.out.println("UNDEFINED"); }
-				if(error == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); }
-				if(error == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); }
-				if(error == GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); }
-				if(error == GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); }
-				if(error == GL_FRAMEBUFFER_UNSUPPORTED) { System.out.println("GL_FRAMEBUFFER_UNSUPPORTED"); }
-				if(error == GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); }
-				if(error == GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); }
-			}
-			
-			//FIXME multiple or no lights
-			Transform transform = (Transform) light.owner.getComponent(Transform.class);
-			Camera camera = new Camera(-10, 10, -10, 10, -20, 20);
-			
-			sprojectionMatrix = camera.getProjectionMatrix();
-	
-			// Calculate view matrix
-			sviewMatrix.setIdentity();
-			sviewMatrix.rotate(Vector3f.negate(transform.rotation));
-			
-			glDisable(GL_CULL_FACE);
-			
-			for(Entity entity: scene.getEntities()) {
-				Mesh mesh = (Mesh) entity.getComponent(Mesh.class);
-				
-				if(mesh != null) {
-					drawMesh(shader, entity);
-				}
-			}
-			
-			glEnable(GL_CULL_FACE);
-			//glCullFace(GL_BACK);
-			
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		}
+	private ShadowInfo getShadowInfo(Transform transform, Camera camera) {
+		int shadowMap = glGenTextures();
+		
+		// Render the scene for the shadow map
+		Shader shader = shaders.get(Shading.SHADOW);
+		glUseProgram(shader.handle);
+		
+		glBindTexture(GL_TEXTURE_2D, shadowMap);
 
-		return shadowMap;
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, Window.width, Window.height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, (FloatBuffer) null);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		
+		glBindFramebuffer(GL_FRAMEBUFFER, shadowBuffer);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowMap, 0);
+		glReadBuffer(GL_NONE);
+		glDrawBuffer(GL_NONE);
+		
+		glClear(GL_DEPTH_BUFFER_BIT);
+		
+		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			Log.debug("The framebuffer is not happy");
+			int error = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+			
+			if(error == GL_FRAMEBUFFER_UNDEFINED) { System.out.println("UNDEFINED"); }
+			if(error == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); }
+			if(error == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); }
+			if(error == GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); }
+			if(error == GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); }
+			if(error == GL_FRAMEBUFFER_UNSUPPORTED) { System.out.println("GL_FRAMEBUFFER_UNSUPPORTED"); }
+			if(error == GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); }
+			if(error == GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); }
+		}
+		
+		Matrix4f projectionMatrix = camera.getProjectionMatrix();
+		Matrix4f viewMatrix = new Matrix4f();
+		viewMatrix.rotate(Vector3f.negate(transform.rotation));
+		
+		glDisable(GL_CULL_FACE);
+		
+		glUniformMatrix4(shader.siProjectionLoc, false, projectionMatrix.getBuffer());
+		glUniformMatrix4(shader.siViewLoc, false, viewMatrix.getBuffer());
+		for(Entity entity: scene.getEntities()) {
+			Mesh mesh = (Mesh) entity.getComponent(Mesh.class);
+			
+			if(mesh != null) {
+				drawMesh(shader, entity);
+			}
+		}
+		
+		glEnable(GL_CULL_FACE);
+		
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		
+		ShadowInfo shadowInfo = new ShadowInfo(shadowMap, projectionMatrix, viewMatrix);
+
+		return shadowInfo;
 	}
 	
 	/**
@@ -265,6 +266,20 @@ public class Renderer implements ISystem {
 	private void uploadLights(Shader shader, List<Entity> pointLights, List<Entity> dirLights) {
 		uploadPointLights(shader, pointLights);
 		uploadDirectionalLights(shader, dirLights);
+	}
+	
+	private void uploadShadowInfo(Shader shader) {
+		for (DirectionalLight light: scene.dirLights) {
+			ShadowInfo shadowInfo = light.shadowInfo;
+			
+			if(light.shadowInfo != null) {
+				glUniformMatrix4(shader.siProjectionLoc, false, shadowInfo.projectionMatrix.getBuffer());
+				glUniformMatrix4(shader.siViewLoc, false, shadowInfo.viewMatrix.getBuffer());
+				glActiveTexture(GL_TEXTURE3);
+				glBindTexture(GL_TEXTURE_2D, shadowInfo.shadowMap);
+				glUniform1i(shader.siMapLoc, 3);
+			}
+		}
 	}
 	
 	/**
@@ -408,16 +423,9 @@ public class Renderer implements ISystem {
 		glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
 		glUniformMatrix4(shader.modelMatrixLoc, false, modelMatrix.getBuffer());
 		
-		glUniformMatrix4(shader.sprojectionMatrixLoc, false, sprojectionMatrix.getBuffer());
-		glUniformMatrix4(shader.sviewMatrixLoc, false, sviewMatrix.getBuffer());
-
 		if(mr.material != null) {
 			uploadMaterial(shader, mr.material);
 		}
-		
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, shadowMap);
-		glUniform1i(shader.shadowMapLoc, 3);
 		
 		glBindVertexArray(mesh.handle);
 		glDrawArrays(GL_TRIANGLES, 0, mesh.getNumFaces() * 3);

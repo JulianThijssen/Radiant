@@ -20,11 +20,20 @@ uniform DirectionalLight dirLights[10];
 uniform int numPointLights;
 uniform int numDirLights;
 
-uniform sampler2D shadowMap;
+// Shadow
+struct ShadowInfo {
+	sampler2DShadow shadowMap;
+	mat4 projectionMatrix;
+	mat4 viewMatrix;
+};
+
+uniform ShadowInfo shadowInfo;
 
 // Material
 struct Material {
 	vec3 diffuseColor;
+	vec3 specularColor;
+	
 	float specularIntensity;
 	vec2 tiling;
 	
@@ -34,9 +43,11 @@ struct Material {
 	sampler2D normalMap;
 	sampler2D specularMap;
 	
-	int hasDiffuseMap;
-	int hasNormalMap;
-	int hasSpecularMap;
+	bool hasDiffuseMap;
+	bool hasNormalMap;
+	bool hasSpecularMap;
+	
+	bool receiveShadows;
 };
 
 uniform Material material;
@@ -80,12 +91,6 @@ void main(void) {
 	    refl += material.diffuseColor * light.color * fDiffuse * fAtt * light.energy;
 	}
 	
-	float bias = 0.005;
-	float visibility = 1.0;
-	if (texture(shadowMap, pass_shadowCoord.xy).z < pass_shadowCoord.z - bias) {
-		visibility = 0.5;
-	}
-	
 	// Directional lighting
 	for(int i = 0; i < numDirLights; i++) {
 		DirectionalLight light = dirLights[i];
@@ -100,8 +105,19 @@ void main(void) {
 		refl += material.diffuseColor * light.color * fDiffuse * light.energy;
 	}
 	
+	// Shadows
+	float visibility = 1.0;
+	if (material.receiveShadows) {
+		float cosTheta = dot(normal, normalize(-dirLights[0].direction));
+		float bias = 0.01 * tan(acos(cosTheta));
+		bias = 0.005;
+		
+		float shadowAtt = texture(shadowInfo.shadowMap, vec3(pass_shadowCoord.xy, pass_shadowCoord.z - bias)) + 1;
+		visibility -= 0.5/shadowAtt;
+	}
+	
 	out_Color = vec4(material.diffuseColor * refl, 1);
-	if(material.hasDiffuseMap == 1) {
+	if(material.hasDiffuseMap) {
 		out_Color *= texture(material.diffuseMap, pass_texCoord * material.tiling);
 	}
 	

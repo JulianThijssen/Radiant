@@ -20,7 +20,14 @@ uniform DirectionalLight dirLights[10];
 uniform int numPointLights;
 uniform int numDirLights;
 
-uniform sampler2DShadow shadowMap;
+// Shadow
+struct ShadowInfo {
+	sampler2DShadow shadowMap;
+	mat4 projectionMatrix;
+	mat4 viewMatrix;
+};
+
+uniform ShadowInfo shadowInfo;
 
 // Material
 struct Material {
@@ -145,7 +152,7 @@ void main(void) {
 		float bias = 0.01 * tan(acos(cosTheta));
 		bias = 0.005;
 		
-		float shadowAtt = texture(shadowMap, vec3(pass_shadowCoord.xy, pass_shadowCoord.z - bias)) + 1;
+		float shadowAtt = texture(shadowInfo.shadowMap, vec3(pass_shadowCoord.xy, pass_shadowCoord.z - bias)) + 1;
 		visibility -= 0.5/shadowAtt;
 	}
 	

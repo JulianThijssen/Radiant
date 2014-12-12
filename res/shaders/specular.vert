@@ -4,8 +4,14 @@ uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 
-uniform mat4 sprojectionMatrix;
-uniform mat4 sviewMatrix;
+// Shadow
+struct ShadowInfo {
+	sampler2DShadow shadowMap;
+	mat4 projectionMatrix;
+	mat4 viewMatrix;
+};
+
+uniform ShadowInfo shadowInfo;
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoord;
@@ -23,7 +29,7 @@ void main(void) {
 	pass_texCoord = texCoord;
 	pass_normal = normal;
 	pass_tangent = (modelMatrix * vec4(tangent, 0)).xyz;
-	pass_shadowCoord = vec4((sprojectionMatrix * sviewMatrix * modelMatrix * vec4(position, 1)) / 2 + 0.5);
+	pass_shadowCoord = vec4((shadowInfo.projectionMatrix * shadowInfo.viewMatrix * modelMatrix * vec4(position, 1)) / 2 + 0.5);
 	
 	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1);
 }

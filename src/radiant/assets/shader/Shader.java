@@ -14,8 +14,9 @@ public class Shader {
 	public int viewMatrixLoc;
 	public int modelMatrixLoc;
 	
-	public int sprojectionMatrixLoc;
-	public int sviewMatrixLoc;
+	public int siMapLoc;
+	public int siProjectionLoc;
+	public int siViewLoc;
 	
 	public int[] plPositionLocs    = new int[MAX_POINT_LIGHTS];
 	public int[] plEnergyLocs      = new int[MAX_POINT_LIGHTS];
@@ -29,8 +30,6 @@ public class Shader {
 	
 	public int numPointLightsLoc;
 	public int numDirLightsLoc;
-	
-	public int shadowMapLoc;
 	
 	public int materialLoc;
 	public int diffuseColorLoc;
@@ -68,8 +67,9 @@ public class Shader {
 		viewMatrixLoc = glGetUniformLocation(handle, "viewMatrix");
 		modelMatrixLoc = glGetUniformLocation(handle, "modelMatrix");
 		
-		sprojectionMatrixLoc = glGetUniformLocation(handle, "sprojectionMatrix");
-		sviewMatrixLoc = glGetUniformLocation(handle, "sviewMatrix");
+		siMapLoc = glGetUniformLocation(handle, "shadowInfo.shadowMap");
+		siProjectionLoc = glGetUniformLocation(handle, "shadowInfo.projectionMatrix");
+		siViewLoc = glGetUniformLocation(handle, "shadowInfo.viewMatrix");
 		
 		// Point lights
 		for(int i = 0; i < MAX_POINT_LIGHTS; i++) {
@@ -88,8 +88,6 @@ public class Shader {
 
 		numPointLightsLoc = glGetUniformLocation(handle, "numPointLights");
 		numDirLightsLoc   = glGetUniformLocation(handle, "numDirLights");
-
-		shadowMapLoc = glGetUniformLocation(handle, "shadowMap");
 		
 		// Material
 		materialLoc = glGetUniformLocation(handle, "material");
