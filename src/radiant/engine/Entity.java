@@ -14,9 +14,11 @@ public class Entity {
 		components.add(c);
 	}
 
-	public Component getComponent(Class<?> type) {
+	public <T extends Component> T getComponent(Class<T> type) {
 		for(Component c: components) {
 			if(c.getClass() == type) {
+				@SuppressWarnings("unchecked")
+				T comp = (T) c; 
 				return c;
 			}
 		}
