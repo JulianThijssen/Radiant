@@ -22,7 +22,7 @@ uniform int numDirLights;
 
 // Shadow
 struct ShadowInfo {
-	sampler2DShadow shadowMap;
+	sampler2D shadowMap;
 	mat4 projectionMatrix;
 	mat4 viewMatrix;
 };
@@ -120,7 +120,7 @@ void main(void) {
 			for (int x = -2; x <= 2; x++) {
 				float sx = pass_shadowCoord.x + x * xOffset;
 				float sy = pass_shadowCoord.y + y * yOffset;
-				factor += texture(shadowInfo.shadowMap, vec3(sx, sy, pass_shadowCoord.z - bias));
+				//factor += texture(shadowInfo.shadowMap, vec3(sx, sy, pass_shadowCoord.z - bias));
 			}
  		}
 		
@@ -133,4 +133,6 @@ void main(void) {
 	}
 	
 	out_Color.rgb *= visibility;
+	
+	out_Color = vec4(texture(shadowInfo.shadowMap, pass_texCoord).rgb, 1);
 }

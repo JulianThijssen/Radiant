@@ -31,10 +31,10 @@ public class ShaderLoader {
 		int shaderProgram = glCreateProgram();
 		
 		if(GL20.glGetShaderi(vertexShader, GL_COMPILE_STATUS) == GL_FALSE) {
-			Log.error(GL20.glGetShaderInfoLog(vertexShader, LOG_SIZE));
+			Log.error("Vertex shader: " + GL20.glGetShaderInfoLog(vertexShader, LOG_SIZE));
 		}
 		if(GL20.glGetShaderi(fragmentShader, GL_COMPILE_STATUS) == GL_FALSE) {
-			Log.error(GL20.glGetShaderInfoLog(fragmentShader, LOG_SIZE));
+			Log.error("Fragment shader: " + GL20.glGetShaderInfoLog(fragmentShader, LOG_SIZE));
 		}
 		
 		glAttachShader(shaderProgram, vertexShader);

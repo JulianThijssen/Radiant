@@ -6,7 +6,7 @@ uniform mat4 modelMatrix;
 
 // Shadow
 struct ShadowInfo {
-	sampler2DShadow shadowMap;
+	sampler2D shadowMap;
 	mat4 projectionMatrix;
 	mat4 viewMatrix;
 };

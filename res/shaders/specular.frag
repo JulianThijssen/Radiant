@@ -1,25 +1,5 @@
 #version 330 core
 
-// Light
-struct PointLight {
-	vec3 position;
-	vec3 color;
-	float energy;
-	float distance;
-};
-
-struct DirectionalLight {
-	vec3 direction;
-	vec3 color;
-	float energy;
-};
-
-uniform PointLight pointLights[80];
-uniform DirectionalLight dirLights[10];
-
-uniform int numPointLights;
-uniform int numDirLights;
-
 // Shadow
 struct ShadowInfo {
 	sampler2DShadow shadowMap;
@@ -27,7 +7,32 @@ struct ShadowInfo {
 	mat4 viewMatrix;
 };
 
-uniform ShadowInfo shadowInfo;
+uniform ShadowInfo plShadowInfo[20];
+uniform ShadowInfo dlShadowInfo[10];
+
+// Light
+struct PointLight {
+	vec3 position;
+	vec3 color;
+	float energy;
+	float distance;
+	
+	//ShadowInfo shadowInfo[6];
+};
+
+struct DirectionalLight {
+	vec3 direction;
+	vec3 color;
+	float energy;
+	
+	//ShadowInfo shadowInfo;
+};
+
+uniform PointLight pointLights[20];
+uniform DirectionalLight dirLights[10];
+
+uniform int numPointLights;
+uniform int numDirLights;
 
 // Material
 struct Material {
@@ -52,15 +57,14 @@ struct Material {
 
 uniform Material material;
 
+uniform mat4 modelMatrix;
 uniform vec3 cameraPosition;
 
 // Pass
-uniform mat4 modelMatrix;
 in vec3 pass_position;
 in vec2 pass_texCoord;
 in vec3 pass_normal;
 in vec3 pass_tangent;
-in vec4 pass_shadowCoord;
 
 out vec4 out_Color;
 
@@ -77,7 +81,14 @@ vec3 calcNormal(vec3 src_normal) {
 }
 
 void main(void) {
+	// Shadows
+	float visibility = 0.0;
+	float bias = 0.005;
+	float xOffset = 1.0 / 1024;
+	float yOffset = 1.0 / 800;
+	
 	vec3 refl = vec3(0, 0, 0);
+	float shadow = 0.5f;
 	
 	//Calculate the location of this fragment (pixel) in world coordinates
     vec3 position = (modelMatrix * vec4(pass_position, 1)).xyz;
@@ -118,6 +129,27 @@ void main(void) {
 	    	fPhong *= texture(material.specularMap, pass_texCoord * material.tiling).xyz;
 	    }
 	    
+	    for (int j = 0; j < 6; j++) {
+	    	int index = i * 6 + j;
+		    // Shadows
+			vec4 shadowCoord = vec4((plShadowInfo[index].projectionMatrix * plShadowInfo[index].viewMatrix * vec4(position, 1)) / 2 + 0.5);
+			
+			if (material.receiveShadows) {
+				//float cosTheta = dot(normal, normalize(-dirLights[0].direction));
+				//float bias = 0.01 * tan(acos(cosTheta));
+				float factor = 0;
+				
+				for (int y = -1; y <= 1; y++) {
+					for (int x = -1; x <= 1; x++) {
+						float sx = shadowCoord.x + x * xOffset;
+						float sy = shadowCoord.y + y * yOffset;
+						factor += texture(plShadowInfo[i].shadowMap, vec3(sx, sy, shadowCoord.z - bias));
+					}
+		 		}
+				visibility += (factor / 18.0);
+			}
+		}
+	    
 		refl += material.specularColor * light.color * fPhong * material.specularIntensity;
 	}
 	
@@ -142,29 +174,26 @@ void main(void) {
 	    	fPhong *= texture(material.specularMap, pass_texCoord * material.tiling).xyz;
 	    }
 		
+		// Shadows
+		vec4 shadowCoord = vec4((dlShadowInfo[i].projectionMatrix * dlShadowInfo[i].viewMatrix * vec4(position, 1)) / 2 + 0.5);
+		
+		if (material.receiveShadows) {
+			//float cosTheta = dot(normal, normalize(-dirLights[0].direction));
+			//float bias = 0.01 * tan(acos(cosTheta));
+			float factor = 0;
+			
+			for (int y = -1; y <= 1; y++) {
+				for (int x = -1; x <= 1; x++) {
+					float sx = shadowCoord.x + x * xOffset;
+					float sy = shadowCoord.y + y * yOffset;
+					factor += texture(dlShadowInfo[i].shadowMap, vec3(sx, sy, shadowCoord.z - bias));
+				}
+	 		}
+			
+			visibility = 0.5 + (factor / 18.0);
+		}
+		
 		refl += material.specularColor * light.color * fPhong * material.specularIntensity;
-	}
-	
-	// Shadows
-	float visibility = 1.0;
-	float bias = 0.005;
-	float factor = 0;
-	float xOffset = 1.0 / 1024;
-	float yOffset = 1.0 / 800;
-	
-	if (material.receiveShadows) {
-		//float cosTheta = dot(normal, normalize(-dirLights[0].direction));
-		//float bias = 0.01 * tan(acos(cosTheta));
-		
-		for (int y = -2; y <= 2; y++) {
-			for (int x = -2; x <= 2; x++) {
-				float sx = pass_shadowCoord.x + x * xOffset;
-				float sy = pass_shadowCoord.y + y * yOffset;
-				factor += texture(shadowInfo.shadowMap, vec3(sx, sy, pass_shadowCoord.z - bias));
-			}
- 		}
-		
-		visibility = 0.5 + (factor / 50.0);
 	}
 	
 	out_Color = vec4(material.diffuseColor * refl, 1);
@@ -173,4 +202,6 @@ void main(void) {
 	}
 	
 	out_Color.rgb *= visibility;
+	
+	//out_Color = texture(plShadowInfo[4].shadowMap, pass_texCoord);
 }

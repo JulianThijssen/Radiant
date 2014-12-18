@@ -4,7 +4,7 @@ import static org.lwjgl.opengl.GL20.glGetUniformLocation;
 import static org.lwjgl.opengl.GL20.glUseProgram;
 
 public class Shader {
-	public static final int MAX_POINT_LIGHTS = 80;
+	public static final int MAX_POINT_LIGHTS = 20;
 	public static final int MAX_DIRECTIONAL_LIGHTS = 10;
 	
 	public int handle;
@@ -18,15 +18,21 @@ public class Shader {
 	public int siProjectionLoc;
 	public int siViewLoc;
 	
-	public int[] plPositionLocs    = new int[MAX_POINT_LIGHTS];
-	public int[] plEnergyLocs      = new int[MAX_POINT_LIGHTS];
-	public int[] plDistanceLocs    = new int[MAX_POINT_LIGHTS];
-	public int[] plColorLocs       = new int[MAX_POINT_LIGHTS];
+	public int[] plPositionLocs     = new int[MAX_POINT_LIGHTS];
+	public int[] plEnergyLocs       = new int[MAX_POINT_LIGHTS];
+	public int[] plDistanceLocs     = new int[MAX_POINT_LIGHTS];
+	public int[] plColorLocs        = new int[MAX_POINT_LIGHTS];
+	public int[] plShadowInfoMap  = new int[MAX_POINT_LIGHTS * 6];
+	public int[] plShadowInfoProj = new int[MAX_POINT_LIGHTS * 6];
+	public int[] plShadowInfoView = new int[MAX_POINT_LIGHTS * 6];
 	
 	public int[] dlColorLocs     = new int[MAX_DIRECTIONAL_LIGHTS];
 	public int[] dlDirectionLocs = new int[MAX_DIRECTIONAL_LIGHTS];
 	public int[] dlEnergyLocs    = new int[MAX_DIRECTIONAL_LIGHTS];
 	
+	public int[] dlShadowInfoMap  = new int[MAX_DIRECTIONAL_LIGHTS];
+	public int[] dlShadowInfoProj = new int[MAX_DIRECTIONAL_LIGHTS];
+	public int[] dlShadowInfoView = new int[MAX_DIRECTIONAL_LIGHTS];
 	
 	public int numPointLightsLoc;
 	public int numDirLightsLoc;
@@ -67,6 +73,7 @@ public class Shader {
 		viewMatrixLoc = glGetUniformLocation(handle, "viewMatrix");
 		modelMatrixLoc = glGetUniformLocation(handle, "modelMatrix");
 		
+		
 		siMapLoc = glGetUniformLocation(handle, "shadowInfo.shadowMap");
 		siProjectionLoc = glGetUniformLocation(handle, "shadowInfo.projectionMatrix");
 		siViewLoc = glGetUniformLocation(handle, "shadowInfo.viewMatrix");
@@ -77,6 +84,13 @@ public class Shader {
 			plEnergyLocs[i]      = glGetUniformLocation(handle, "pointLights["+i+"].energy");
 			plDistanceLocs[i]    = glGetUniformLocation(handle, "pointLights["+i+"].distance");
 			plColorLocs[i]       = glGetUniformLocation(handle, "pointLights["+i+"].color");
+			
+			for (int j = 0; j < 6; j++) {
+				int index = i * 6 + j;
+				plShadowInfoMap[index]  = glGetUniformLocation(handle, "plShadowInfo["+index+"].shadowMap");
+				plShadowInfoProj[index] = glGetUniformLocation(handle, "plShadowInfo["+index+"].projectionMatrix");
+				plShadowInfoView[index] = glGetUniformLocation(handle, "plShadowInfo["+index+"].viewMatrix");
+			}
 		}
 		
 		// Directional lights
@@ -84,6 +98,10 @@ public class Shader {
 			dlDirectionLocs[i] = glGetUniformLocation(handle, "dirLights["+i+"].direction");
 			dlColorLocs[i]     = glGetUniformLocation(handle, "dirLights["+i+"].color");
 			dlEnergyLocs[i]    = glGetUniformLocation(handle, "dirLights["+i+"].energy");
+			
+			dlShadowInfoMap[i]  = glGetUniformLocation(handle, "dlShadowInfo["+i+"].shadowMap");
+			dlShadowInfoProj[i] = glGetUniformLocation(handle, "dlShadowInfo["+i+"].projectionMatrix");
+			dlShadowInfoView[i] = glGetUniformLocation(handle, "dlShadowInfo["+i+"].viewMatrix");
 		}
 
 		numPointLightsLoc = glGetUniformLocation(handle, "numPointLights");
