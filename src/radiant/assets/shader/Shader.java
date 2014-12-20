@@ -9,38 +9,31 @@ public class Shader {
 	
 	public int handle;
 	
-	// Locations
+	/* Locations of shader uniforms */
 	public int projectionMatrixLoc;
 	public int viewMatrixLoc;
 	public int modelMatrixLoc;
 	
+	public int biasMatrixLoc;
+	
+	// Light
 	public int siMapLoc;
 	public int siProjectionLoc;
 	public int siViewLoc;
-	
-	public int[] plPositionLocs     = new int[MAX_POINT_LIGHTS];
-	public int[] plEnergyLocs       = new int[MAX_POINT_LIGHTS];
-	public int[] plDistanceLocs     = new int[MAX_POINT_LIGHTS];
-	public int[] plColorLocs        = new int[MAX_POINT_LIGHTS];
-	public int[] plShadowInfoMap  = new int[MAX_POINT_LIGHTS * 6];
-	public int[] plShadowInfoProj = new int[MAX_POINT_LIGHTS * 6];
-	public int[] plShadowInfoView = new int[MAX_POINT_LIGHTS * 6];
-	
-	public int[] dlColorLocs     = new int[MAX_DIRECTIONAL_LIGHTS];
-	public int[] dlDirectionLocs = new int[MAX_DIRECTIONAL_LIGHTS];
-	public int[] dlEnergyLocs    = new int[MAX_DIRECTIONAL_LIGHTS];
-	
-	public int[] dlShadowInfoMap  = new int[MAX_DIRECTIONAL_LIGHTS];
-	public int[] dlShadowInfoProj = new int[MAX_DIRECTIONAL_LIGHTS];
-	public int[] dlShadowInfoView = new int[MAX_DIRECTIONAL_LIGHTS];
+
+	public int plPositionLoc;
+	public int plColorLoc;
+	public int plDistanceLoc;
+	public int plEnergyLoc;
 	
 	public int dlColorLoc;
 	public int dlDirectionLoc;
 	public int dlEnergyLoc;
 	
-	public int numPointLightsLoc;
-	public int numDirLightsLoc;
+	public int isPointLightLoc;
+	public int isDirLightLoc;
 	
+	// Material
 	public int materialLoc;
 	public int diffuseColorLoc;
 	public int specularColorLoc;
@@ -60,6 +53,7 @@ public class Shader {
 	
 	public int receiveShadowsLoc;
 	
+	// Camera
 	public int cameraPositionLoc;
 	
 	public Shader(int handle) {
@@ -77,42 +71,23 @@ public class Shader {
 		viewMatrixLoc = glGetUniformLocation(handle, "viewMatrix");
 		modelMatrixLoc = glGetUniformLocation(handle, "modelMatrix");
 		
+		biasMatrixLoc = glGetUniformLocation(handle, "biasMatrix");
+		
 		siMapLoc = glGetUniformLocation(handle, "shadowInfo.shadowMap");
 		siProjectionLoc = glGetUniformLocation(handle, "shadowInfo.projectionMatrix");
 		siViewLoc = glGetUniformLocation(handle, "shadowInfo.viewMatrix");
 		
-//		// Point lights
-//		for(int i = 0; i < MAX_POINT_LIGHTS; i++) {
-//			plPositionLocs[i]    = glGetUniformLocation(handle, "pointLights["+i+"].position");
-//			plEnergyLocs[i]      = glGetUniformLocation(handle, "pointLights["+i+"].energy");
-//			plDistanceLocs[i]    = glGetUniformLocation(handle, "pointLights["+i+"].distance");
-//			plColorLocs[i]       = glGetUniformLocation(handle, "pointLights["+i+"].color");
-//			
-//			for (int j = 0; j < 6; j++) {
-//				int index = i * 6 + j;
-//				plShadowInfoMap[index]  = glGetUniformLocation(handle, "plShadowInfo["+index+"].shadowMap");
-//				plShadowInfoProj[index] = glGetUniformLocation(handle, "plShadowInfo["+index+"].projectionMatrix");
-//				plShadowInfoView[index] = glGetUniformLocation(handle, "plShadowInfo["+index+"].viewMatrix");
-//			}
-//		}
-//		
-//		// Directional lights
-//		for(int i = 0; i < MAX_DIRECTIONAL_LIGHTS; i++) {
-//			dlDirectionLocs[i] = glGetUniformLocation(handle, "dirLights["+i+"].direction");
-//			dlColorLocs[i]     = glGetUniformLocation(handle, "dirLights["+i+"].color");
-//			dlEnergyLocs[i]    = glGetUniformLocation(handle, "dirLights["+i+"].energy");
-//			
-//			dlShadowInfoMap[i]  = glGetUniformLocation(handle, "dlShadowInfo["+i+"].shadowMap");
-//			dlShadowInfoProj[i] = glGetUniformLocation(handle, "dlShadowInfo["+i+"].projectionMatrix");
-//			dlShadowInfoView[i] = glGetUniformLocation(handle, "dlShadowInfo["+i+"].viewMatrix");
-//		}
+		plPositionLoc = glGetUniformLocation(handle, "pointLight.position");
+		plColorLoc    = glGetUniformLocation(handle, "pointLight.color");
+		plDistanceLoc = glGetUniformLocation(handle, "pointLight.distance");
+		plEnergyLoc   = glGetUniformLocation(handle, "pointLight.energy");
 		
 		dlDirectionLoc = glGetUniformLocation(handle, "dirLight.direction");
 		dlColorLoc     = glGetUniformLocation(handle, "dirLight.color");
 		dlEnergyLoc    = glGetUniformLocation(handle, "dirLight.energy");
 
-		numPointLightsLoc = glGetUniformLocation(handle, "numPointLights");
-		numDirLightsLoc   = glGetUniformLocation(handle, "numDirLights");
+		isPointLightLoc = glGetUniformLocation(handle, "isPointLight");
+		isDirLightLoc   = glGetUniformLocation(handle, "isDirLight");
 		
 		// Material
 		materialLoc = glGetUniformLocation(handle, "material");

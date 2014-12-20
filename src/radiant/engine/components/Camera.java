@@ -24,10 +24,8 @@ public class Camera extends Component {
 	private float   zFar        = DEFAULT_ZFAR;
 	private boolean perspective = DEFAULT_PERSPECTIVE;
 	
-	private Matrix4f projectionMatrix = new Matrix4f();
-	
 	public Camera() {
-		recalculate();
+		
 	}
 	
 	public Camera(float left, float right, float bottom, float top, float zNear, float zFar) {
@@ -38,7 +36,6 @@ public class Camera extends Component {
 		this.top = top;
 		this.zNear = zNear;
 		this.zFar = zFar;
-		recalculate();
 	}
 	
 	public Camera(float fovy, float aspect, float zNear, float zFar) {
@@ -47,61 +44,52 @@ public class Camera extends Component {
 		this.aspect = aspect;
 		this.zNear = zNear;
 		this.zFar = zFar;
-		recalculate();
 	}
 	
-	public Matrix4f getProjectionMatrix() {
-		return projectionMatrix;
+	public void loadProjectionMatrix(Matrix4f m) {
+		recalculate(m);
 	}
 	
-	private void recalculate() {
-		aspect = (float) Window.width / Window.height;
-		
-		projectionMatrix.setIdentity();
+	private void recalculate(Matrix4f m) {
+		m.setIdentity();
 		if(perspective) {
-			projectionMatrix.array[0] = (float) (1 / Math.tan(Math.toRadians(fovy / 2f))) / aspect;
-			projectionMatrix.array[5] = (float) (1 / Math.tan(Math.toRadians(fovy / 2f)));
-			projectionMatrix.array[10] = (zNear + zFar) / (zNear - zFar);
-			projectionMatrix.array[11] = -1;
-			projectionMatrix.array[14] = (2 * zNear * zFar) / (zNear - zFar);
-			projectionMatrix.array[15] = 0;
+			m.array[0] = (float) (1.0 / Math.tan(Math.toRadians(fovy / 2.0))) / aspect;
+			m.array[5] = (float) (1.0 / Math.tan(Math.toRadians(fovy / 2.0)));
+			m.array[10] = (zNear + zFar) / (zNear - zFar);
+			m.array[11] = -1;
+			m.array[14] = (2 * zNear * zFar) / (zNear - zFar);
+			m.array[15] = 0;
 		} else {
-			projectionMatrix.array[0] = 2 / (right - left);
-			projectionMatrix.array[5] = 2 / (top - bottom);
-			projectionMatrix.array[10] = -2 / (zFar - zNear);
-			projectionMatrix.array[12] = (-right - left) / (right - left);
-			projectionMatrix.array[13] = (-top - bottom) / (top - bottom);
-			projectionMatrix.array[14] = (-zFar - zNear) / (zFar - zNear);
+			m.array[0] = 2 / (right - left);
+			m.array[5] = 2 / (top - bottom);
+			m.array[10] = -2 / (zFar - zNear);
+			m.array[12] = (-right - left) / (right - left);
+			m.array[13] = (-top - bottom) / (top - bottom);
+			m.array[14] = (-zFar - zNear) / (zFar - zNear);
 		}
 	}
 	
 	public void setFov(float fovy) {
 		this.fovy = fovy;
-		recalculate();
 	}
 	
 	public void setAspectRatio(float aspect) {
 		this.aspect = aspect;
-		recalculate();
 	}
 	
 	public void setZNear(float zNear) {
 		this.zNear = zNear;
-		recalculate();
 	}
 	
 	public void setZFar(float zFar) {
 		this.zFar = zFar;
-		recalculate();
 	}
 	
 	public void setPerspective() {
 		perspective = true;
-		recalculate();
 	}
 	
 	public void setOrthographic() {
 		perspective = false;
-		recalculate();
 	}
 }
