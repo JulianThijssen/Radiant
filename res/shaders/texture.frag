@@ -1,33 +1,5 @@
-#version 330 core
-
-// Material
-struct Material {
-	vec3 diffuseColor;
-	vec3 specularColor;
-	
-	float specularIntensity;
-	vec2 tiling;
-	
-	float hardness;
-	
-	sampler2D diffuseMap;
-	sampler2D normalMap;
-	sampler2D specularMap;
-	
-	bool hasDiffuseMap;
-	bool hasNormalMap;
-	bool hasSpecularMap;
-	
-	bool receiveShadows;
-};
-
-uniform Material material;
-
 // Pass
 uniform mat4 modelMatrix;
-in vec3 pass_position;
-in vec2 pass_texCoord;
-in vec3 pass_normal;
 
 out vec4 out_Color;
 

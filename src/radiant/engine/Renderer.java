@@ -219,21 +219,21 @@ public class Renderer implements ISystem {
 		}
 		
 		// Diffuse
-		shader = shaders.get(Shading.DIFFUSE);
-		glUseProgram(shader.handle);
-		
-		glDisable(GL_BLEND);
-		glActiveTexture(GL_TEXTURE3);
-		//int shadowMap = scene.pointLights.get(0).shadowMap;
-		ShadowInfo shadowInfo = scene.dirLights.get(0).shadowInfo;
-		glBindTexture(GL_TEXTURE_2D, shadowInfo.shadowMap);
-		glUniform1i(shader.siMapLoc, 3);
-		glUniformMatrix4(shader.siProjectionLoc, false, shadowInfo.projectionMatrix.getBuffer());
-		glUniformMatrix4(shader.siViewLoc, false, shadowInfo.viewMatrix.getBuffer());
-		
-		for(Entity entity: shaderMap.get(shader)) {
-			drawMesh(shader, entity);
-		}
+//		shader = shaders.get(Shading.DIFFUSE);
+//		glUseProgram(shader.handle);
+//		
+//		glDisable(GL_BLEND);
+//		glActiveTexture(GL_TEXTURE3);
+//		//int shadowMap = scene.pointLights.get(0).shadowMap;
+//		ShadowInfo shadowInfo = scene.dirLights.get(0).shadowInfo;
+//		glBindTexture(GL_TEXTURE_2D, shadowInfo.shadowMap);
+//		glUniform1i(shader.siMapLoc, 3);
+//		glUniformMatrix4(shader.siProjectionLoc, false, shadowInfo.projectionMatrix.getBuffer());
+//		glUniformMatrix4(shader.siViewLoc, false, shadowInfo.viewMatrix.getBuffer());
+//		
+//		for(Entity entity: shaderMap.get(shader)) {
+//			drawMesh(shader, entity);
+//		}
 	}
 	
 	private void loadShadowInfo(int shadowMap, Matrix4f projMatrix, Matrix4f viewMatrix) {

@@ -20,9 +20,12 @@ import org.lwjgl.opengl.GL20;
 
 import radiant.engine.core.diag.Log;
 import radiant.engine.core.errors.AssetLoaderException;
+import radiant.engine.core.file.FileIO;
 
 public class ShaderLoader {
 	public static final int LOG_SIZE = 1024;
+	public static final String commonVert = FileIO.loadAsString("res/shaders/common.vert");
+	public static final String commonFrag = FileIO.loadAsString("res/shaders/common.frag");
 	
 	public static Shader loadShaders(String vertpath, String fragpath) throws AssetLoaderException {
 		int vertexShader = loadShader(vertpath, GL_VERTEX_SHADER);
@@ -50,6 +53,13 @@ public class ShaderLoader {
 	
 	public static int loadShader(String filename, int type) throws AssetLoaderException {
 		StringBuilder shaderSource = new StringBuilder();
+		if (type == GL_VERTEX_SHADER) {
+			shaderSource.append(commonVert);
+		}
+		if (type == GL_FRAGMENT_SHADER) {
+			shaderSource.append(commonFrag);
+		}
+		
 		int shaderID = 0;
 		
 		try {

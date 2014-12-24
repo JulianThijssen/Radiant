@@ -1,5 +1,3 @@
-#version 330 core
-
 // Material
 uniform sampler2D diffuseMap;
 
@@ -11,8 +9,6 @@ uniform vec2 tiling;
 
 // Pass
 uniform mat4 modelMatrix;
-in vec3 pass_position;
-in vec2 pass_texCoord;
 
 out vec4 out_Color;
 
