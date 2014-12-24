@@ -78,6 +78,7 @@ vec3 calcNormal(vec3 src_normal) {
 void main(void) {
 	// Shadows
 	float visibility = 1.0;
+	float shadowValue = 0.2;
 	float bias = 0.005;
 	float xOffset = 1.0 / 1024;
 	float yOffset = 1.0 / 1024;
@@ -142,7 +143,7 @@ void main(void) {
 			float dist = length(lightDir);
 			
 			if (sample < dist - bias * 20) {
-				visibility = 0.5;
+				visibility = shadowValue;
 			}
 		}
 	    
@@ -185,7 +186,7 @@ void main(void) {
 			//visibility += (factor / 18.0);
 			
 			if (texture(shadowInfo.shadowMap, pass_shadowCoord.xy).z < pass_shadowCoord.z - bias) {
-				visibility = 0.5;
+				visibility = shadowValue;
 			}
 		}
 		

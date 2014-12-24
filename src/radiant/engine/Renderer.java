@@ -64,8 +64,6 @@ public class Renderer implements ISystem {
 		glCullFace(GL_BACK);
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
 		glEnable(GL_BLEND);
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		//glBlendFunc(GL_ONE, GL_ONE);
 		
 		glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
 		
@@ -110,11 +108,10 @@ public class Renderer implements ISystem {
 		
 		Camera camera = (Camera) scene.mainCamera.getComponent(Camera.class);
 		Transform ct = (Transform) scene.mainCamera.getComponent(Transform.class);
+		
 		glEnable(GL_BLEND);
 		glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ZERO);
 		renderScene(ct, camera);
-		glDisable(GL_BLEND);
-		//glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	}
 	
 	private void renderScene(Transform transform, Camera camera) {
@@ -141,7 +138,7 @@ public class Renderer implements ISystem {
 		for (PointLight light: scene.pointLights) {
 			Transform lightT = (Transform) light.owner.getComponent(Transform.class);
 			Camera lightC = new Camera(90, 1, 0.1f, 20);
-			//Camera lightC = new Camera(-10, 10, -10, 10, 0.1f, 20);
+			
 			Matrix4f projectionMatrix = new Matrix4f();
 			Matrix4f viewMatrix = new Matrix4f();
 			
@@ -157,11 +154,14 @@ public class Renderer implements ISystem {
 			}
 		}
 
+		// Divide the meshes into shader buckets
 		divideMeshes();
 
+		// Set the viewport to the normal window size
 		glViewport(0, 0, Window.width, Window.height);
 		
 		// Render all the meshes associated with a shader
+		// Unshaded
 		Shader shader = shaders.get(Shading.UNSHADED);
 		glUseProgram(shader.handle);
 		
@@ -169,6 +169,7 @@ public class Renderer implements ISystem {
 			drawMesh(shader, entity);
 		}
 		
+		// Normal
 		shader = shaders.get(Shading.NORMAL);
 		glUseProgram(shader.handle);
 		
@@ -176,6 +177,7 @@ public class Renderer implements ISystem {
 			drawMesh(shader, entity);
 		}
 
+		// Specular
 		shader = shaders.get(Shading.SPECULAR);
 		glUseProgram(shader.handle);
 		
@@ -200,25 +202,7 @@ public class Renderer implements ISystem {
 		glUniform3f(shader.cameraPositionLoc, camT.position.x, camT.position.y, camT.position.z);
 		
 		for (PointLight light: scene.pointLights) {
-			Entity e = light.owner;
-			Transform lightT = (Transform) e.getComponent(Transform.class);
-			
-			glActiveTexture(GL_TEXTURE4);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, light.shadowMap);
-			glUniform1i(shader.siCubeMapLoc, 4);
-
-			glUniform1i(shader.isPointLightLoc, 1);
-			glUniform1i(shader.isDirLightLoc, 0);
-			glUniform3f(shader.plPositionLoc, lightT.position.x, lightT.position.y, lightT.position.z);
-			glUniform3f(shader.plColorLoc, light.color.x, light.color.y, light.color.z);
-			glUniform1f(shader.plEnergyLoc, light.energy);
-			glUniform1f(shader.plDistanceLoc, light.distance);
-
-			for(Entity entity: shaderMap.get(shader)) {				
-				drawMesh(shader, entity);
-			}
-			glActiveTexture(GL_TEXTURE4);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+			uploadPointLight(shader, light);
 		}
 		
 		for (DirectionalLight light: scene.dirLights) {
@@ -234,21 +218,22 @@ public class Renderer implements ISystem {
 			drawMesh(shader, entity);
 		}
 		
-//		shader = shaders.get(Shading.DIFFUSE);
-//		glUseProgram(shader.handle);
-//		
-//		glDisable(GL_BLEND);
-//		glActiveTexture(GL_TEXTURE3);
-//		//int shadowMap = scene.pointLights.get(0).shadowMap;
-//		ShadowInfo shadowInfo = scene.dirLights.get(0).shadowInfo;
-//		glBindTexture(GL_TEXTURE_2D, shadowInfo.shadowMap);
-//		glUniform1i(shader.siMapLoc, 3);
-//		glUniformMatrix4(shader.siProjectionLoc, false, shadowInfo.projectionMatrix.getBuffer());
-//		glUniformMatrix4(shader.siViewLoc, false, shadowInfo.viewMatrix.getBuffer());
-//		
-//		for(Entity entity: shaderMap.get(shader)) {
-//			drawMesh(shader, entity);
-//		}
+		// Diffuse
+		shader = shaders.get(Shading.DIFFUSE);
+		glUseProgram(shader.handle);
+		
+		glDisable(GL_BLEND);
+		glActiveTexture(GL_TEXTURE3);
+		//int shadowMap = scene.pointLights.get(0).shadowMap;
+		ShadowInfo shadowInfo = scene.dirLights.get(0).shadowInfo;
+		glBindTexture(GL_TEXTURE_2D, shadowInfo.shadowMap);
+		glUniform1i(shader.siMapLoc, 3);
+		glUniformMatrix4(shader.siProjectionLoc, false, shadowInfo.projectionMatrix.getBuffer());
+		glUniformMatrix4(shader.siViewLoc, false, shadowInfo.viewMatrix.getBuffer());
+		
+		for(Entity entity: shaderMap.get(shader)) {
+			drawMesh(shader, entity);
+		}
 	}
 	
 	private void loadShadowInfo(int shadowMap, Matrix4f projMatrix, Matrix4f viewMatrix) {
@@ -353,7 +338,6 @@ public class Renderer implements ISystem {
 	 * Divide the meshes in the scene into their appropriate shader buckets
 	 */
 	private void divideMeshes() {
-		// Divide entities into shader buckets
 		for(List<Entity> meshes: shaderMap.values()) {
 			meshes.clear();
 		}
@@ -368,41 +352,33 @@ public class Renderer implements ISystem {
 			shaderMap.get(shader).add(e);
 		}
 	}
-	
-//	private void uploadLights(Shader shader, List<Entity> pointLights, List<Entity> dirLights) {
-//		//uploadPointLights(shader, pointLights);
-//		uploadDirectionalLights(shader, dirLights);
-//	}
 
 	/**
-	 * Uploads all the point lights in the scene to the shaders
+	 * Uploads a point light to the shader
 	 * @param shader The shader currently in use
-	 * @param lights The list of entities that have a point light component
+	 * @param lights The point light to upload
 	 */
-//	private void uploadPointLights(Shader shader, List<Entity> pointLights) {
-//		glUniform1i(shader.numPointLightsLoc, pointLights.size());
-//		
-//		for(int i = 0; i < pointLights.size(); i++) {
-//			Entity e = pointLights.get(i);
-//			Transform  transform = (Transform) e.getComponent(Transform.class);
-//			PointLight light = (PointLight) e.getComponent(PointLight.class);
-//
-//			glUniform3f(shader.plPositionLocs[i], transform.position.x, transform.position.y, transform.position.z);
-//			glUniform3f(shader.plColorLocs[i], light.color.x, light.color.y, light.color.z);
-//			glUniform1f(shader.plEnergyLocs[i], light.energy);
-//			glUniform1f(shader.plDistanceLocs[i], light.distance);
-//			
-//			for (int j = 0; j < 6; j++) {
-//				int index = i * 6 + j;
-//				glActiveTexture(GL_TEXTURE3);
-//				glBindTexture(GL_TEXTURE_2D, light.shadowInfo[j].shadowMap);
-//				glUniform1i(shader.plShadowInfoMap[index], 3);
-//				glUniformMatrix4(shader.plShadowInfoProj[index], false, light.shadowInfo[j].projectionMatrix.getBuffer());
-//				glUniformMatrix4(shader.plShadowInfoView[index], false, light.shadowInfo[j].viewMatrix.getBuffer());
-//				glBindTexture(GL_TEXTURE_2D, 0);
-//			}
-//		}
-//	}
+	private void uploadPointLight(Shader shader, PointLight light) {
+		Entity e = light.owner;
+		Transform lightT = (Transform) e.getComponent(Transform.class);
+		
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, light.shadowMap);
+		glUniform1i(shader.siCubeMapLoc, 4);
+
+		glUniform1i(shader.isPointLightLoc, 1);
+		glUniform1i(shader.isDirLightLoc, 0);
+		glUniform3f(shader.plPositionLoc, lightT.position.x, lightT.position.y, lightT.position.z);
+		glUniform3f(shader.plColorLoc, light.color.x, light.color.y, light.color.z);
+		glUniform1f(shader.plEnergyLoc, light.energy);
+		glUniform1f(shader.plDistanceLoc, light.distance);
+
+		for(Entity entity: shaderMap.get(shader)) {				
+			drawMesh(shader, entity);
+		}
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+	}
 	
 	/**
 	 * Uploads a directional light to the shader
