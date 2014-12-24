@@ -218,20 +218,44 @@ public class Renderer implements ISystem {
 			drawMesh(shader, entity);
 		}
 		
-		// Diffuse
+//		// Diffuse
 //		shader = shaders.get(Shading.DIFFUSE);
 //		glUseProgram(shader.handle);
 //		
-//		glDisable(GL_BLEND);
-//		glActiveTexture(GL_TEXTURE3);
-//		//int shadowMap = scene.pointLights.get(0).shadowMap;
-//		ShadowInfo shadowInfo = scene.dirLights.get(0).shadowInfo;
-//		glBindTexture(GL_TEXTURE_2D, shadowInfo.shadowMap);
-//		glUniform1i(shader.siMapLoc, 3);
-//		glUniformMatrix4(shader.siProjectionLoc, false, shadowInfo.projectionMatrix.getBuffer());
-//		glUniformMatrix4(shader.siViewLoc, false, shadowInfo.viewMatrix.getBuffer());
+//		biasMatrix = new Matrix4f();
+//		biasMatrix.array[0] = 0.5f;
+//		biasMatrix.array[5] = 0.5f;
+//		biasMatrix.array[10] = 0.5f;
+//		biasMatrix.array[12] = 0.5f;
+//		biasMatrix.array[13] = 0.5f;
+//		biasMatrix.array[14] = 0.5f;
+//		glUniformMatrix4(shader.biasMatrixLoc, false, biasMatrix.getBuffer());
 //		
-//		for(Entity entity: shaderMap.get(shader)) {
+//		// Draw the objects into depth buffer first, for culling
+//		glDrawBuffer(GL_NONE);
+//		for(Entity entity: shaderMap.get(shader)) {				
+//			drawMesh(shader, entity);
+//		}
+//		glDrawBuffer(GL_BACK);
+//		glDepthFunc(GL_LEQUAL);
+//		
+//		camT = (Transform) scene.mainCamera.getComponent(Transform.class);
+//		glUniform3f(shader.cameraPositionLoc, camT.position.x, camT.position.y, camT.position.z);
+//		
+//		for (PointLight light: scene.pointLights) {
+//			uploadPointLight(shader, light);
+//		}
+//		
+//		for (DirectionalLight light: scene.dirLights) {
+//			uploadDirectionalLight(shader, light);
+//		}
+//		
+//		// Multiply diffuse texture with the lighting
+//		for (Entity entity: shaderMap.get(shader)) {
+//			shader = shaders.get(Shading.TEXTURE);
+//			glUseProgram(shader.handle);
+//			
+//			glBlendFuncSeparate(GL_DST_COLOR, GL_ZERO, GL_ONE, GL_ONE);
 //			drawMesh(shader, entity);
 //		}
 	}
@@ -499,17 +523,17 @@ public class Renderer implements ISystem {
 		if(transform == null) {
 			return;
 		}
-
+		
 		modelMatrix.setIdentity();
 		
 		// Go up the hierarchy and stack transformations if this entity has a parent
 		if(attached != null) {
 			Entity parent = attached.parent;
 			Transform parentT = (Transform) parent.getComponent(Transform.class);
-			
+
 			modelMatrix.translate(parentT.position);
 			modelMatrix.rotate(parentT.rotation);
-			modelMatrix.scale(parentT.scale);
+			//modelMatrix.scale(parentT.scale); //FIXME allow scaling
 		}
 		
 		modelMatrix.translate(transform.position);

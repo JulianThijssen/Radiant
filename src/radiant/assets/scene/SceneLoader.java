@@ -147,7 +147,22 @@ public class SceneLoader {
 								} else {
 									Mesh mesh = model.getMeshes().get(0);
 									scene.meshes.add(mesh);
+									if(mesh.materialIndex != -1) {
+										MeshRenderer mr = new MeshRenderer(model.getMaterials().get(mesh.materialIndex));
+										entity.addComponent(mr);
+										scene.meshRenderers.add(mr);
+									}
 									entity.addComponent(mesh);
+								}
+							}
+							
+							if(compNode.getNodeName().equals("AttachedTo")) {
+								String parentName = compNode.getAttributes().getNamedItem("parent").getNodeValue();
+								for (Entity e: scene.getEntities()) {
+									if(parentName.equals(e.name)) {
+										entity.addComponent(new AttachedTo(e));
+										break;
+									}
 								}
 							}
 							
