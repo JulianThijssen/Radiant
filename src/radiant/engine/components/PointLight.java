@@ -27,6 +27,7 @@ import radiant.engine.Window;
 import radiant.engine.core.math.Vector3f;
 
 public class PointLight extends Component {
+	public static final int DEFAULT_SHADOW_RESOLUTION = 256;
 	public static final Vector3f[] shadowTransforms = {
 		new Vector3f(180, 90, 0),  // Positive X
 		new Vector3f(180, -90, 0), // Negative X
@@ -43,6 +44,7 @@ public class PointLight extends Component {
 	
 	public int shadowMap;
 	public int depthMap;
+	public int shadowRes = DEFAULT_SHADOW_RESOLUTION;
 	
 	public PointLight() {
 		///
@@ -53,7 +55,7 @@ public class PointLight extends Component {
 		
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);//FIXME CLAMP_TO_EDGE
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -64,7 +66,7 @@ public class PointLight extends Component {
 
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);//FIXME CLAMP_TO_EDGE
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
