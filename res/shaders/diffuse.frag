@@ -27,6 +27,7 @@ struct ShadowInfo {
 	mat4 viewMatrix;
 };
 
+uniform samplerCube shadowCubeMap;
 uniform ShadowInfo shadowInfo;
 
 // Material
@@ -110,7 +111,7 @@ void main(void) {
 	float bias = 0.005;
 	float factor = 0;
 	float xOffset = 1.0 / 1024;
-	float yOffset = 1.0 / 800;
+	float yOffset = 1.0 / 1024;
 	
 	if (material.receiveShadows) {
 		//float cosTheta = dot(normal, normalize(-dirLights[0].direction));
@@ -134,5 +135,6 @@ void main(void) {
 	
 	out_Color.rgb *= visibility;
 	
+	//out_Color = vec4(texture(shadowCubeMap, vec3(pass_texCoord.x * 2 - 1, pass_texCoord.y * 2 - 1, -1)).r / 20, 0, 0, 1);
 	out_Color = vec4(texture(shadowInfo.shadowMap, pass_texCoord).rgb, 1);
 }

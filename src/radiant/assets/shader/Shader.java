@@ -18,6 +18,8 @@ public class Shader {
 	
 	// Light
 	public int siMapLoc;
+	public int siLightPosLoc;
+	public int siCubeMapLoc;
 	public int siProjectionLoc;
 	public int siViewLoc;
 
@@ -74,6 +76,8 @@ public class Shader {
 		biasMatrixLoc = glGetUniformLocation(handle, "biasMatrix");
 		
 		siMapLoc = glGetUniformLocation(handle, "shadowInfo.shadowMap");
+		siLightPosLoc = glGetUniformLocation(handle, "lightPos");
+		siCubeMapLoc = glGetUniformLocation(handle, "shadowCubeMap");
 		siProjectionLoc = glGetUniformLocation(handle, "shadowInfo.projectionMatrix");
 		siViewLoc = glGetUniformLocation(handle, "shadowInfo.viewMatrix");
 		

@@ -100,7 +100,7 @@ public class ModelLoader {
 						if(texCoords == null) {
 							texCoords = new ArrayList<Vector2f>();
 						}
-						texCoords.add(new Vector2f(u, -v));
+						texCoords.add(new Vector2f(u, 1 - v));
 					}
 					if(type.equals("vn")) {
 						float x = Float.parseFloat(segments[1]);

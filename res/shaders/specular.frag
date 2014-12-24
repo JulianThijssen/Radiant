@@ -8,6 +8,7 @@ struct ShadowInfo {
 };
 
 uniform ShadowInfo shadowInfo;
+uniform samplerCube shadowCubeMap;
 
 // Light
 struct PointLight {
@@ -79,7 +80,7 @@ void main(void) {
 	float visibility = 1.0;
 	float bias = 0.005;
 	float xOffset = 1.0 / 1024;
-	float yOffset = 1.0 / 800;
+	float yOffset = 1.0 / 1024;
 	
 	vec3 refl = vec3(0, 0, 0);
 	
@@ -102,9 +103,9 @@ void main(void) {
 		// Calculate the vector from this pixels surface to the light source
 	    vec3 lightDir = light.position - position;
 
-	    float length = length(lightDir);
+	    float lightLength = length(lightDir);
 	    
-	    float x = length / light.distance;
+	    float x = lightLength / light.distance;
 	    float fAtt = 1 - pow(x, 4);
 	    if (fAtt < 0) {
 	    	fAtt = 0;
@@ -137,14 +138,11 @@ void main(void) {
 	 		//}
 			//visibility += (factor / 18.0);
 
-			if (texture(shadowInfo.shadowMap, pass_shadowCoord.xy / pass_shadowCoord.w).z < (pass_shadowCoord.z - bias) / pass_shadowCoord.w) {
+			float sample = texture(shadowCubeMap, position - light.position).r;
+			float dist = length(lightDir);
+			
+			if (sample < dist - bias * 20) {
 				visibility = 0.5;
-			}
-			if (pass_shadowCoord.x / pass_shadowCoord.w > 1 || pass_shadowCoord.x / pass_shadowCoord.w < 0) {
-				visibility = 1;
-			}
-			if (pass_shadowCoord.y / pass_shadowCoord.w > 1 || pass_shadowCoord.y / pass_shadowCoord.w < 0) {
-				visibility = 1;
 			}
 		}
 	    
@@ -194,9 +192,5 @@ void main(void) {
 		refl += material.specularColor * light.color * fPhong * material.specularIntensity;
 	}
 	
-	out_Color = vec4(material.diffuseColor * refl * visibility, 1);
-	float sample = texture(shadowInfo.shadowMap, pass_shadowCoord.xy / pass_shadowCoord.w).z;
-	float dist = (pass_shadowCoord.z - bias) / pass_shadowCoord.w;
-	//out_Color = vec4(texture(shadowInfo.shadowMap, pass_shadowCoord.z).rgb, 1);
-	//out_Color = vec4((dist - sample) * 100, 0, 0, 1);
+	out_Color = vec4(refl * visibility, 1);
 }

@@ -12,6 +12,7 @@ struct ShadowInfo {
 };
 
 uniform mat4 biasMatrix;
+uniform bool isDirLight;
 
 uniform ShadowInfo shadowInfo;
 
@@ -31,7 +32,9 @@ void main(void) {
 	pass_texCoord = texCoord;
 	pass_normal = normal;
 	pass_tangent = (modelMatrix * vec4(tangent, 0)).xyz;
-	pass_shadowCoord = biasMatrix * shadowInfo.projectionMatrix * shadowInfo.viewMatrix * modelMatrix * vec4(position, 1);
+	if (isDirLight) {
+		pass_shadowCoord = biasMatrix * shadowInfo.projectionMatrix * shadowInfo.viewMatrix * modelMatrix * vec4(position, 1);
+	}
 
 	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1);
 }
