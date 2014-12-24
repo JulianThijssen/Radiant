@@ -23,31 +23,35 @@ import static org.lwjgl.opengl.GL30.GL_R32F;
 
 import java.nio.FloatBuffer;
 
-import radiant.engine.Window;
 import radiant.engine.core.math.Vector3f;
 
 public class PointLight extends Component {
+	public static final float DEFAULT_ENERGY = 1.0f;
+	public static final float DEFAULT_DISTANCE = 5.0f;
+	public static final boolean DEFAULT_CAST_SHADOWS = false;
 	public static final int DEFAULT_SHADOW_RESOLUTION = 256;
+	
 	public static final Vector3f[] shadowTransforms = {
 		new Vector3f(180, 90, 0),  // Positive X
 		new Vector3f(180, -90, 0), // Negative X
-		new Vector3f(90, 0, 0),  // Positive Y
-		new Vector3f(-90, 0, 0), // Negative Y
-		new Vector3f(180, 0, 0), // Positive Z
-		new Vector3f(180, 180, 0)    // Negative Z
+		new Vector3f(90, 0, 0),    // Positive Y
+		new Vector3f(-90, 0, 0),   // Negative Y
+		new Vector3f(180, 0, 0),   // Positive Z
+		new Vector3f(180, 180, 0)  // Negative Z
 	};
 	
 	public Vector3f color = new Vector3f(1, 1, 1);
 	
-	public float energy = 1;
-	public float distance = 1;
-	
-	public int shadowMap;
-	public int depthMap;
+	public float energy = DEFAULT_ENERGY;
+	public float distance = DEFAULT_DISTANCE;
+	public boolean castShadows = DEFAULT_CAST_SHADOWS;
 	public int shadowRes = DEFAULT_SHADOW_RESOLUTION;
 	
+	public int shadowMap = -1;
+	public int depthMap = -1;
+	
 	public PointLight() {
-		///
+		// Generate a depth map
 		depthMap = glGenTextures();
 		glBindTexture(GL_TEXTURE_2D, depthMap);
 		
@@ -59,7 +63,8 @@ public class PointLight extends Component {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 		glBindTexture(GL_TEXTURE_2D, 0);
-		///
+		
+		// Generate a color map to store the shadow map in
 		shadowMap = glGenTextures();
 		
 		glBindTexture(GL_TEXTURE_CUBE_MAP, shadowMap);

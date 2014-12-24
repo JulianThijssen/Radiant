@@ -38,7 +38,7 @@ void main(void) {
 		refl += material.specularColor * material.specularIntensity * light.color * fPhong * fAtt;
 		
 		// Shadows
-		if (material.receiveShadows) {
+		if (material.receiveShadows && light.castShadows) {
 			float sample = texture(shadowCubeMap, position - light.position).r;
 			float dist = length(lightDir);
 			
@@ -62,7 +62,7 @@ void main(void) {
 		refl += material.specularColor * material.specularIntensity * light.color * fPhong;
 		
 		// Shadows
-		if (material.receiveShadows) {
+		if (material.receiveShadows && light.castShadows) {
 			visibility = getDirVisibility(bias);
 		}
 	}

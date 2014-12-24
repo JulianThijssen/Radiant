@@ -27,10 +27,12 @@ public class Shader {
 	public int plColorLoc;
 	public int plDistanceLoc;
 	public int plEnergyLoc;
+	public int plCastShadowsLoc;
 	
 	public int dlColorLoc;
 	public int dlDirectionLoc;
 	public int dlEnergyLoc;
+	public int dlCastShadowsLoc;
 	
 	public int isPointLightLoc;
 	public int isDirLightLoc;
@@ -81,14 +83,16 @@ public class Shader {
 		siProjectionLoc = glGetUniformLocation(handle, "shadowInfo.projectionMatrix");
 		siViewLoc = glGetUniformLocation(handle, "shadowInfo.viewMatrix");
 		
-		plPositionLoc = glGetUniformLocation(handle, "pointLight.position");
-		plColorLoc    = glGetUniformLocation(handle, "pointLight.color");
-		plDistanceLoc = glGetUniformLocation(handle, "pointLight.distance");
-		plEnergyLoc   = glGetUniformLocation(handle, "pointLight.energy");
+		plPositionLoc    = glGetUniformLocation(handle, "pointLight.position");
+		plColorLoc       = glGetUniformLocation(handle, "pointLight.color");
+		plDistanceLoc    = glGetUniformLocation(handle, "pointLight.distance");
+		plEnergyLoc      = glGetUniformLocation(handle, "pointLight.energy");
+		plCastShadowsLoc = glGetUniformLocation(handle, "pointLight.castShadows");
 		
-		dlDirectionLoc = glGetUniformLocation(handle, "dirLight.direction");
-		dlColorLoc     = glGetUniformLocation(handle, "dirLight.color");
-		dlEnergyLoc    = glGetUniformLocation(handle, "dirLight.energy");
+		dlDirectionLoc   = glGetUniformLocation(handle, "dirLight.direction");
+		dlColorLoc       = glGetUniformLocation(handle, "dirLight.color");
+		dlEnergyLoc      = glGetUniformLocation(handle, "dirLight.energy");
+		dlCastShadowsLoc = glGetUniformLocation(handle, "dirLight.castShadows");
 
 		isPointLightLoc = glGetUniformLocation(handle, "isPointLight");
 		isDirLightLoc   = glGetUniformLocation(handle, "isDirLight");

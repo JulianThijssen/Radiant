@@ -22,13 +22,18 @@ import radiant.engine.core.math.Matrix4f;
 import radiant.engine.core.math.Vector3f;
 
 public class DirectionalLight extends Component {
+	public static final float DEFAULT_ENERGY = 1.0f;
+	public static final boolean DEFAULT_CAST_SHADOWS = false;
+	
 	public Vector3f color = new Vector3f(1, 1, 1);
 	
-	public float energy = 1.0f;
+	public float energy = DEFAULT_ENERGY;
+	public boolean castShadows = DEFAULT_CAST_SHADOWS;
 	
 	public ShadowInfo shadowInfo = null;
 	
 	public DirectionalLight() {
+		// Generate a shadow info object
 		int shadowMap = glGenTextures();
 		shadowInfo = new ShadowInfo(shadowMap, new Matrix4f(), new Matrix4f());
 		

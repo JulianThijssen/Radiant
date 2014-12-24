@@ -372,6 +372,11 @@ public class Renderer implements ISystem {
 		glUniform3f(shader.plColorLoc, light.color.x, light.color.y, light.color.z);
 		glUniform1f(shader.plEnergyLoc, light.energy);
 		glUniform1f(shader.plDistanceLoc, light.distance);
+		if (light.castShadows) {
+			glUniform1i(shader.plCastShadowsLoc, 1);
+		} else {
+			glUniform1i(shader.plCastShadowsLoc, 0);
+		}
 
 		for(Entity entity: shaderMap.get(shader)) {				
 			drawMesh(shader, entity);
@@ -406,6 +411,11 @@ public class Renderer implements ISystem {
 		glUniform3f(shader.dlDirectionLoc, dir.x, dir.y, dir.z);
 		glUniform3f(shader.dlColorLoc, light.color.x, light.color.y, light.color.z);
 		glUniform1f(shader.dlEnergyLoc, light.energy);
+		if (light.castShadows) {
+			glUniform1i(shader.dlCastShadowsLoc, 1);
+		} else {
+			glUniform1i(shader.dlCastShadowsLoc, 0);
+		}
 		
 		for(Entity entity: shaderMap.get(shader)) {				
 			drawMesh(shader, entity);
