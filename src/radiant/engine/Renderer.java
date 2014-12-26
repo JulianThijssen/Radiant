@@ -41,7 +41,9 @@ public class Renderer implements ISystem {
 	
 	private Vector3f clearColor = new Vector3f(0, 0, 0);
 	
-	private int shadowBuffer = 0;
+	private FrameBuffer shadowBuffer;
+	
+	private int drawCalls = 0;
 	
 	@Override
 	public void create() {
@@ -67,7 +69,7 @@ public class Renderer implements ISystem {
 		
 		glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
 		
-		shadowBuffer = glGenFramebuffers();
+		shadowBuffer = new FrameBuffer();
 	}
 	
 	/**
@@ -102,6 +104,10 @@ public class Renderer implements ISystem {
 	public void update() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
+		// Reset the draw calls before the next render
+		drawCalls = 0;
+		
+		// If there is no main camera in the scene, nothing can be rendered
 		if(scene.mainCamera == null) {
 			return;
 		}
@@ -109,20 +115,21 @@ public class Renderer implements ISystem {
 		Camera camera = (Camera) scene.mainCamera.getComponent(Camera.class);
 		Transform ct = (Transform) scene.mainCamera.getComponent(Transform.class);
 		
-		glEnable(GL_BLEND);
-		glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ZERO);
 		renderScene(ct, camera);
 	}
 	
 	private void renderScene(Transform transform, Camera camera) {
 		camera.loadProjectionMatrix(projectionMatrix);
+		// Divide the meshes into shader buckets
+		divideMeshes();
 		
 		// Calculate view matrix
 		viewMatrix.setIdentity();
 		viewMatrix.rotate(Vector3f.negate(transform.rotation));
 		viewMatrix.translate(Vector3f.negate(transform.position));
 		
-		// Calculate shadow info
+		// Generate the shadow maps
+		glDisable(GL_BLEND);
 		for (DirectionalLight light: scene.dirLights) {
 			Transform lightT = (Transform) light.owner.getComponent(Transform.class);
 			Camera lightC = new Camera(-10, 10, -10, 10, -20, 20);
@@ -153,20 +160,63 @@ public class Renderer implements ISystem {
 				loadShadowInfoCube(light, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, projectionMatrix, viewMatrix, lightT.position);
 			}
 		}
-
-		// Divide the meshes into shader buckets
-		divideMeshes();
+		
+		// Set the framebuffer to the normal buffer
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		// Set the viewport to the normal window size
 		glViewport(0, 0, Window.width, Window.height);
 		
+		// Enable the blending of light contributions
+		glEnable(GL_BLEND);
+		glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ZERO);
+		
+		// Set the clear color
+		glClearColor(clearColor.x, clearColor.y, clearColor.z, 1);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
 		// Render all the meshes associated with a shader
+		Matrix4f biasMatrix = new Matrix4f();
+		biasMatrix.array[0] = 0.5f;
+		biasMatrix.array[5] = 0.5f;
+		biasMatrix.array[10] = 0.5f;
+		biasMatrix.array[12] = 0.5f;
+		biasMatrix.array[13] = 0.5f;
+		biasMatrix.array[14] = 0.5f;
+		Transform camT = (Transform) scene.mainCamera.getComponent(Transform.class);
+		
 		// Unshaded
 		Shader shader = shaders.get(Shading.UNSHADED);
 		glUseProgram(shader.handle);
 		
+		// Draw the objects into depth buffer first, for culling
+		glDrawBuffer(GL_NONE);
+		for(Entity entity: scene.getEntities()) {
+			Mesh mesh = (Mesh) entity.getComponent(Mesh.class);
+			
+			if(mesh != null) {
+				drawMesh(shader, entity);
+			}
+		}
+		glDrawBuffer(GL_BACK);
+		glDepthFunc(GL_LEQUAL);
+		
 		for(Entity entity: shaderMap.get(shader)) {
 			drawMesh(shader, entity);
+		}
+		
+		// Diffuse
+		shader = shaders.get(Shading.DIFFUSE);
+		glUseProgram(shader.handle);
+		
+		glUniformMatrix4(shader.biasMatrixLoc, false, biasMatrix.getBuffer());
+		
+		for (PointLight light: scene.pointLights) {
+			uploadPointLight(shader, light);
+		}
+		
+		for (DirectionalLight light: scene.dirLights) {
+			uploadDirectionalLight(shader, light);
 		}
 		
 		// Normal
@@ -181,24 +231,7 @@ public class Renderer implements ISystem {
 		shader = shaders.get(Shading.SPECULAR);
 		glUseProgram(shader.handle);
 		
-		Matrix4f biasMatrix = new Matrix4f();
-		biasMatrix.array[0] = 0.5f;
-		biasMatrix.array[5] = 0.5f;
-		biasMatrix.array[10] = 0.5f;
-		biasMatrix.array[12] = 0.5f;
-		biasMatrix.array[13] = 0.5f;
-		biasMatrix.array[14] = 0.5f;
 		glUniformMatrix4(shader.biasMatrixLoc, false, biasMatrix.getBuffer());
-		
-		// Draw the objects into depth buffer first, for culling
-		glDrawBuffer(GL_NONE);
-		for(Entity entity: shaderMap.get(shader)) {				
-			drawMesh(shader, entity);
-		}
-		glDrawBuffer(GL_BACK);
-		glDepthFunc(GL_LEQUAL);
-		
-		Transform camT = (Transform) scene.mainCamera.getComponent(Transform.class);
 		glUniform3f(shader.cameraPositionLoc, camT.position.x, camT.position.y, camT.position.z);
 		
 		for (PointLight light: scene.pointLights) {
@@ -210,88 +243,42 @@ public class Renderer implements ISystem {
 		}
 		
 		// Multiply diffuse texture with the lighting
-		for (Entity entity: shaderMap.get(shader)) {
-			shader = shaders.get(Shading.TEXTURE);
-			glUseProgram(shader.handle);
-			
-			glBlendFuncSeparate(GL_DST_COLOR, GL_ZERO, GL_ONE, GL_ONE);
-			drawMesh(shader, entity);
-		}
+		shader = shaders.get(Shading.TEXTURE);
+		glUseProgram(shader.handle);
 		
-//		// Diffuse
-//		shader = shaders.get(Shading.DIFFUSE);
-//		glUseProgram(shader.handle);
-//		
-//		biasMatrix = new Matrix4f();
-//		biasMatrix.array[0] = 0.5f;
-//		biasMatrix.array[5] = 0.5f;
-//		biasMatrix.array[10] = 0.5f;
-//		biasMatrix.array[12] = 0.5f;
-//		biasMatrix.array[13] = 0.5f;
-//		biasMatrix.array[14] = 0.5f;
-//		glUniformMatrix4(shader.biasMatrixLoc, false, biasMatrix.getBuffer());
-//		
-//		// Draw the objects into depth buffer first, for culling
-//		glDrawBuffer(GL_NONE);
-//		for(Entity entity: shaderMap.get(shader)) {				
-//			drawMesh(shader, entity);
-//		}
-//		glDrawBuffer(GL_BACK);
-//		glDepthFunc(GL_LEQUAL);
-//		
-//		camT = (Transform) scene.mainCamera.getComponent(Transform.class);
-//		glUniform3f(shader.cameraPositionLoc, camT.position.x, camT.position.y, camT.position.z);
-//		
-//		for (PointLight light: scene.pointLights) {
-//			uploadPointLight(shader, light);
-//		}
-//		
-//		for (DirectionalLight light: scene.dirLights) {
-//			uploadDirectionalLight(shader, light);
-//		}
-//		
-//		// Multiply diffuse texture with the lighting
-//		for (Entity entity: shaderMap.get(shader)) {
-//			shader = shaders.get(Shading.TEXTURE);
-//			glUseProgram(shader.handle);
-//			
-//			glBlendFuncSeparate(GL_DST_COLOR, GL_ZERO, GL_ONE, GL_ONE);
-//			drawMesh(shader, entity);
-//		}
+		// Set the blend function to multiply diffuse textures with light contributions
+		glBlendFuncSeparate(GL_DST_COLOR, GL_ZERO, GL_ONE, GL_ONE);
+
+		for(Entity entity: scene.getEntities()) {
+			Mesh mesh = (Mesh) entity.getComponent(Mesh.class);
+			
+			if(mesh != null) {
+				drawMesh(shader, entity);
+			}
+		}
 	}
 	
 	private void loadShadowInfo(int shadowMap, Matrix4f projMatrix, Matrix4f viewMatrix) {
-		glViewport(0, 0, 1024, 1024);
+		// Set the viewport to the size of the shadow map
+		glViewport(0, 0, 1024, 1024); // FIXME variable size
 		
-		// Render the scene for the shadow map
+		// Set the shadow shader to render the shadow map with
 		Shader shader = shaders.get(Shading.SHADOW);
 		glUseProgram(shader.handle);
 		
-		glBindFramebuffer(GL_FRAMEBUFFER, shadowBuffer);
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowMap, 0);
-		glReadBuffer(GL_NONE);
-		glDrawBuffer(GL_NONE);
+		// Set up the framebuffer and validate it
+		shadowBuffer.bind();
+		shadowBuffer.setTexture(GL_DEPTH_ATTACHMENT, shadowMap);
+		shadowBuffer.disableColor();
+		shadowBuffer.validate();
 		
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-			Log.debug("The framebuffer is not happy");
-			int error = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-			
-			if(error == GL_FRAMEBUFFER_UNDEFINED) { System.out.println("UNDEFINED"); }
-			if(error == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); }
-			if(error == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); }
-			if(error == GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); }
-			if(error == GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); }
-			if(error == GL_FRAMEBUFFER_UNSUPPORTED) { System.out.println("GL_FRAMEBUFFER_UNSUPPORTED"); }
-			if(error == GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); }
-			if(error == GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); }
-		}
-		
+		// Upload the light matrices
 		glUniformMatrix4(shader.siProjectionLoc, false, projMatrix.getBuffer());
 		glUniformMatrix4(shader.siViewLoc, false, viewMatrix.getBuffer());
 		
-		glDisable(GL_BLEND);
+		// Clear the framebuffer and render the scene from the view of the light
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
 		glDisable(GL_CULL_FACE);
 		
 		for(Entity entity: scene.getEntities()) {
@@ -302,47 +289,34 @@ public class Renderer implements ISystem {
 			}
 		}
 		
-		glEnable(GL_BLEND);
 		glEnable(GL_CULL_FACE);
-		
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	
 	private void loadShadowInfoCube(PointLight light, int face, Matrix4f projMatrix, Matrix4f viewMatrix, Vector3f lightPos) {
-		glViewport(0, 0, 1024, 1024);
+		// Set the viewport to the size of the shadow map
+		glViewport(0, 0, 1024, 1024); // FIXME variable size
 		
-		// Render the scene for the shadow map
+		// Set the shadow shader to render the shadow map with
 		Shader shader = shaders.get(Shading.SHADOW);
 		glUseProgram(shader.handle);
 		
-		glBindFramebuffer(GL_FRAMEBUFFER, shadowBuffer);
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, light.depthMap, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, face, light.shadowMap, 0);
-		glReadBuffer(GL_NONE);
-		glDrawBuffer(GL_COLOR_ATTACHMENT0);
-		
-		glClearColor(100, 100, 100, 100);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-			Log.debug("The framebuffer is not happy");
-			int error = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-			
-			if(error == GL_FRAMEBUFFER_UNDEFINED) { System.out.println("UNDEFINED"); }
-			if(error == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); }
-			if(error == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); }
-			if(error == GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); }
-			if(error == GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); }
-			if(error == GL_FRAMEBUFFER_UNSUPPORTED) { System.out.println("GL_FRAMEBUFFER_UNSUPPORTED"); }
-			if(error == GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); }
-			if(error == GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE) { System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); }
-		}
-		
+		// Set up the framebuffer and validate it
+		shadowBuffer.bind();
+		shadowBuffer.setTexture(GL_DEPTH_ATTACHMENT, light.depthMap);
+		shadowBuffer.setCubeMap(GL_COLOR_ATTACHMENT0, face, light.shadowMap);
+		shadowBuffer.enableColor(GL_COLOR_ATTACHMENT0);
+		shadowBuffer.validate();
+
+		// Upload the light matrices
 		glUniform3f(shader.siLightPosLoc, lightPos.x, lightPos.y, lightPos.z);
 		glUniformMatrix4(shader.siProjectionLoc, false, projMatrix.getBuffer());
 		glUniformMatrix4(shader.siViewLoc, false, viewMatrix.getBuffer());
 		
-		glDisable(GL_BLEND);
+		// Set the clear color to be the furthest distance possible
+		shadowBuffer.setClearColor(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, 1);
+		
+		// Clear the framebuffer and render the scene from the view of the light
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		for(Entity entity: scene.getEntities()) {
 			Mesh mesh = (Mesh) entity.getComponent(Mesh.class);
@@ -351,11 +325,6 @@ public class Renderer implements ISystem {
 				drawMesh(shader, entity);
 			}
 		}
-		
-		glEnable(GL_BLEND);
-		
-		glClearColor(clearColor.x, clearColor.y, clearColor.z, 0);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	
 	/**
@@ -559,5 +528,8 @@ public class Renderer implements ISystem {
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, 0);
+		
+		// Add a drawcall to the counter
+		drawCalls++;
 	}
 }

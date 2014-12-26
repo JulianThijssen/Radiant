@@ -39,9 +39,6 @@ void main(void) {
 		
 		// Shadows
 		if (material.receiveShadows && light.castShadows) {
-			float sample = texture(shadowCubeMap, position - light.position).r;
-			float dist = length(lightDir);
-			
 			visibility = getPointVisibility(bias * 20, lightDir);
 		}
 	}

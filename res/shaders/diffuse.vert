@@ -11,6 +11,9 @@ struct ShadowInfo {
 	mat4 viewMatrix;
 };
 
+uniform mat4 biasMatrix;
+uniform bool isDirLight;
+
 uniform ShadowInfo shadowInfo;
 
 layout(location = 0) in vec3 position;
@@ -27,7 +30,9 @@ void main(void) {
 	pass_position = position;
 	pass_texCoord = texCoord;
 	pass_normal = normal;
-	pass_shadowCoord = vec4((shadowInfo.projectionMatrix * shadowInfo.viewMatrix * modelMatrix * vec4(position, 1)) / 2 + 0.5);
+	if (isDirLight) {
+		pass_shadowCoord = biasMatrix * shadowInfo.projectionMatrix * shadowInfo.viewMatrix * modelMatrix * vec4(position, 1);
+	}
 	
 	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1);
 }

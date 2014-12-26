@@ -4,6 +4,9 @@ uniform mat4 modelMatrix;
 out vec4 out_Color;
 
 void main(void) {
+	float visibility = 1.0;
+	float bias = 0.005;
+	
 	vec3 refl = vec3(0, 0, 0);
 	
 	// Calculate the location of this fragment (pixel) in world coordinates
@@ -22,6 +25,11 @@ void main(void) {
 	    float fAtt = calcPointAtt(light, lightDir);
 	    float fDiffuse = calcDiffuse(lightDir, normal);
 		refl += material.diffuseColor * light.color * light.energy * fDiffuse * fAtt;
+		
+		// Shadows
+		if (material.receiveShadows && light.castShadows) {
+			visibility = getPointVisibility(bias * 20, lightDir);
+		}
 	}
 	
 	// Directional lighting
@@ -36,20 +44,11 @@ void main(void) {
 		float fDiffuse = clamp(dot(normal, normalize(lightDir)), 0, 1);
 		
 		refl += material.diffuseColor * light.color * fDiffuse * light.energy;
-	}
-	
-	// Shadows
-	float visibility = 1.0;
-	float bias = 0.005;
-	float factor = 0;
-	float xOffset = 1.0 / 1024;
-	float yOffset = 1.0 / 1024;
-	
-	if (material.receiveShadows) {
-		//float cosTheta = dot(normal, normalize(-dirLights[0].direction));
-		//float bias = 0.01 * tan(acos(cosTheta));
 		
-		visibility = getDirVisibility(bias);
+		// Shadows
+		if (material.receiveShadows && light.castShadows) {
+			visibility = getDirVisibility(bias);
+		}
 	}
 	
 	out_Color = vec4(refl * visibility, 1);
