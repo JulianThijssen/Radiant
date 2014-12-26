@@ -112,8 +112,8 @@ public class Renderer implements ISystem {
 			return;
 		}
 		
-		Camera camera = (Camera) scene.mainCamera.getComponent(Camera.class);
-		Transform ct = (Transform) scene.mainCamera.getComponent(Transform.class);
+		Camera camera = scene.mainCamera.getComponent(Camera.class);
+		Transform ct = scene.mainCamera.getComponent(Transform.class);
 		
 		renderScene(ct, camera);
 	}
@@ -131,7 +131,7 @@ public class Renderer implements ISystem {
 		// Generate the shadow maps
 		glDisable(GL_BLEND);
 		for (DirectionalLight light: scene.dirLights) {
-			Transform lightT = (Transform) light.owner.getComponent(Transform.class);
+			Transform lightT = light.owner.getComponent(Transform.class);
 			Camera lightC = new Camera(-10, 10, -10, 10, -20, 20);
 			lightC.loadProjectionMatrix(light.shadowInfo.projectionMatrix);
 			light.shadowInfo.viewMatrix.setIdentity();
@@ -143,7 +143,7 @@ public class Renderer implements ISystem {
 			}
 		}
 		for (PointLight light: scene.pointLights) {
-			Transform lightT = (Transform) light.owner.getComponent(Transform.class);
+			Transform lightT = light.owner.getComponent(Transform.class);
 			Camera lightC = new Camera(90, 1, 0.1f, 20);
 			
 			Matrix4f projectionMatrix = new Matrix4f();
@@ -183,7 +183,7 @@ public class Renderer implements ISystem {
 		biasMatrix.array[12] = 0.5f;
 		biasMatrix.array[13] = 0.5f;
 		biasMatrix.array[14] = 0.5f;
-		Transform camT = (Transform) scene.mainCamera.getComponent(Transform.class);
+		Transform camT = scene.mainCamera.getComponent(Transform.class);
 		
 		// Unshaded
 		Shader shader = shaders.get(Shading.UNSHADED);
@@ -192,7 +192,7 @@ public class Renderer implements ISystem {
 		// Draw the objects into depth buffer first, for culling
 		glDrawBuffer(GL_NONE);
 		for(Entity entity: scene.getEntities()) {
-			Mesh mesh = (Mesh) entity.getComponent(Mesh.class);
+			Mesh mesh = entity.getComponent(Mesh.class);
 			
 			if(mesh != null) {
 				drawMesh(shader, entity);
@@ -250,7 +250,7 @@ public class Renderer implements ISystem {
 		glBlendFuncSeparate(GL_DST_COLOR, GL_ZERO, GL_ONE, GL_ONE);
 
 		for(Entity entity: scene.getEntities()) {
-			Mesh mesh = (Mesh) entity.getComponent(Mesh.class);
+			Mesh mesh = entity.getComponent(Mesh.class);
 			
 			if(mesh != null) {
 				drawMesh(shader, entity);
@@ -282,7 +282,7 @@ public class Renderer implements ISystem {
 		glDisable(GL_CULL_FACE);
 		
 		for(Entity entity: scene.getEntities()) {
-			Mesh mesh = (Mesh) entity.getComponent(Mesh.class);
+			Mesh mesh = entity.getComponent(Mesh.class);
 			
 			if(mesh != null) {
 				drawMesh(shader, entity);
@@ -319,7 +319,7 @@ public class Renderer implements ISystem {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		for(Entity entity: scene.getEntities()) {
-			Mesh mesh = (Mesh) entity.getComponent(Mesh.class);
+			Mesh mesh = entity.getComponent(Mesh.class);
 			
 			if(mesh != null) {
 				drawMesh(shader, entity);
@@ -335,8 +335,8 @@ public class Renderer implements ISystem {
 			meshes.clear();
 		}
 		for(Entity e: scene.getEntities()) {
-			Mesh mesh = (Mesh) e.getComponent(Mesh.class);
-			MeshRenderer mr = (MeshRenderer) e.getComponent(MeshRenderer.class);
+			Mesh mesh = e.getComponent(Mesh.class);
+			MeshRenderer mr = e.getComponent(MeshRenderer.class);
 			if(mesh == null || mr == null) {
 				continue;
 			}
@@ -353,7 +353,7 @@ public class Renderer implements ISystem {
 	 */
 	private void uploadPointLight(Shader shader, PointLight light) {
 		Entity e = light.owner;
-		Transform lightT = (Transform) e.getComponent(Transform.class);
+		Transform lightT = e.getComponent(Transform.class);
 		
 		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, light.shadowMap);
@@ -385,7 +385,7 @@ public class Renderer implements ISystem {
 	 */
 	private void uploadDirectionalLight(Shader shader, DirectionalLight light) {
 		Entity e = light.owner;
-		Transform lightT = (Transform) e.getComponent(Transform.class);
+		Transform lightT = e.getComponent(Transform.class);
 		
 		Matrix4f m = new Matrix4f();
 		m.rotate(lightT.rotation);
@@ -484,10 +484,10 @@ public class Renderer implements ISystem {
 	 * @param entity The entity that has the mesh component to be drawn
 	 */
 	private void drawMesh(Shader shader, Entity entity) {		
-		Transform transform = (Transform) entity.getComponent(Transform.class);
-		Mesh mesh = (Mesh) entity.getComponent(Mesh.class);
-		MeshRenderer mr = (MeshRenderer) entity.getComponent(MeshRenderer.class);
-		AttachedTo attached = (AttachedTo) entity.getComponent(AttachedTo.class);
+		Transform transform = entity.getComponent(Transform.class);
+		Mesh mesh           = entity.getComponent(Mesh.class);
+		MeshRenderer mr     = entity.getComponent(MeshRenderer.class);
+		AttachedTo attached = entity.getComponent(AttachedTo.class);
 		
 		if(transform == null) {
 			return;
@@ -498,7 +498,7 @@ public class Renderer implements ISystem {
 		// Go up the hierarchy and stack transformations if this entity has a parent
 		if(attached != null) {
 			Entity parent = attached.parent;
-			Transform parentT = (Transform) parent.getComponent(Transform.class);
+			Transform parentT = parent.getComponent(Transform.class);
 
 			modelMatrix.translate(parentT.position);
 			modelMatrix.rotate(parentT.rotation);

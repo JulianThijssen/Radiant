@@ -10,8 +10,8 @@ public class BoxCollider extends Component {
 	public boolean collidesWith(BoxCollider collider) {
 		Entity other = collider.owner;
 		
-		Transform t1 = (Transform) owner.getComponent(Transform.class);
-		Transform t2 = (Transform) other.getComponent(Transform.class);
+		Transform t1 = owner.getComponent(Transform.class);
+		Transform t2 = other.getComponent(Transform.class);
 		
 		if(t1 == null || t2 == null) {
 			return false;

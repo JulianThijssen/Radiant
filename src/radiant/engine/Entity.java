@@ -14,10 +14,12 @@ public class Entity {
 		components.add(c);
 	}
 
-	public Component getComponent(Class<?> type) {
+	@SuppressWarnings("unchecked")
+	public <T extends Component> T getComponent(Class<T> type) {
 		for(Component c: components) {
 			if(c.getClass() == type) {
-				return c;
+				T component = (T) c; 
+				return component;
 			}
 		}
 		return null;

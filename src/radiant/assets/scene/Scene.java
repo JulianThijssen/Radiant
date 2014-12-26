@@ -40,8 +40,8 @@ public class Scene {
 	public List<Entity> getPointLights() {
 		ArrayList<Entity> pointLights = new ArrayList<Entity>();
 		for(Entity e: entities) {
-			Transform transform = (Transform) e.getComponent(Transform.class);
-			PointLight light = (PointLight) e.getComponent(PointLight.class);
+			Transform transform = e.getComponent(Transform.class);
+			PointLight light = e.getComponent(PointLight.class);
 			if(transform != null && light != null) {
 				pointLights.add(e);
 			}
@@ -55,8 +55,8 @@ public class Scene {
 	public List<Entity> getDirectionalLights() {
 		ArrayList<Entity> dirLights = new ArrayList<Entity>();
 		for(Entity e: entities) {
-			Transform transform = (Transform) e.getComponent(Transform.class);
-			DirectionalLight light = (DirectionalLight) e.getComponent(DirectionalLight.class);
+			Transform transform = e.getComponent(Transform.class);
+			DirectionalLight light = e.getComponent(DirectionalLight.class);
 			if(transform != null && light != null) {
 				dirLights.add(e);
 			}

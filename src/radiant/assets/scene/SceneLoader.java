@@ -109,7 +109,7 @@ public class SceneLoader {
 										}
 									}
 									if (matNode.getNodeName().equals("Tiling")) {
-										MeshRenderer mr = (MeshRenderer) entity.getComponent(MeshRenderer.class);
+										MeshRenderer mr = entity.getComponent(MeshRenderer.class);
 										
 										float xTiling = Float.parseFloat(matNode.getAttributes().getNamedItem("x").getNodeValue());
 										float yTiling = Float.parseFloat(matNode.getAttributes().getNamedItem("y").getNodeValue());
@@ -226,7 +226,7 @@ public class SceneLoader {
 						}
 					}
 				}
-				MeshRenderer mr = (MeshRenderer) entity.getComponent(MeshRenderer.class);
+				MeshRenderer mr = entity.getComponent(MeshRenderer.class);
 				if(mr == null) {
 					Material mat = new Material("Empty");
 					mat.shading = Shading.DIFFUSE;
