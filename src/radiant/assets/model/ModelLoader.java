@@ -269,9 +269,10 @@ public class ModelLoader {
 	
 	private static Face readFace(String[] segments) throws AssetLoaderException {
 		Face face = new Face();
-
+		
 		for(int i = 0; i < VERTICES_PER_FACE; i++) {
 			String[] elements = segments[i+1].split("/");
+			
 			if(elements.length >= 1) {
 				if(elements[0].isEmpty()) {
 					throw new AssetLoaderException("Vertex missing for face");
@@ -291,6 +292,7 @@ public class ModelLoader {
 				}
 			}
 		}
+		
 		return face;
 	}
 	

@@ -29,7 +29,7 @@ public class PointLight extends Component {
 	public static final float DEFAULT_ENERGY = 1.0f;
 	public static final float DEFAULT_DISTANCE = 5.0f;
 	public static final boolean DEFAULT_CAST_SHADOWS = false;
-	public static final int DEFAULT_SHADOW_RESOLUTION = 256;
+	public static final int DEFAULT_SHADOW_RESOLUTION = 1024;
 	
 	public static final Vector3f[] shadowTransforms = {
 		new Vector3f(180, 90, 0),  // Positive X
@@ -76,7 +76,7 @@ public class PointLight extends Component {
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 		for (int i = 0; i < 6; i++) {
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_R32F, 1024, 1024, 0, GL_RED, GL_FLOAT, (FloatBuffer) null);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_R32F, shadowRes, shadowRes, 0, GL_RED, GL_FLOAT, (FloatBuffer) null);
 		}
 		
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);

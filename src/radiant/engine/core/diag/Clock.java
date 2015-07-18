@@ -12,14 +12,26 @@ public class Clock {
 	 * Sets the current time as the start time of the clock
 	 */
 	public void start() {
-		startTime = System.currentTimeMillis();
+		startTime = System.nanoTime();
 	}
 	
 	/**
 	 * Sets the current time as the end time of the clock
 	 */
 	public void end() {
-		endTime = System.currentTimeMillis();
+		endTime = System.nanoTime();
+	}
+	
+	/**
+	 * Returns the difference between the end time and start time of the clock
+	 * in nanoseconds, returns -1 if one or both of the times are not set.
+	 * @return
+	 */
+	public int getNanoseconds() {
+		if(startTime == -1 || endTime == -1) {
+			return -1;
+		}
+		return (int) (endTime - startTime);
 	}
 	
 	/**
@@ -31,7 +43,7 @@ public class Clock {
 		if(startTime == -1 || endTime == -1) {
 			return -1;
 		}
-		return (int) (endTime - startTime);
+		return (int) (endTime - startTime) / 1000000;
 	}
 	
 	/**
@@ -43,6 +55,6 @@ public class Clock {
 		if(startTime == -1 || endTime == -1) {
 			return -1;
 		}
-		return (float) (endTime - startTime) / 1000;
+		return (float) (endTime - startTime) / 1000000000;
 	}
 }

@@ -95,12 +95,10 @@ float calcDiffuse(vec3 lightDir, vec3 normal) {
 
 /* Calculates the specular contribution of the light */
 float calcSpec(vec3 lightDir, vec3 camDir, vec3 normal) {
-	vec3 half = (normalize(lightDir) + normalize(camDir)) / 2;
-    float fPhong = pow(max(dot(normal, normalize(half)), 0), material.hardness);
-    if(material.hasSpecularMap) {
-    	fPhong *= texture(material.specularMap, pass_texCoord * material.tiling).xyz;
-    }
-    return fPhong;
+	vec3 half = normalize(normalize(lightDir) + normalize(camDir));
+	float fPhong = pow(max(dot(half, normal), 0), material.hardness);
+    
+	return fPhong;
 }
 
 /* Calculates whether a given fragment is in shadow for directional lights */

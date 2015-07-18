@@ -17,6 +17,7 @@ public class Log {
 	
 	public static void error(String error) {
 		out.println(error);
+		System.exit(1);
 	}
 	
 	public static void setOutput(PrintStream output) {

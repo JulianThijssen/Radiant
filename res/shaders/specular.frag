@@ -35,7 +35,9 @@ void main(void) {
 	    
 	    // Calculate specular lighting
 	    float fPhong = calcSpec(lightDir, camDir, normal);
-		refl += material.specularColor * material.specularIntensity * light.color * fPhong * fAtt;
+		if(material.hasSpecularMap) {
+			refl += material.specularColor * material.specularIntensity * light.color * fPhong * fAtt * texture(material.specularMap, pass_texCoord * material.tiling).xyz;
+		}
 		
 		// Shadows
 		if (material.receiveShadows && light.castShadows) {

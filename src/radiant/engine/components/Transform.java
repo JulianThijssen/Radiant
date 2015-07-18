@@ -21,17 +21,9 @@ public class Transform extends Component {
 	}
 	
 	public Transform(float x, float y, float z, float pitch, float yaw, float roll, float sx, float sy, float sz) {
-		position.x = x;
-		position.y = y;
-		position.z = z;
-		
-		rotation.x = pitch;
-		rotation.y = yaw;
-		rotation.z = roll;
-		
-		scale.x = sx;
-		scale.y = sy;
-		scale.z = sz;
+		position.set(x, y, z);
+		rotation.set(pitch, yaw, roll);
+		scale.set(sx, sy, sz);
 	}
 	
 	// 2D Transform

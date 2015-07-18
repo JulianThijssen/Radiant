@@ -1,6 +1,5 @@
 package radiant.engine.components;
 
-import radiant.engine.Window;
 import radiant.engine.core.math.Matrix4f;
 
 public class Camera extends Component {

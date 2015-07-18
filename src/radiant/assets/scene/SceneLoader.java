@@ -43,7 +43,7 @@ public class SceneLoader {
 		} catch(SAXException saxe) {
 			Log.error("Failed to parse scene file: " + path);
 		} catch(IOException ie) {
-			Log.error("An error occurred while reading scene file: " + path);
+			Log.error("Could not load or find scene file: " + path);
 		}
 		
 		Scene scene = new Scene();

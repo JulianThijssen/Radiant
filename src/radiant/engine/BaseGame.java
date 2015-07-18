@@ -5,6 +5,7 @@ import java.util.List;
 
 import radiant.assets.AssetLoader;
 import radiant.assets.scene.Scene;
+import radiant.engine.core.diag.Clock;
 import radiant.engine.core.diag.Log;
 import radiant.engine.core.errors.RadiantException;
 
@@ -39,6 +40,8 @@ public abstract class BaseGame {
 		window.destroy();
 	}
 	
+	Clock clock = new Clock();
+	
 	public void update() {
 		long nextUpdate = System.currentTimeMillis();
 		long lastFpsCount = System.currentTimeMillis();
@@ -62,8 +65,10 @@ public abstract class BaseGame {
 					nextUpdate += skipTime;
 					skipped++;
 				}
+				
 				renderer.update();
 				window.update();
+
 				frames++;
 			}
 		}

@@ -5,8 +5,6 @@ import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL14.glBlendFuncSeparate;
 import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.GL32.glFramebufferTexture;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +22,7 @@ import radiant.engine.components.Mesh;
 import radiant.engine.components.MeshRenderer;
 import radiant.engine.components.PointLight;
 import radiant.engine.components.Transform;
-import radiant.engine.core.diag.Log;
+import radiant.engine.core.diag.Clock;
 import radiant.engine.core.file.Path;
 import radiant.engine.core.math.Matrix4f;
 import radiant.engine.core.math.Vector3f;
@@ -44,6 +42,7 @@ public class Renderer implements ISystem {
 	private FrameBuffer shadowBuffer;
 	
 	private int drawCalls = 0;
+	private Clock clock = new Clock();
 	
 	@Override
 	public void create() {
@@ -119,6 +118,7 @@ public class Renderer implements ISystem {
 	}
 	
 	private void renderScene(Transform transform, Camera camera) {
+		clock.start();
 		camera.loadProjectionMatrix(projectionMatrix);
 		// Divide the meshes into shader buckets
 		divideMeshes();
@@ -256,6 +256,8 @@ public class Renderer implements ISystem {
 				drawMesh(shader, entity);
 			}
 		}
+		clock.end();
+		//System.out.println("Total: " + clock.getNanoseconds());
 	}
 	
 	private void loadShadowInfo(int shadowMap, Matrix4f projMatrix, Matrix4f viewMatrix) {
@@ -294,7 +296,7 @@ public class Renderer implements ISystem {
 	
 	private void loadShadowInfoCube(PointLight light, int face, Matrix4f projMatrix, Matrix4f viewMatrix, Vector3f lightPos) {
 		// Set the viewport to the size of the shadow map
-		glViewport(0, 0, 1024, 1024); // FIXME variable size
+		glViewport(0, 0, light.shadowRes, light.shadowRes);
 		
 		// Set the shadow shader to render the shadow map with
 		Shader shader = shaders.get(Shading.SHADOW);
