@@ -31,6 +31,10 @@ public class FrameBuffer {
 		glBindFramebuffer(GL_FRAMEBUFFER, handle);
 	}
 	
+	public void unbind() {
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+	
 	public void setTexture(int attachment, int texture) {
 		glFramebufferTexture(GL_FRAMEBUFFER, attachment, texture, 0);
 	}

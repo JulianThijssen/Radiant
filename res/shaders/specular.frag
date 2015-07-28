@@ -1,5 +1,6 @@
 uniform mat4 modelMatrix;
 uniform vec3 cameraPosition;
+uniform vec3 camDir;
 
 out vec4 out_Color;
 
@@ -14,7 +15,7 @@ void main(void) {
     vec3 position = (modelMatrix * vec4(pass_position, 1)).xyz;
     
     //Normals
-    vec3 normal = normalize(transpose(inverse(mat3(modelMatrix))) * pass_normal);
+    vec3 normal = normalize(pass_normal);//normalize(transpose(inverse(mat3(modelMatrix))) * pass_normal);
     
     if(material.hasNormalMap) {
     	normal = calcNormal(normal, pass_tangent, pass_texCoord);
@@ -34,10 +35,8 @@ void main(void) {
 		refl += material.diffuseColor * light.color * light.energy * fDiffuse * fAtt;
 	    
 	    // Calculate specular lighting
-	    float fPhong = calcSpec(lightDir, camDir, normal);
-		if(material.hasSpecularMap) {
-			refl += material.specularColor * material.specularIntensity * light.color * fPhong * fAtt * texture(material.specularMap, pass_texCoord * material.tiling).xyz;
-		}
+	    float fPhong = calcSpec(lightDir, camDir, normal, material.hardness);
+		refl += material.specularColor * material.specularIntensity * light.color * fPhong * fAtt;
 		
 		// Shadows
 		if (material.receiveShadows && light.castShadows) {
@@ -57,7 +56,7 @@ void main(void) {
 		refl += material.diffuseColor * light.color * fDiffuse * light.energy;
 		
 		// Calculate specular lighting
-		float fPhong = calcSpec(lightDir, camDir, normal);
+		float fPhong = calcSpec(lightDir, camDir, normal, material.hardness);
 		refl += material.specularColor * material.specularIntensity * light.color * fPhong;
 		
 		// Shadows

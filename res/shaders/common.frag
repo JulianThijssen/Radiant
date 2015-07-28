@@ -81,10 +81,8 @@ vec3 calcNormal(vec3 src_normal, vec3 src_tangent, vec2 texCoord) {
 float calcPointAtt(PointLight light, vec3 lightDir) {
 	float lightLength = length(lightDir);
 	float x = lightLength / light.distance;
-    float fAtt = 1 - pow(x, 2);
-    if (fAtt < 0) {
-    	fAtt = 0;
-    }
+    float fAtt = max(0, 1 - pow(x, 0.2));
+
     return fAtt;
 }
 
@@ -94,9 +92,12 @@ float calcDiffuse(vec3 lightDir, vec3 normal) {
 }
 
 /* Calculates the specular contribution of the light */
-float calcSpec(vec3 lightDir, vec3 camDir, vec3 normal) {
+float calcSpec(vec3 lightDir, vec3 camDir, vec3 normal, float hardness) {
 	vec3 half = normalize(normalize(lightDir) + normalize(camDir));
-	float fPhong = pow(max(dot(half, normal), 0), material.hardness);
+	float fPhong = pow(max(dot(half, normal), 0), hardness);
+	//if(material.hasSpecularMap) {
+	//	fPhong *= texture(material.specularMap, pass_texCoord * material.tiling).xyz;
+	//}
     
 	return fPhong;
 }
@@ -128,20 +129,25 @@ float getPointVisibility(float bias, vec3 lightDir) {
 	float xOffset = 1.0 / 1024;
 	float yOffset = 1.0 / 1024;
 	
-	float sample = texture(shadowCubeMap, -lightDir).r;
 	float dist = length(lightDir);
 	
-	for (int y = -1; y <= 1; y++) {
-		for (int x = -1; x <= 1; x++) {
-			float sx = pass_shadowCoord.x + x * xOffset;
-			float sy = pass_shadowCoord.y + y * yOffset;
-			if (sample < dist - bias) {
-				factor += 0;
-			} else {
-				factor += 1;
+	for (int z = -1; z <= 1; z++) {
+		for (int y = -1; y <= 1; y++) {
+			for (int x = -1; x <= 1; x++) {
+				//if (y == 0) { continue; }
+				//if (z == 0) { continue; }
+				//if (x == 0) { continue; }
+				float sx = -lightDir.x + x * 8 * xOffset;
+				float sy = -lightDir.y + y * 8 * yOffset;
+				float sz = -lightDir.z + z * 8 * yOffset;
+				float sample = texture(shadowCubeMap, vec3(sx, sy, sz)).r;
+				
+				if (dist - bias < sample) {
+					factor++;
+				}
 			}
 		}
 	}
 	
-	return (factor / 18.0);
+	return (factor / 54.0) + 0.5;
 }

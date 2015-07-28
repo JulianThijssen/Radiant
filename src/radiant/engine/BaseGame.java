@@ -3,6 +3,8 @@ package radiant.engine;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.lwjgl.input.Keyboard;
+
 import radiant.assets.AssetLoader;
 import radiant.assets.scene.Scene;
 import radiant.engine.core.diag.Clock;
@@ -12,7 +14,9 @@ import radiant.engine.core.errors.RadiantException;
 public abstract class BaseGame {
 	/* System */
 	private Window window = new Window();
-	private Renderer renderer = new Renderer();
+	
+	private Renderer forward = new ForwardRenderer();
+	private Renderer deferred = new DeferredRenderer();
 	
 	/* Scene */
 	private List<Scene> scenes = new ArrayList<Scene>();
@@ -23,11 +27,14 @@ public abstract class BaseGame {
 	private int skipTime = 40;
 	private int framesPerSecond = 0;
 	
+	private boolean deferredOn = false;
+	
 	public final void startGame() throws RadiantException {
 		if(AssetLoader.getErrors() > 0) {
 			throw new RadiantException("Can't start game, there are unresolved errors");
 		}
-		renderer.create();
+		forward.create();
+		deferred.create();
 		
 		update();
 	}
@@ -59,14 +66,23 @@ public abstract class BaseGame {
 			      Log.debug("FPS: " + framesPerSecond);
 			      frames = 0;
 			    }
-				
+			    
+			    // Switch between renderers
+			    deferredOn = Keyboard.isKeyDown(Keyboard.KEY_2);
+			    
 				while(System.currentTimeMillis() > nextUpdate && skipped < maxSkip) {
 					currentScene.update();
 					nextUpdate += skipTime;
 					skipped++;
 				}
 				
-				renderer.update();
+				if (deferredOn) {
+					forward.update();
+				}
+				else {
+					deferred.update();
+				}
+
 				window.update();
 
 				frames++;
@@ -105,7 +121,8 @@ public abstract class BaseGame {
 		for(Scene s: scenes) {
 			if(s == scene) {
 				currentScene = s;
-				renderer.setScene(currentScene);
+				forward.setScene(currentScene);
+				deferred.setScene(currentScene);
 				currentScene.start();
 			}
 		}

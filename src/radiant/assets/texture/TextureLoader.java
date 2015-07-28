@@ -1,22 +1,6 @@
 package radiant.assets.texture;
 
-import static org.lwjgl.opengl.GL11.GL_LINEAR;
-import static org.lwjgl.opengl.GL11.GL_LINEAR_MIPMAP_LINEAR;
-import static org.lwjgl.opengl.GL11.GL_NEAREST;
-import static org.lwjgl.opengl.GL11.GL_REPEAT;
-import static org.lwjgl.opengl.GL11.GL_RGBA;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_S;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_T;
-import static org.lwjgl.opengl.GL11.GL_UNPACK_ALIGNMENT;
-import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
-import static org.lwjgl.opengl.GL11.glBindTexture;
-import static org.lwjgl.opengl.GL11.glGenTextures;
-import static org.lwjgl.opengl.GL11.glPixelStorei;
-import static org.lwjgl.opengl.GL11.glTexImage2D;
-import static org.lwjgl.opengl.GL11.glTexParameteri;
+import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.glGenerateMipmap;
 
 import java.io.FileInputStream;
@@ -24,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 
 import radiant.engine.core.errors.AssetLoaderException;
 import de.matthiasmann.twl.utils.PNGDecoder;
@@ -36,6 +21,18 @@ public class TextureLoader {
 			return loadPNG(texture);
 		}
 		throw new AssetLoaderException("Can not open texture file with extension: '" + extension + "'");
+	}
+	
+	public static int create(int internalFormat, int width, int height, int format, int type, FloatBuffer data) {
+		int texture = glGenTextures();
+		glBindTexture(GL_TEXTURE_2D, texture);
+		
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		
+		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, (FloatBuffer) data);
+		
+		return texture;
 	}
 	
 	private static TextureData loadPNG(Texture texture) throws AssetLoaderException {
