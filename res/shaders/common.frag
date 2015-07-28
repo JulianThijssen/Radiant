@@ -63,6 +63,15 @@ in vec3 pass_tangent;
 in vec4 pass_shadowCoord;
 
 
+/* Converts a vector to a color */
+vec4 toColor(vec4 v) {
+	return 0.5 * v + 0.5;
+}
+
+/* Converts a color back to a vector */
+vec4 fromColor(vec4 c) {
+	return 2 * v - 1;
+}
 
 /* Calculates the normal of the fragment using a normal map */
 vec3 calcNormal(vec3 src_normal, vec3 src_tangent, vec2 texCoord) {

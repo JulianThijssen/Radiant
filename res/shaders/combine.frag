@@ -9,7 +9,7 @@ out vec4 out_Color;
 
 void main(void) {
 	vec3 color = texture(colorTex, pass_texCoord).rgb;
-	vec3 normal = texture(normalTex, pass_texCoord).rgb;
+	vec3 normal = fromColor(texture(normalTex, pass_texCoord)).rgb;
 	vec3 position = texture(positionTex, pass_texCoord).rgb;
 	vec4 specular = texture(specularTex, pass_texCoord);
 

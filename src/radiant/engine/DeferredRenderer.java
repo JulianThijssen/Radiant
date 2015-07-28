@@ -26,6 +26,7 @@ import radiant.engine.components.Mesh;
 import radiant.engine.components.MeshRenderer;
 import radiant.engine.components.PointLight;
 import radiant.engine.components.Transform;
+import radiant.engine.core.diag.Log;
 import radiant.engine.core.errors.AssetLoaderException;
 import radiant.engine.core.file.Path;
 import radiant.engine.core.math.Matrix4f;
@@ -48,9 +49,9 @@ public class DeferredRenderer extends Renderer {
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
 		glEnable(GL_TEXTURE_2D);
-		
-		setClearColor(0.2f, 0.2f, 0.6f, 1);
 
+		clearColor.set(0.286f, 0.36f, 0.396f);
+		
 		shadowBuffer = new FrameBuffer();
 		
 		loadShaders();
@@ -58,10 +59,10 @@ public class DeferredRenderer extends Renderer {
 		gBuffer = new FrameBuffer();
 		gBuffer.bind();
 		
-		colorTex = TextureLoader.create(GL_RGBA32F, Window.width, Window.height, GL_RGBA, GL_FLOAT, null);
+		colorTex = TextureLoader.create(GL_RGBA8, Window.width, Window.height, GL_RGBA, GL_UNSIGNED_BYTE, null);
 		gBuffer.setTexture(GL_COLOR_ATTACHMENT0, colorTex);
 		
-		normalTex = TextureLoader.create(GL_RGBA32F, Window.width, Window.height, GL_RGBA, GL_FLOAT, null);
+		normalTex = TextureLoader.create(GL_RGBA16, Window.width, Window.height, GL_RGBA, GL_UNSIGNED_BYTE, null);
 		gBuffer.setTexture(GL_COLOR_ATTACHMENT1, normalTex);
 		
 		positionTex = TextureLoader.create(GL_RGBA32F, Window.width, Window.height, GL_RGBA, GL_FLOAT, null);
@@ -84,7 +85,7 @@ public class DeferredRenderer extends Renderer {
 		
 		gBuffer.validate();
 		
-		gBuffer.setClearColor(0, 0, 1, 1);
+		setClearColor(clearColor.x, clearColor.y, clearColor.z, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gBuffer.unbind();
 		
@@ -111,11 +112,7 @@ public class DeferredRenderer extends Renderer {
 	}
 
 	@Override
-	public void update() {
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-		glViewport(0, 0, Window.width, Window.height);
-		
+	public void update() {		
 		// If there is no main camera in the scene, nothing can be rendered
 		if(scene.mainCamera == null) {
 			return;
@@ -128,10 +125,17 @@ public class DeferredRenderer extends Renderer {
 		
 		gBuffer.bind();
 		glViewport(0, 0, Window.width, Window.height);
+		
+		gBuffer.setClearColor(clearColor.x, clearColor.y, clearColor.z, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		renderScene(ct, camera);
 		gBuffer.unbind();
+		
+		Log.debug(clearColor.toString());
+		glViewport(0, 0, Window.width, Window.height);
+		setClearColor(clearColor.x, clearColor.y, clearColor.z, 1);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		glDisable(GL_DEPTH_TEST);
 		glBlendFunc(GL_ONE, GL_ONE);

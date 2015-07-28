@@ -16,7 +16,7 @@ void main(void) {
     	normal = calcNormal(normal, pass_tangent, pass_texCoord);
     }
     
-	out_Normal = normalize((modelMatrix * vec4(normal, 0)));
+	out_Normal = toColor(normalize((modelMatrix * vec4(normal, 0))));
 	out_Position = vec4(pass_position, 1);
 	out_Specular = vec4(material.specularColor * material.specularIntensity, material.hardness);
 	//out_Depth = vec4(depth, depth, depth, 1);
