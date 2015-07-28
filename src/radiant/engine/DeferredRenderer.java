@@ -131,8 +131,7 @@ public class DeferredRenderer extends Renderer {
 
 		renderScene(ct, camera);
 		gBuffer.unbind();
-		
-		Log.debug(clearColor.toString());
+
 		glViewport(0, 0, Window.width, Window.height);
 		setClearColor(clearColor.x, clearColor.y, clearColor.z, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -143,6 +142,8 @@ public class DeferredRenderer extends Renderer {
 		
 		Shader shader = shaders.get(Shading.AMBIENT);
 		glUseProgram(shader.handle);
+		
+		glUniform1f(glGetUniformLocation(shader.handle, "ambientLight"), 0.1f);
 		
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, colorTex);

@@ -70,7 +70,7 @@ vec4 toColor(vec4 v) {
 
 /* Converts a color back to a vector */
 vec4 fromColor(vec4 c) {
-	return 2 * v - 1;
+	return 2 * c - 1;
 }
 
 /* Calculates the normal of the fragment using a normal map */
