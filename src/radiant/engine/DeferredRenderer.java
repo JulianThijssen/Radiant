@@ -101,9 +101,9 @@ public class DeferredRenderer extends Renderer {
 	 */
 	private void loadShaders() {
 		shaders.put(Shading.NONE, null);
-		shaders.put(Shading.COMBINE, AssetLoader.loadShader(new Path("shaders/combine")));
-		shaders.put(Shading.DEFERRED, AssetLoader.loadShader(new Path("shaders/deferred")));
 		shaders.put(Shading.AMBIENT, AssetLoader.loadShader(new Path("shaders/ambient")));
+		shaders.put(Shading.GBUFFER, AssetLoader.loadShader(new Path("shaders/gbuffer")));
+		shaders.put(Shading.DEFERRED, AssetLoader.loadShader(new Path("shaders/deferred")));
 		shaders.put(Shading.SHADOW, AssetLoader.loadShader(new Path("shaders/shadow")));
 		
 		for(Shader shader: shaders.values()) {
@@ -164,7 +164,7 @@ public class DeferredRenderer extends Renderer {
 		
 		glEnable(GL_BLEND);
 		
-		shader = shaders.get(Shading.COMBINE);
+		shader = shaders.get(Shading.DEFERRED);
 		glUseProgram(shader.handle);
 		
 		glUniform3f(glGetUniformLocation(shader.handle, "camPos"), ct.position.x, ct.position.y, ct.position.z);
@@ -216,7 +216,7 @@ public class DeferredRenderer extends Renderer {
 		viewMatrix.rotate(Vector3f.negate(transform.rotation));
 		viewMatrix.translate(Vector3f.negate(transform.position));
 		
-		Shader shader = shaders.get(Shading.DEFERRED);
+		Shader shader = shaders.get(Shading.GBUFFER);
 		glUseProgram(shader.handle);
 		
 		for(Entity entity: scene.getEntities()) {
