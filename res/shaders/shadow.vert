@@ -9,6 +9,8 @@ struct ShadowInfo {
 
 uniform ShadowInfo shadowInfo;
 
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 
 layout(location = 0) in vec3 position;
@@ -16,6 +18,6 @@ layout(location = 0) in vec3 position;
 out vec3 pass_position;
 
 void main(void) {
-	gl_Position = shadowInfo.projectionMatrix * shadowInfo.viewMatrix * modelMatrix * vec4(position, 1);
+	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1);
 	pass_position = (modelMatrix * vec4(position, 1)).xyz;
 }

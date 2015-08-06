@@ -25,7 +25,7 @@ public abstract class Renderer implements ISystem {
 	protected HashMap<Shading, Shader> shaders = new HashMap<Shading, Shader>();
 	protected HashMap<Shader, List<Entity>> shaderMap = new HashMap<Shader, List<Entity>>();
 
-	protected abstract void renderScene(Transform transform, Camera camera);
+	protected abstract void renderScene(Shader shader, Transform transform, Camera camera);
 	
 	/**
 	 * Draws the mesh associated with the given entity

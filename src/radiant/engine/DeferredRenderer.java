@@ -129,7 +129,7 @@ public class DeferredRenderer extends Renderer {
 		gBuffer.setClearColor(clearColor.x, clearColor.y, clearColor.z, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		renderScene(ct, camera);
+		renderScene(shaders.get(Shading.GBUFFER), ct, camera);
 		gBuffer.unbind();
 
 		glViewport(0, 0, Window.width, Window.height);
@@ -205,19 +205,23 @@ public class DeferredRenderer extends Renderer {
 	}
 
 	@Override
-	protected void renderScene(Transform transform, Camera camera) {
-		camera.loadProjectionMatrix(projectionMatrix);
-		
+	protected void renderScene(Shader shader, Transform transform, Camera camera) {
 		// Divide the meshes into shader buckets
 		divideMeshes();
 		
+		Matrix4f projectionMatrix = new Matrix4f();
+		Matrix4f viewMatrix = new Matrix4f();
+		
+		camera.loadProjectionMatrix(projectionMatrix);
 		// Calculate view matrix
 		viewMatrix.setIdentity();
 		viewMatrix.rotate(Vector3f.negate(transform.rotation));
 		viewMatrix.translate(Vector3f.negate(transform.position));
 		
-		Shader shader = shaders.get(Shading.GBUFFER);
 		glUseProgram(shader.handle);
+		
+		glUniformMatrix4(shader.projectionMatrixLoc, false, projectionMatrix.getBuffer());
+		glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
 		
 		for(Entity entity: scene.getEntities()) {
 			Mesh mesh = entity.getComponent(Mesh.class);
@@ -246,18 +250,32 @@ public class DeferredRenderer extends Renderer {
 			Transform lightT = light.owner.getComponent(Transform.class);
 			Camera lightC = new Camera(90, 1, 0.1f, 20);
 			
-			Matrix4f projectionMatrix = new Matrix4f();
-			Matrix4f viewMatrix = new Matrix4f();
-			
 			for (int i = 0; i < 6; i++) {
-				lightT.rotation = PointLight.shadowTransforms[i];
+				lightT.rotation = CubeMap.transforms[i];
 				
-				lightC.loadProjectionMatrix(projectionMatrix);
-				viewMatrix.setIdentity();
-				viewMatrix.rotate(Vector3f.negate(lightT.rotation));
-				viewMatrix.translate(Vector3f.negate(lightT.position));
+				// Set the viewport to the size of the shadow map
+				glViewport(0, 0, light.shadowMap.getResolution(), light.shadowMap.getResolution());
 				
-				loadShadowInfoCube(light, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, projectionMatrix, viewMatrix, lightT.position);
+				// Set the shadow shader to render the shadow map with
+				Shader shader = shaders.get(Shading.SHADOW);
+				glUseProgram(shader.handle);
+				
+				// Set up the framebuffer and validate it
+				shadowBuffer.bind();
+				shadowBuffer.setCubeMap(light.shadowMap, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
+				shadowBuffer.enableColor(GL_COLOR_ATTACHMENT0);
+				shadowBuffer.validate();
+
+				// Upload the light matrices
+				glUniform3f(shader.siLightPosLoc, lightT.position.x, lightT.position.y, lightT.position.z); 
+				
+				// Set the clear color to be the furthest distance possible
+				shadowBuffer.setClearColor(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, 1);
+				
+				// Clear the framebuffer and render the scene from the view of the light
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+				renderScene(shaders.get(Shading.SHADOW), lightT, lightC);
 			}
 		}
 		shadowBuffer.unbind();
@@ -297,41 +315,6 @@ public class DeferredRenderer extends Renderer {
 		glEnable(GL_CULL_FACE);
 	}
 	
-	private void loadShadowInfoCube(PointLight light, int face, Matrix4f projMatrix, Matrix4f viewMatrix, Vector3f lightPos) {
-		// Set the viewport to the size of the shadow map
-		glViewport(0, 0, light.shadowRes, light.shadowRes);
-		
-		// Set the shadow shader to render the shadow map with
-		Shader shader = shaders.get(Shading.SHADOW);
-		glUseProgram(shader.handle);
-		
-		// Set up the framebuffer and validate it
-		shadowBuffer.bind();
-		shadowBuffer.setTexture(GL_DEPTH_ATTACHMENT, light.depthMap);
-		shadowBuffer.setCubeMap(GL_COLOR_ATTACHMENT0, face, light.shadowMap);
-		shadowBuffer.enableColor(GL_COLOR_ATTACHMENT0);
-		shadowBuffer.validate();
-
-		// Upload the light matrices
-		glUniform3f(shader.siLightPosLoc, lightPos.x, lightPos.y, lightPos.z);
-		glUniformMatrix4(shader.siProjectionLoc, false, projMatrix.getBuffer());
-		glUniformMatrix4(shader.siViewLoc, false, viewMatrix.getBuffer());
-		
-		// Set the clear color to be the furthest distance possible
-		shadowBuffer.setClearColor(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, 1);
-		
-		// Clear the framebuffer and render the scene from the view of the light
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-		for(Entity entity: scene.getEntities()) {
-			Mesh mesh = entity.getComponent(Mesh.class);
-			
-			if(mesh != null) {
-				drawMesh(shader, entity);
-			}
-		}
-	}
-	
 	/**
 	 * Uploads a point light to the shader
 	 * @param shader The shader currently in use
@@ -342,7 +325,7 @@ public class DeferredRenderer extends Renderer {
 		Transform lightT = e.getComponent(Transform.class);
 		
 		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, light.shadowMap);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, light.shadowMap.colorMap);
 		glUniform1i(shader.siCubeMapLoc, 4);
 
 		glUniform1i(shader.isPointLightLoc, 1);
@@ -469,8 +452,6 @@ public class DeferredRenderer extends Renderer {
 		modelMatrix.scale(transform.scale);
 		
 		// Upload matrices to the shader
-		glUniformMatrix4(shader.projectionMatrixLoc, false, projectionMatrix.getBuffer());
-		glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
 		glUniformMatrix4(shader.modelMatrixLoc, false, modelMatrix.getBuffer());
 		
 		if(mr.material != null) {

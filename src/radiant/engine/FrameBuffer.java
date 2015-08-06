@@ -4,6 +4,8 @@ import static org.lwjgl.opengl.GL11.GL_NONE;
 import static org.lwjgl.opengl.GL11.glClearColor;
 import static org.lwjgl.opengl.GL11.glDrawBuffer;
 import static org.lwjgl.opengl.GL11.glReadBuffer;
+import static org.lwjgl.opengl.GL30.GL_COLOR_ATTACHMENT0;
+import static org.lwjgl.opengl.GL30.GL_DEPTH_ATTACHMENT;
 import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
 import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER_COMPLETE;
 import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
@@ -39,8 +41,9 @@ public class FrameBuffer {
 		glFramebufferTexture(GL_FRAMEBUFFER, attachment, texture, 0);
 	}
 	
-	public void setCubeMap(int attachment, int face, int texture) {
-		glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, face, texture, 0);
+	public void setCubeMap(CubeMap cubeMap, int face) {
+		setTexture(GL_DEPTH_ATTACHMENT, cubeMap.depthMap);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, face, cubeMap.colorMap, 0);
 	}
 	
 	public void setClearColor(float red, float green, float blue, float alpha) {

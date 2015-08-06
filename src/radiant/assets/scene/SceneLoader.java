@@ -185,6 +185,10 @@ public class SceneLoader {
 								light.energy   = Float.parseFloat(compNode.getAttributes().getNamedItem("energy").getNodeValue());
 								light.distance = Float.parseFloat(compNode.getAttributes().getNamedItem("distance").getNodeValue());
 								light.castShadows = Boolean.parseBoolean(compNode.getAttributes().getNamedItem("castShadows").getNodeValue());
+								Node shadowNode = compNode.getAttributes().getNamedItem("shadowRes");
+								if (shadowNode != null) {
+									light.shadowMap.setResolution(Integer.parseInt(shadowNode.getNodeValue()));
+								}
 								
 								for(int l = 0; l < compNode.getChildNodes().getLength(); l++) {
 									Node lightNode = compNode.getChildNodes().item(l);
