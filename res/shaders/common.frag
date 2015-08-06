@@ -62,6 +62,7 @@ in vec3 pass_normal;
 in vec3 pass_tangent;
 in vec4 pass_shadowCoord;
 
+vec4 shadowCoord;
 
 /* Converts a vector to a color */
 vec4 toColor(vec4 v) {
@@ -119,9 +120,9 @@ float getDirVisibility(float bias) {
 	
 	for (int y = -1; y <= 1; y++) {
 		for (int x = -1; x <= 1; x++) {
-			float sx = pass_shadowCoord.x + x * xOffset;
-			float sy = pass_shadowCoord.y + y * yOffset;
-			if (texture(shadowInfo.shadowMap, pass_shadowCoord.xy).z < pass_shadowCoord.z - bias) {
+			float sx = shadowCoord.x + x * xOffset;
+			float sy = shadowCoord.y + y * yOffset;
+			if (texture(shadowInfo.shadowMap, shadowCoord.xy).z < shadowCoord.z - bias) {
 				factor += 0;
 			} else {
 				factor += 1;

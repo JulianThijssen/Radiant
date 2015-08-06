@@ -195,8 +195,25 @@ public class DeferredRenderer extends Renderer {
 		glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
 		glUniformMatrix4(shader.modelMatrixLoc, false, modelMatrix.getBuffer());
 		
+		// Render all the meshes associated with a shader
+		Matrix4f biasMatrix = new Matrix4f();
+		biasMatrix.array[0] = 0.5f;
+		biasMatrix.array[5] = 0.5f;
+		biasMatrix.array[10] = 0.5f;
+		biasMatrix.array[12] = 0.5f;
+		biasMatrix.array[13] = 0.5f;
+		biasMatrix.array[14] = 0.5f;
+		glUniformMatrix4(shader.biasMatrixLoc, false, biasMatrix.getBuffer());
+		
 		for (PointLight light: scene.pointLights) {
 			uploadPointLight(shader, light);
+			
+			glBindVertexArray(quad.handle);
+			glDrawArrays(GL_TRIANGLES, 0, quad.getNumFaces() * 3);
+			glBindVertexArray(0);
+		}
+		for (DirectionalLight light: scene.dirLights) {
+			uploadDirectionalLight(shader, light);
 			
 			glBindVertexArray(quad.handle);
 			glDrawArrays(GL_TRIANGLES, 0, quad.getNumFaces() * 3);
@@ -243,12 +260,33 @@ public class DeferredRenderer extends Renderer {
 			light.shadowInfo.viewMatrix.translate(Vector3f.negate(lightT.position));
 			
 			if (light.shadowInfo != null) {
-				loadShadowInfo(light.shadowInfo.shadowMap, light.shadowInfo.projectionMatrix, light.shadowInfo.viewMatrix);
+				// Set the viewport to the size of the shadow map
+				glViewport(0, 0, 1024, 1024); // FIXME variable size
+				
+				// Set the shadow shader to render the shadow map with
+				Shader shader = shaders.get(Shading.SHADOW);
+				glUseProgram(shader.handle);
+				
+				// Set up the framebuffer and validate it
+				shadowBuffer.bind();
+				shadowBuffer.setTexture(GL_DEPTH_ATTACHMENT, light.shadowInfo.shadowMap);
+				shadowBuffer.disableColor();
+				shadowBuffer.validate();
+				
+				// Clear the framebuffer and render the scene from the view of the light
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				
+				glDisable(GL_CULL_FACE);
+				
+				renderScene(shader, lightT, lightC);
+
+				glEnable(GL_CULL_FACE);
 			}
 		}
 		for (PointLight light: scene.pointLights) {
 			Transform lightT = light.owner.getComponent(Transform.class);
 			Camera lightC = new Camera(90, 1, 0.1f, 20);
+			
 			
 			for (int i = 0; i < 6; i++) {
 				lightT.rotation = CubeMap.transforms[i];
@@ -281,40 +319,6 @@ public class DeferredRenderer extends Renderer {
 		shadowBuffer.unbind();
 	}
 	
-	private void loadShadowInfo(int shadowMap, Matrix4f projMatrix, Matrix4f viewMatrix) {
-		// Set the viewport to the size of the shadow map
-		glViewport(0, 0, 1024, 1024); // FIXME variable size
-		
-		// Set the shadow shader to render the shadow map with
-		Shader shader = shaders.get(Shading.SHADOW);
-		glUseProgram(shader.handle);
-		
-		// Set up the framebuffer and validate it
-		shadowBuffer.bind();
-		shadowBuffer.setTexture(GL_DEPTH_ATTACHMENT, shadowMap);
-		shadowBuffer.disableColor();
-		shadowBuffer.validate();
-		
-		// Upload the light matrices
-		glUniformMatrix4(shader.siProjectionLoc, false, projMatrix.getBuffer());
-		glUniformMatrix4(shader.siViewLoc, false, viewMatrix.getBuffer());
-		
-		// Clear the framebuffer and render the scene from the view of the light
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-		glDisable(GL_CULL_FACE);
-		
-		for(Entity entity: scene.getEntities()) {
-			Mesh mesh = entity.getComponent(Mesh.class);
-			
-			if(mesh != null) {
-				drawMesh(shader, entity);
-			}
-		}
-		
-		glEnable(GL_CULL_FACE);
-	}
-	
 	/**
 	 * Uploads a point light to the shader
 	 * @param shader The shader currently in use
@@ -339,9 +343,39 @@ public class DeferredRenderer extends Renderer {
 		} else {
 			glUniform1i(shader.plCastShadowsLoc, 0);
 		}
-
-		//glActiveTexture(GL_TEXTURE4);
-		//glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+	}
+	
+	/**
+	 * Uploads a directional light to the shader
+	 * @param shader The shader currently in use
+	 * @param lights The directional light to upload
+	 */
+	private void uploadDirectionalLight(Shader shader, DirectionalLight light) {
+		Entity e = light.owner;
+		Transform lightT = e.getComponent(Transform.class);
+		
+		Matrix4f m = new Matrix4f();
+		m.rotate(lightT.rotation);
+		Vector3f dir = new Vector3f(0, 0, -1);
+		dir = m.transform(dir, 0);
+		
+		glActiveTexture(GL_TEXTURE5);
+		ShadowInfo shadowInfo = light.shadowInfo;
+		glBindTexture(GL_TEXTURE_2D, shadowInfo.shadowMap);
+		glUniform1i(shader.siMapLoc, 5);
+		glUniformMatrix4(shader.siProjectionLoc, false, shadowInfo.projectionMatrix.getBuffer());
+		glUniformMatrix4(shader.siViewLoc, false, shadowInfo.viewMatrix.getBuffer());
+		
+		glUniform1i(shader.isPointLightLoc, 0);
+		glUniform1i(shader.isDirLightLoc, 1);
+		glUniform3f(shader.dlDirectionLoc, dir.x, dir.y, dir.z);
+		glUniform3f(shader.dlColorLoc, light.color.x, light.color.y, light.color.z);
+		glUniform1f(shader.dlEnergyLoc, light.energy);
+		if (light.castShadows) {
+			glUniform1i(shader.dlCastShadowsLoc, 1);
+		} else {
+			glUniform1i(shader.dlCastShadowsLoc, 0);
+		}
 	}
 	
 	/**

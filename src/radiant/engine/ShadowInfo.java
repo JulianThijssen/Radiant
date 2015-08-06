@@ -4,12 +4,10 @@ import radiant.engine.core.math.Matrix4f;
 
 public class ShadowInfo {
 	public int shadowMap;
-	public Matrix4f projectionMatrix;
-	public Matrix4f viewMatrix;
+	public Matrix4f projectionMatrix = new Matrix4f();
+	public Matrix4f viewMatrix = new Matrix4f();
 	
-	public ShadowInfo(int shadowMap, Matrix4f projectionMatrix, Matrix4f viewMatrix) {
+	public ShadowInfo(int shadowMap) {
 		this.shadowMap = shadowMap;
-		this.projectionMatrix = projectionMatrix;
-		this.viewMatrix = viewMatrix;
 	}
 }

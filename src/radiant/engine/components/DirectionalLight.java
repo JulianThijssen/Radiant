@@ -35,7 +35,7 @@ public class DirectionalLight extends Component {
 	public DirectionalLight() {
 		// Generate a shadow info object
 		int shadowMap = glGenTextures();
-		shadowInfo = new ShadowInfo(shadowMap, new Matrix4f(), new Matrix4f());
+		shadowInfo = new ShadowInfo(shadowMap);
 		
 		glBindTexture(GL_TEXTURE_2D, shadowMap);
 		

@@ -61,6 +61,7 @@ void main(void) {
 		
 		// Shadows
 		if (material.receiveShadows && light.castShadows) {
+			shadowCoord = pass_shadowCoord;
 			visibility = getDirVisibility(bias);
 		}
 	}
