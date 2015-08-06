@@ -7,17 +7,11 @@ import static org.lwjgl.opengl.GL14.glBlendFuncSeparate;
 import static org.lwjgl.opengl.GL30.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-
-import org.omg.CORBA.CTX_RESTRICT_SCOPE;
 
 import radiant.assets.AssetLoader;
 import radiant.assets.material.Material;
 import radiant.assets.material.Shading;
-import radiant.assets.model.Model;
-import radiant.assets.model.ModelLoader;
-import radiant.assets.scene.Scene;
 import radiant.assets.shader.Shader;
 import radiant.assets.texture.TextureData;
 import radiant.engine.components.AttachedTo;
