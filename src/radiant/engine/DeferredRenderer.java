@@ -118,6 +118,9 @@ public class DeferredRenderer extends Renderer {
 			return;
 		}
 		
+		// Divide the meshes into shader buckets
+		divideMeshes();
+		
 		Camera camera = scene.mainCamera.getComponent(Camera.class);
 		Transform ct = scene.mainCamera.getComponent(Transform.class);
 		
@@ -205,10 +208,7 @@ public class DeferredRenderer extends Renderer {
 	}
 
 	@Override
-	protected void renderScene(Shader shader, Transform transform, Camera camera) {
-		// Divide the meshes into shader buckets
-		divideMeshes();
-		
+	protected void renderScene(Shader shader, Transform transform, Camera camera) {		
 		Matrix4f projectionMatrix = new Matrix4f();
 		Matrix4f viewMatrix = new Matrix4f();
 		
