@@ -48,11 +48,8 @@ public class ForwardRenderer extends Renderer {
 	 * texture wrapping and alpha handling.
 	 */
 	private void setGlParameters() {
-		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
-		glEnable(GL_BLEND);
 		
 		glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
 		
@@ -100,15 +97,13 @@ public class ForwardRenderer extends Renderer {
 		Transform ct = scene.mainCamera.getComponent(Transform.class);
 		
 		// Generate the shadow maps
+		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_BLEND);
+		
 		generateShadowMaps();
 
 		// Set the viewport to the normal window size
 		glViewport(0, 0, Window.width, Window.height);
-		
-		// Enable the blending of light contributions
-		glEnable(GL_BLEND);
-		glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ZERO);
 		
 		// Set the clear color
 		glClearColor(clearColor.x, clearColor.y, clearColor.z, 1);
@@ -129,18 +124,30 @@ public class ForwardRenderer extends Renderer {
 		biasMatrix.array[13] = 0.5f;
 		biasMatrix.array[14] = 0.5f;
 		
+		// Multiply diffuse texture with the lighting
+		Shader shader = shaders.get(Shading.TEXTURE);
+		glUseProgram(shader.handle);
+
+		glUniform1f(glGetUniformLocation(shader.handle, "ambientLight"), 0.1f);
+		
+		renderScene(shader, ct, camera);
+		
+		// Enable the blending of light contributions
+		glEnable(GL_BLEND);
+		glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ZERO);
+		glDepthFunc(GL_LEQUAL);
+		
 		// Unshaded
-		Shader shader = shaders.get(Shading.UNSHADED);
+		shader = shaders.get(Shading.UNSHADED);
 		glUseProgram(shader.handle);
 		
 		// Draw the objects into depth buffer first, for culling
-		glDrawBuffer(GL_NONE);
+		//glDrawBuffer(GL_NONE);
 		
-		renderScene(shader, ct, camera);
+		//renderScene(shader, ct, camera);
 
-		glDrawBuffer(GL_BACK);
-		glDepthFunc(GL_LEQUAL);
-		
+		//glDrawBuffer(GL_BACK);
+
 		for(Entity entity: shaderMap.get(shader)) {
 			drawMesh(shader, entity);
 		}
@@ -213,15 +220,6 @@ public class ForwardRenderer extends Renderer {
 				drawMesh(shader, entity);
 			}
 		}
-		
-		// Multiply diffuse texture with the lighting
-		shader = shaders.get(Shading.TEXTURE);
-		glUseProgram(shader.handle);
-		
-		// Set the blend function to multiply diffuse textures with light contributions
-		glBlendFuncSeparate(GL_DST_COLOR, GL_ZERO, GL_ONE, GL_ONE);
-
-		renderScene(shader, ct, camera);
 		
 		clock.end();
 		//System.out.println("Total: " + clock.getNanoseconds());

@@ -45,10 +45,8 @@ public class DeferredRenderer extends Renderer {
 	
 	@Override
 	public void create() {
-		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
-		glEnable(GL_TEXTURE_2D);
 
 		clearColor.set(0.286f, 0.36f, 0.396f);
 		
@@ -123,6 +121,9 @@ public class DeferredRenderer extends Renderer {
 		
 		Camera camera = scene.mainCamera.getComponent(Camera.class);
 		Transform ct = scene.mainCamera.getComponent(Transform.class);
+		
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
 		
 		generateShadowMaps();
 		
@@ -219,9 +220,6 @@ public class DeferredRenderer extends Renderer {
 			glDrawArrays(GL_TRIANGLES, 0, quad.getNumFaces() * 3);
 			glBindVertexArray(0);
 		}
-		
-		glDisable(GL_BLEND);
-		glEnable(GL_DEPTH_TEST);
 	}
 
 	@Override

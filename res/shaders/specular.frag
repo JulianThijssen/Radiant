@@ -32,7 +32,11 @@ void main(void) {
 	    // Calculate the diffuse contribution
 	    float fAtt = calcPointAtt(light, lightDir);
 	    float fDiffuse = calcDiffuse(lightDir, normal);
-		refl += material.diffuseColor * light.color * light.energy * fDiffuse * fAtt;
+	    vec3 diffuseColor = material.diffuseColor;
+	    if (material.hasDiffuseMap) {
+	    	diffuseColor *= texture(material.diffuseMap, pass_texCoord * material.tiling).rgb;
+	    }
+		refl += diffuseColor * light.color * light.energy * fDiffuse * fAtt;
 	    
 	    // Calculate specular lighting
 	    float fPhong = calcSpec(lightDir, camDir, normal, material.hardness);
@@ -53,7 +57,11 @@ void main(void) {
 		
 		// Calculate diffuse lighting
 		float fDiffuse = calcDiffuse(lightDir, normal);
-		refl += material.diffuseColor * light.color * fDiffuse * light.energy;
+		vec3 diffuseColor = material.diffuseColor;
+	    if (material.hasDiffuseMap) {
+	    	diffuseColor *= texture(material.diffuseMap, pass_texCoord * material.tiling).rgb;
+	    }
+		refl += diffuseColor * light.color * fDiffuse * light.energy;
 		
 		// Calculate specular lighting
 		float fPhong = calcSpec(lightDir, camDir, normal, material.hardness);
