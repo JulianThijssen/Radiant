@@ -273,12 +273,8 @@ public class DeferredRenderer extends Renderer {
 				
 				// Clear the framebuffer and render the scene from the view of the light
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-				
-				glDisable(GL_CULL_FACE);
-				
-				renderScene(shader, lightT, lightC);
 
-				glEnable(GL_CULL_FACE);
+				renderScene(shader, lightT, lightC);
 			}
 		}
 		for (PointLight light: scene.pointLights) {
