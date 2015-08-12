@@ -18,7 +18,6 @@ import static org.lwjgl.opengl.GL14.GL_DEPTH_COMPONENT16;
 import java.nio.FloatBuffer;
 
 import radiant.engine.ShadowInfo;
-import radiant.engine.core.math.Matrix4f;
 import radiant.engine.core.math.Vector3f;
 
 public class DirectionalLight extends Component {

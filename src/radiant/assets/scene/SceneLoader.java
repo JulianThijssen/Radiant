@@ -23,6 +23,7 @@ import radiant.engine.components.PointLight;
 import radiant.engine.components.Mesh;
 import radiant.engine.components.MeshRenderer;
 import radiant.engine.components.MouseLook;
+import radiant.engine.components.ReflectionProbe;
 import radiant.engine.components.Transform;
 import radiant.engine.core.diag.Log;
 import radiant.engine.core.file.Path;
@@ -156,7 +157,7 @@ public class SceneLoader {
 								}
 							}
 							
-							if(compNode.getNodeName().equals("AttachedTo")) {
+							if (compNode.getNodeName().equals("AttachedTo")) {
 								String parentName = compNode.getAttributes().getNamedItem("parent").getNodeValue();
 								for (Entity e: scene.getEntities()) {
 									if(parentName.equals(e.name)) {
@@ -166,7 +167,7 @@ public class SceneLoader {
 								}
 							}
 							
-							if(compNode.getNodeName().equals("Camera")) {
+							if (compNode.getNodeName().equals("Camera")) {
 								Camera camera = new Camera();
 								camera.setFov(Float.parseFloat(compNode.getAttributes().getNamedItem("fovy").getNodeValue()));
 								camera.setAspectRatio(Float.parseFloat(compNode.getAttributes().getNamedItem("aspect").getNodeValue()));
@@ -179,7 +180,7 @@ public class SceneLoader {
 								scene.mainCamera = entity;
 							}
 							
-							if(compNode.getNodeName().equals("PointLight")) {
+							if (compNode.getNodeName().equals("PointLight")) {
 								PointLight light = new PointLight();
 								
 								light.energy   = Float.parseFloat(compNode.getAttributes().getNamedItem("energy").getNodeValue());
@@ -204,7 +205,7 @@ public class SceneLoader {
 								entity.addComponent(light);
 							}
 							
-							if(compNode.getNodeName().equals("DirectionalLight")) {
+							if (compNode.getNodeName().equals("DirectionalLight")) {
 								DirectionalLight light = new DirectionalLight();
 								
 								light.energy   = Float.parseFloat(compNode.getAttributes().getNamedItem("energy").getNodeValue());
@@ -224,7 +225,19 @@ public class SceneLoader {
 								entity.addComponent(light);
 							}
 							
-							if(compNode.getNodeName().equals("MouseLook")) {
+							if (compNode.getNodeName().equals("ReflectionProbe")) {
+								ReflectionProbe probe = new ReflectionProbe();
+								
+								int resolution = Integer.parseInt(compNode.getAttributes().getNamedItem("res").getNodeValue());
+								
+								if (resolution > 1) {
+									probe.setResolution(resolution);
+								}
+								scene.probes.add(probe);
+								entity.addComponent(probe);
+							}
+							
+							if (compNode.getNodeName().equals("MouseLook")) {
 								entity.addComponent(new MouseLook());
 							}
 						}

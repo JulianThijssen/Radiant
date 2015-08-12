@@ -12,6 +12,7 @@ import java.util.List;
 import radiant.assets.AssetLoader;
 import radiant.assets.material.Material;
 import radiant.assets.material.Shading;
+import radiant.assets.model.ModelLoader;
 import radiant.assets.shader.Shader;
 import radiant.assets.texture.TextureData;
 import radiant.engine.components.AttachedTo;
@@ -20,14 +21,17 @@ import radiant.engine.components.DirectionalLight;
 import radiant.engine.components.Mesh;
 import radiant.engine.components.MeshRenderer;
 import radiant.engine.components.PointLight;
+import radiant.engine.components.ReflectionProbe;
 import radiant.engine.components.Transform;
 import radiant.engine.core.diag.Clock;
+import radiant.engine.core.errors.AssetLoaderException;
 import radiant.engine.core.file.Path;
 import radiant.engine.core.math.Matrix4f;
 import radiant.engine.core.math.Vector3f;
 
 public class ForwardRenderer extends Renderer {
 	private FrameBuffer shadowBuffer;
+	private FrameBuffer reflBuffer;
 	
 	private int drawCalls = 0;
 	private Clock clock = new Clock();
@@ -54,6 +58,7 @@ public class ForwardRenderer extends Renderer {
 		glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
 		
 		shadowBuffer = new FrameBuffer();
+		reflBuffer = new FrameBuffer();
 	}
 	
 	/**
@@ -67,6 +72,8 @@ public class ForwardRenderer extends Renderer {
 		shaders.put(Shading.SPECULAR, AssetLoader.loadShader(new Path("shaders/specular")));
 		shaders.put(Shading.SHADOW, AssetLoader.loadShader(new Path("shaders/shadow")));
 		shaders.put(Shading.TEXTURE, AssetLoader.loadShader(new Path("shaders/texture")));
+		shaders.put(Shading.DEBUG, AssetLoader.loadShader(new Path("shaders/3dtex")));
+		shaders.put(Shading.REFLECTIVE, AssetLoader.loadShader(new Path("shaders/reflective")));
 		
 		for(Shader shader: shaders.values()) {
 			shaderMap.put(shader, new ArrayList<Entity>());
@@ -96,15 +103,21 @@ public class ForwardRenderer extends Renderer {
 		Camera camera = scene.mainCamera.getComponent(Camera.class);
 		Transform ct = scene.mainCamera.getComponent(Transform.class);
 		
-		// Generate the shadow maps
 		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_BLEND);
 		
-		generateShadowMaps();
-
+		// Generate the shadow maps
+		genShadowMaps();
+		
+		genReflectionMaps();
+		
 		// Set the viewport to the normal window size
 		glViewport(0, 0, Window.width, Window.height);
 		
+		render(camera, ct);
+	}
+	
+	private void render(Camera camera, Transform t) {
 		// Set the clear color
 		glClearColor(clearColor.x, clearColor.y, clearColor.z, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -112,8 +125,8 @@ public class ForwardRenderer extends Renderer {
 		camera.loadProjectionMatrix(projectionMatrix);
 		// Calculate view matrix
 		viewMatrix.setIdentity();
-		viewMatrix.rotate(Vector3f.negate(ct.rotation));
-		viewMatrix.translate(Vector3f.negate(ct.position));
+		viewMatrix.rotate(Vector3f.negate(t.rotation));
+		viewMatrix.translate(Vector3f.negate(t.position));
 		
 		// Render all the meshes associated with a shader
 		Matrix4f biasMatrix = new Matrix4f();
@@ -130,7 +143,7 @@ public class ForwardRenderer extends Renderer {
 
 		glUniform1f(glGetUniformLocation(shader.handle, "ambientLight"), 0.1f);
 		
-		renderScene(shader, ct, camera);
+		renderScene(shader, t, camera);
 		
 		// Enable the blending of light contributions
 		glEnable(GL_BLEND);
@@ -141,13 +154,6 @@ public class ForwardRenderer extends Renderer {
 		shader = shaders.get(Shading.UNSHADED);
 		glUseProgram(shader.handle);
 		
-		// Draw the objects into depth buffer first, for culling
-		//glDrawBuffer(GL_NONE);
-		
-		//renderScene(shader, ct, camera);
-
-		//glDrawBuffer(GL_BACK);
-
 		for(Entity entity: shaderMap.get(shader)) {
 			drawMesh(shader, entity);
 		}
@@ -202,14 +208,14 @@ public class ForwardRenderer extends Renderer {
 		glUseProgram(shader.handle);
 		
 		glUniformMatrix4(shader.biasMatrixLoc, false, biasMatrix.getBuffer());
-		glUniform3f(shader.cameraPositionLoc, ct.position.x, ct.position.y, ct.position.z);
+		glUniform3f(shader.cameraPositionLoc, t.position.x, t.position.y, t.position.z);
 		glUniformMatrix4(shader.projectionMatrixLoc, false, projectionMatrix.getBuffer());
 		glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
 		
 		for (PointLight light: scene.pointLights) {
 			uploadPointLight(shader, light);
 			
-			for(Entity entity: shaderMap.get(shader)) {				
+			for(Entity entity: shaderMap.get(shader)) {
 				drawMesh(shader, entity);
 			}
 		}
@@ -220,8 +226,53 @@ public class ForwardRenderer extends Renderer {
 				drawMesh(shader, entity);
 			}
 		}
+
+		// Reflective
+		shader = shaders.get(Shading.REFLECTIVE);
+		glUseProgram(shader.handle);
+		
+		glUniformMatrix4(shader.biasMatrixLoc, false, biasMatrix.getBuffer());
+		glUniform3f(shader.cameraPositionLoc, t.position.x, t.position.y, t.position.z);
+		glUniformMatrix4(shader.projectionMatrixLoc, false, projectionMatrix.getBuffer());
+		glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
+		
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, scene.probes.get(0).cubeMap.colorMap);
+		glUniform1i(glGetUniformLocation(shader.handle, "reflCubeMap"), 6);
+		
+		for (PointLight light: scene.pointLights) {
+			uploadPointLight(shader, light);
+			
+			for(Entity entity: shaderMap.get(shader)) {
+				drawMesh(shader, entity);
+			}
+		}
+		for (DirectionalLight light: scene.dirLights) {
+			uploadDirectionalLight(shader, light);
+			
+			for(Entity entity: shaderMap.get(shader)) {
+				drawMesh(shader, entity);
+			}
+		}
 		
 		clock.end();
+		
+		glDisable(GL_BLEND);
+		
+		shader = shaders.get(Shading.DEBUG);
+		glUseProgram(shader.handle);
+		
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, scene.probes.get(0).cubeMap.colorMap);
+		glUniform1i(glGetUniformLocation(shader.handle, "reflCubeMap"), 6);
+		
+		glUniformMatrix4(shader.projectionMatrixLoc, false, projectionMatrix.getBuffer());
+		glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
+		
+		for(Entity entity: shaderMap.get(shader)) {				
+			drawMesh(shader, entity);
+		}
+		
 		//System.out.println("Total: " + clock.getNanoseconds());
 	}
 	
@@ -250,7 +301,7 @@ public class ForwardRenderer extends Renderer {
 		}
 	}
 	
-	private void generateShadowMaps() {
+	private void genShadowMaps() {
 		// Generate the shadow maps
 		for (DirectionalLight light: scene.dirLights) {
 			Transform lightT = light.owner.getComponent(Transform.class);
@@ -277,11 +328,7 @@ public class ForwardRenderer extends Renderer {
 				// Clear the framebuffer and render the scene from the view of the light
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 				
-				glDisable(GL_CULL_FACE);
-				
 				renderScene(shader, lightT, lightC);
-
-				glEnable(GL_CULL_FACE);
 			}
 		}
 		for (PointLight light: scene.pointLights) {
@@ -317,6 +364,29 @@ public class ForwardRenderer extends Renderer {
 			}
 		}
 		shadowBuffer.unbind();
+	}
+	
+	private void genReflectionMaps() {
+		for (ReflectionProbe probe: scene.probes) {
+			Camera camera  = new Camera(90, 1, 0.1f, 20);
+			Vector3f probePos = probe.owner.getComponent(Transform.class).position;
+			Transform transform = new Transform(probePos.x, probePos.y, probePos.z);
+			
+			for (int i = 0; i < 6; i++) {
+				transform.rotation = CubeMap.transforms[i];
+				
+				glViewport(0, 0, probe.getResolution(), probe.getResolution());
+				
+				reflBuffer.bind();
+				reflBuffer.setCubeMap(probe.cubeMap, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
+				reflBuffer.enableColor(GL_COLOR_ATTACHMENT0);
+				reflBuffer.validate();
+				
+				render(camera, transform);
+				
+				reflBuffer.unbind();
+			}
+		}
 	}
 	
 	/**
@@ -424,7 +494,7 @@ public class ForwardRenderer extends Renderer {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, diffuseMap.handle);
 			glUniform1i(shader.diffuseMapLoc, 0);
-
+			
 			// Let the shader know we uploaded a diffuse map
 			glUniform1i(shader.hasDiffuseMapLoc, 1);
 		} else {

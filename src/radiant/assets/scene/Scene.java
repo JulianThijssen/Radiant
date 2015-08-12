@@ -11,6 +11,7 @@ import radiant.engine.components.DirectionalLight;
 import radiant.engine.components.Mesh;
 import radiant.engine.components.MeshRenderer;
 import radiant.engine.components.PointLight;
+import radiant.engine.components.ReflectionProbe;
 import radiant.engine.components.Transform;
 
 public class Scene {
@@ -23,6 +24,7 @@ public class Scene {
 	public List<Camera>           cameras       = new ArrayList<Camera>();
 	public List<PointLight>       pointLights   = new ArrayList<PointLight>();
 	public List<DirectionalLight> dirLights     = new ArrayList<DirectionalLight>();
+	public List<ReflectionProbe>  probes        = new ArrayList<ReflectionProbe>();
 	
 	public Entity mainCamera;
 	

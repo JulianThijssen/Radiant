@@ -12,7 +12,7 @@ void main(void) {
 	}
 	
 	vec3 normal = pass_normal;
-	if(material.hasNormalMap) {
+	if (material.hasNormalMap) {
     	normal = calcNormal(normal, pass_tangent, pass_texCoord);
     }
     

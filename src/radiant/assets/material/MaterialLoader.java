@@ -125,10 +125,10 @@ public class MaterialLoader {
 				// Shadows
 				if (prefix.equals("ReceiveShadows")) {
 					String shadows = segments[1];
-					if("off".equals(shadows)) {
+					if ("off".equals(shadows)) {
 						currentMaterial.receiveShadows = false;
 					}
-					if("on".equals(shadows)) {
+					if ("on".equals(shadows)) {
 						currentMaterial.receiveShadows = true;
 					}
 				}
@@ -136,17 +136,23 @@ public class MaterialLoader {
 				// Shading
 				if (prefix.equals("shading")) {
 					String shading = segments[1];
-					if(shading.equals("unshaded")) {
+					if (shading.equals("unshaded")) {
 						currentMaterial.shading = Shading.UNSHADED;
 					}
-					if(shading.equals("diffuse")) {
+					if (shading.equals("diffuse")) {
 						currentMaterial.shading = Shading.DIFFUSE;
 					}
-					if(shading.equals("normal")) {
+					if (shading.equals("normal")) {
 						currentMaterial.shading = Shading.NORMAL;
 					}
-					if(shading.equals("specular")) {
+					if (shading.equals("specular")) {
 						currentMaterial.shading = Shading.SPECULAR;
+					}
+					if (shading.equals("debug")) {
+						currentMaterial.shading = Shading.DEBUG;
+					}
+					if (shading.equals("reflective")) {
+						currentMaterial.shading = Shading.REFLECTIVE;
 					}
 				}
 			}

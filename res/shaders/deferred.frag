@@ -49,7 +49,7 @@ void main(void) {
 		refl += specular.rgb * light.color * fPhong;
 		
 		shadowCoord = biasMatrix * shadowInfo.projectionMatrix * shadowInfo.viewMatrix * vec4(position, 1);
-		visibility = getDirVisibility(bias);
+		visibility = getDirVisibility(0.0025);
 	}
 	
 	out_Color = vec4(refl * visibility, 1);

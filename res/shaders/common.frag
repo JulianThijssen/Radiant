@@ -46,6 +46,7 @@ struct Material {
 
 uniform ShadowInfo shadowInfo;
 uniform samplerCube shadowCubeMap;
+uniform samplerCube reflCubeMap;
 
 uniform PointLight pointLight;
 uniform DirectionalLight dirLight;
@@ -120,12 +121,11 @@ float getDirVisibility(float bias) {
 	
 	for (int y = -1; y <= 1; y++) {
 		for (int x = -1; x <= 1; x++) {
-			float sx = shadowCoord.x + x * xOffset;
-			float sy = shadowCoord.y + y * yOffset;
-			if (texture(shadowInfo.shadowMap, shadowCoord.xy).z < shadowCoord.z - bias) {
-				factor += 0;
-			} else {
-				factor += 1;
+			float sx = shadowCoord.x + x * xOffset * 0.5;
+			float sy = shadowCoord.y + y * yOffset * 0.5;
+			float sample = texture(shadowInfo.shadowMap, vec2(sx, sy)).z;
+			if (shadowCoord.z - bias < sample) {
+				factor++;
 			}
 		}
 	}

@@ -47,7 +47,7 @@ public class ShaderLoader {
 		glValidateProgram(shaderProgram);
 		
 		Shader shader = new Shader(shaderProgram);
-	
+		Log.debug("Successfully loaded shader: " + vertpath + " and " + fragpath);
 		return shader;
 	}
 	

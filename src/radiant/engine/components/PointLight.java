@@ -1,6 +1,7 @@
 package radiant.engine.components;
 
 import radiant.engine.CubeMap;
+import radiant.engine.MapType;
 import radiant.engine.core.math.Vector3f;
 
 public class PointLight extends Component {
@@ -8,7 +9,7 @@ public class PointLight extends Component {
 	public static final float DEFAULT_DISTANCE = 5.0f;
 	public static final boolean DEFAULT_CAST_SHADOWS = false;
 
-	public CubeMap shadowMap = new CubeMap();
+	public CubeMap shadowMap = new CubeMap(MapType.SHADOW_MAP);
 	
 	public Vector3f color = new Vector3f(1, 1, 1);
 	

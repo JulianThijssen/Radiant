@@ -25,6 +25,7 @@ import radiant.engine.components.DirectionalLight;
 import radiant.engine.components.Mesh;
 import radiant.engine.components.MeshRenderer;
 import radiant.engine.components.PointLight;
+import radiant.engine.components.ReflectionProbe;
 import radiant.engine.components.Transform;
 import radiant.engine.core.diag.Log;
 import radiant.engine.core.errors.AssetLoaderException;
@@ -34,6 +35,7 @@ import radiant.engine.core.math.Vector3f;
 
 public class DeferredRenderer extends Renderer {
 	private FrameBuffer shadowBuffer;
+	private FrameBuffer reflBuffer;
 	
 	private FrameBuffer gBuffer = null;
 	private int colorTex = -1;
@@ -51,6 +53,7 @@ public class DeferredRenderer extends Renderer {
 		clearColor.set(0.286f, 0.36f, 0.396f);
 		
 		shadowBuffer = new FrameBuffer();
+		reflBuffer = new FrameBuffer();
 		
 		loadShaders();
 		
@@ -125,15 +128,23 @@ public class DeferredRenderer extends Renderer {
 		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
 		
-		generateShadowMaps();
+		// Generate the shadow maps for each light
+		genShadowMaps();
 		
+		// Generate the reflection maps for each reflection probe
+		//genReflectionMaps();
+		
+		render(camera, ct);
+	}
+
+	private void render(Camera camera, Transform t) {
 		gBuffer.bind();
 		glViewport(0, 0, Window.width, Window.height);
 		
 		gBuffer.setClearColor(clearColor.x, clearColor.y, clearColor.z, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		renderScene(shaders.get(Shading.GBUFFER), ct, camera);
+		renderScene(shaders.get(Shading.GBUFFER), t, camera);
 		gBuffer.unbind();
 
 		glViewport(0, 0, Window.width, Window.height);
@@ -171,7 +182,7 @@ public class DeferredRenderer extends Renderer {
 		shader = shaders.get(Shading.DEFERRED);
 		glUseProgram(shader.handle);
 		
-		glUniform3f(glGetUniformLocation(shader.handle, "camPos"), ct.position.x, ct.position.y, ct.position.z);
+		glUniform3f(glGetUniformLocation(shader.handle, "camPos"), t.position.x, t.position.y, t.position.z);
 		
 		projectionMatrix.setIdentity();
 		viewMatrix.setIdentity();
@@ -221,7 +232,7 @@ public class DeferredRenderer extends Renderer {
 			glBindVertexArray(0);
 		}
 	}
-
+	
 	@Override
 	protected void renderScene(Shader shader, Transform transform, Camera camera) {		
 		Matrix4f projectionMatrix = new Matrix4f();
@@ -247,7 +258,7 @@ public class DeferredRenderer extends Renderer {
 		}
 	}
 	
-	private void generateShadowMaps() {
+	private void genShadowMaps() {
 		// Generate the shadow maps
 		for (DirectionalLight light: scene.dirLights) {
 			Transform lightT = light.owner.getComponent(Transform.class);
