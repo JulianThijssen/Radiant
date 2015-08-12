@@ -17,9 +17,10 @@ void main(void) {
     //Normals
     vec3 normal = normalize(pass_normal);//normalize(transpose(inverse(mat3(modelMatrix))) * pass_normal);
     
-    if(material.hasNormalMap) {
+    if (material.hasNormalMap) {
     	normal = calcNormal(normal, pass_tangent, pass_texCoord);
     }
+    normal = normalize((modelMatrix * vec4(normal, 0))).xyz;
     
     vec3 camDir = normalize(cameraPosition - position);
 	
