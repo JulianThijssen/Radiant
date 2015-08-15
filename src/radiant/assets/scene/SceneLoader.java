@@ -53,7 +53,11 @@ public class SceneLoader {
 		
 		for(int i = 0; i < sceneNode.getChildNodes().getLength(); i++) {
 			Node entityNode = sceneNode.getChildNodes().item(i);
-			if(entityNode.getNodeName().equals("Entity")) {
+			
+			if (entityNode.getNodeName().equals("Ambient")) {
+				scene.ambient = Float.parseFloat(entityNode.getTextContent());
+			}
+			if (entityNode.getNodeName().equals("Entity")) {
 				Entity entity = new Entity();
 				
 				for(int j = 0; j < entityNode.getChildNodes().getLength(); j++) {

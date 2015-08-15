@@ -27,6 +27,7 @@ public class Scene {
 	public List<ReflectionProbe>  probes        = new ArrayList<ReflectionProbe>();
 	
 	public Entity mainCamera;
+	public float ambient = 0.1f;
 	
 	/**
 	 * Set the main camera from which to render the scene

@@ -12,7 +12,6 @@ import java.util.List;
 import radiant.assets.AssetLoader;
 import radiant.assets.material.Material;
 import radiant.assets.material.Shading;
-import radiant.assets.model.ModelLoader;
 import radiant.assets.shader.Shader;
 import radiant.assets.texture.TextureData;
 import radiant.engine.components.AttachedTo;
@@ -24,7 +23,6 @@ import radiant.engine.components.PointLight;
 import radiant.engine.components.ReflectionProbe;
 import radiant.engine.components.Transform;
 import radiant.engine.core.diag.Clock;
-import radiant.engine.core.errors.AssetLoaderException;
 import radiant.engine.core.file.Path;
 import radiant.engine.core.math.Matrix4f;
 import radiant.engine.core.math.Vector3f;
@@ -72,7 +70,6 @@ public class ForwardRenderer extends Renderer {
 		shaders.put(Shading.SPECULAR, AssetLoader.loadShader(new Path("shaders/specular")));
 		shaders.put(Shading.SHADOW, AssetLoader.loadShader(new Path("shaders/shadow")));
 		shaders.put(Shading.TEXTURE, AssetLoader.loadShader(new Path("shaders/texture")));
-		shaders.put(Shading.DEBUG, AssetLoader.loadShader(new Path("shaders/3dtex")));
 		shaders.put(Shading.REFLECTIVE, AssetLoader.loadShader(new Path("shaders/reflective")));
 		
 		for(Shader shader: shaders.values()) {
@@ -141,7 +138,7 @@ public class ForwardRenderer extends Renderer {
 		Shader shader = shaders.get(Shading.TEXTURE);
 		glUseProgram(shader.handle);
 
-		glUniform1f(glGetUniformLocation(shader.handle, "ambientLight"), 0.1f);
+		glUniform1f(glGetUniformLocation(shader.handle, "ambientLight"), scene.ambient);
 		
 		renderScene(shader, t, camera);
 		
@@ -258,20 +255,6 @@ public class ForwardRenderer extends Renderer {
 		clock.end();
 		
 		glDisable(GL_BLEND);
-		
-		shader = shaders.get(Shading.DEBUG);
-		glUseProgram(shader.handle);
-		
-		glActiveTexture(GL_TEXTURE6);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, scene.probes.get(0).cubeMap.colorMap);
-		glUniform1i(glGetUniformLocation(shader.handle, "reflCubeMap"), 6);
-		
-		glUniformMatrix4(shader.projectionMatrixLoc, false, projectionMatrix.getBuffer());
-		glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
-		
-		for(Entity entity: shaderMap.get(shader)) {				
-			drawMesh(shader, entity);
-		}
 		
 		//System.out.println("Total: " + clock.getNanoseconds());
 	}

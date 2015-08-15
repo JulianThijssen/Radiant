@@ -148,9 +148,6 @@ public class MaterialLoader {
 					if (shading.equals("specular")) {
 						currentMaterial.shading = Shading.SPECULAR;
 					}
-					if (shading.equals("debug")) {
-						currentMaterial.shading = Shading.DEBUG;
-					}
 					if (shading.equals("reflective")) {
 						currentMaterial.shading = Shading.REFLECTIVE;
 					}
