@@ -45,7 +45,7 @@ void main(void) {
 		
 		// Shadows
 		if (material.receiveShadows && light.castShadows) {
-			visibility = getPointVisibility(bias * 20, lightDir);
+			visibility = getPointVisibility(bias, lightDir);
 		}
 	}
 	

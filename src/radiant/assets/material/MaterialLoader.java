@@ -151,6 +151,9 @@ public class MaterialLoader {
 					if (shading.equals("reflective")) {
 						currentMaterial.shading = Shading.REFLECTIVE;
 					}
+					if (shading.equals("debug")) {
+						currentMaterial.shading = Shading.DEBUG;
+					}
 				}
 			}
 			materials.add(currentMaterial);

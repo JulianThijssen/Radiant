@@ -5,5 +5,5 @@ uniform vec3 lightPos;
 void main(void) {
 	vec3 lightDir = lightPos - pass_position;
 	
-	fragmentDepth = length(lightDir);
+	//fragmentDepth = length(lightDir);
 }

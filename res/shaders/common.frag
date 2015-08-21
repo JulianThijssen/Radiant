@@ -116,8 +116,8 @@ float calcSpec(vec3 lightDir, vec3 camDir, vec3 normal, float hardness) {
 /* Calculates whether a given fragment is in shadow for directional lights */
 float getDirVisibility(float bias) {
 	float factor = 0;
-	float xOffset = 1.0 / 1024;
-	float yOffset = 1.0 / 1024;
+	float xOffset = 1.0 / 2048;
+	float yOffset = 1.0 / 2048;
 	
 	for (int y = -1; y <= 1; y++) {
 		for (int x = -1; x <= 1; x++) {
@@ -133,24 +133,32 @@ float getDirVisibility(float bias) {
 	return (factor / 18.0);
 }
 
+float vecToDepthVal(vec3 v) {
+	vec3 absVec = abs(v);
+	float locZcomp = max(absVec.x, max(absVec.y, absVec.z));
+	
+	float f = 20;
+	float n = 0.1;
+	float normZcomp = (f + n) / (f - n) - (2*f*n) / (f-n) / locZcomp;
+	return (normZcomp + 1.0) * 0.5;
+}
+
 /* Calculates whether a given fragment is in shadow for point lights */
 float getPointVisibility(float bias, vec3 lightDir) {
 	float factor = 0;
-	float xOffset = 1.0 / 1024;
-	float yOffset = 1.0 / 1024;
+	float xOffset = 1.0 / 256; // FIXME allow custom resolution setting
+	float yOffset = 1.0 / 256; 
 	
-	float dist = length(lightDir);
+	float dist = vecToDepthVal(-lightDir);
+	lightDir = normalize(lightDir);
 	
 	for (int z = -1; z <= 1; z++) {
 		for (int y = -1; y <= 1; y++) {
 			for (int x = -1; x <= 1; x++) {
-				//if (y == 0) { continue; }
-				//if (z == 0) { continue; }
-				//if (x == 0) { continue; }
-				float sx = -lightDir.x + x * 8 * xOffset;
-				float sy = -lightDir.y + y * 8 * yOffset;
-				float sz = -lightDir.z + z * 8 * yOffset;
-				float sample = texture(shadowCubeMap, vec3(sx, sy, sz)).r;
+				float sx = -lightDir.x + x * xOffset;
+				float sy = -lightDir.y + y * yOffset;
+				float sz = -lightDir.z + z * yOffset;
+				float sample = texture(shadowCubeMap, vec3(sx, sy, sz)).z;
 				
 				if (dist - bias < sample) {
 					factor++;

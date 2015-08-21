@@ -71,6 +71,7 @@ public class ForwardRenderer extends Renderer {
 		shaders.put(Shading.SHADOW, AssetLoader.loadShader(new Path("shaders/shadow")));
 		shaders.put(Shading.TEXTURE, AssetLoader.loadShader(new Path("shaders/texture")));
 		shaders.put(Shading.REFLECTIVE, AssetLoader.loadShader(new Path("shaders/reflective")));
+		shaders.put(Shading.DEBUG, AssetLoader.loadShader(new Path("shaders/debug")));
 		
 		for(Shader shader: shaders.values()) {
 			shaderMap.put(shader, new ArrayList<Entity>());
@@ -223,7 +224,7 @@ public class ForwardRenderer extends Renderer {
 				drawMesh(shader, entity);
 			}
 		}
-
+		
 		// Reflective
 		shader = shaders.get(Shading.REFLECTIVE);
 		glUseProgram(shader.handle);
@@ -255,6 +256,19 @@ public class ForwardRenderer extends Renderer {
 		clock.end();
 		
 		glDisable(GL_BLEND);
+		
+		// Debug
+		shader = shaders.get(Shading.DEBUG);
+		glUseProgram(shader.handle);
+		
+		glUniformMatrix4(shader.projectionMatrixLoc, false, projectionMatrix.getBuffer());
+		glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
+		
+		uploadPointLight(shader, scene.pointLights.get(0));
+		
+		for(Entity entity: shaderMap.get(shader)) {
+			drawMesh(shader, entity);
+		}
 		
 		//System.out.println("Total: " + clock.getNanoseconds());
 	}
@@ -295,8 +309,10 @@ public class ForwardRenderer extends Renderer {
 			light.shadowInfo.viewMatrix.translate(Vector3f.negate(lightT.position));
 			
 			if (light.shadowInfo != null) {
+				int resolution = light.shadowInfo.resolution;
+				
 				// Set the viewport to the size of the shadow map
-				glViewport(0, 0, 1024, 1024); // FIXME variable size
+				glViewport(0, 0, resolution, resolution);
 				
 				// Set the shadow shader to render the shadow map with
 				Shader shader = shaders.get(Shading.SHADOW);
@@ -320,7 +336,7 @@ public class ForwardRenderer extends Renderer {
 			
 			for (int i = 0; i < 6; i++) {
 				lightT.rotation = CubeMap.transforms[i];
-				
+
 				// Set the viewport to the size of the shadow map
 				glViewport(0, 0, light.shadowMap.getResolution(), light.shadowMap.getResolution());
 				
@@ -330,8 +346,8 @@ public class ForwardRenderer extends Renderer {
 				
 				// Set up the framebuffer and validate it
 				shadowBuffer.bind();
-				shadowBuffer.setCubeMap(light.shadowMap, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
-				shadowBuffer.enableColor(GL_COLOR_ATTACHMENT0);
+				shadowBuffer.setDepthCubeMap(light.shadowMap, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
+				shadowBuffer.disableColor();
 				shadowBuffer.validate();
 
 				// Upload the light matrices
@@ -401,7 +417,7 @@ public class ForwardRenderer extends Renderer {
 		Transform lightT = e.getComponent(Transform.class);
 		
 		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, light.shadowMap.colorMap);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, light.shadowMap.depthMap);
 		glUniform1i(shader.siCubeMapLoc, 4);
 
 		glUniform1i(shader.isPointLightLoc, 1);

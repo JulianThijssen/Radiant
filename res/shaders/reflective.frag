@@ -40,8 +40,8 @@ void main(void) {
 	    if (material.hasDiffuseMap) {
 	    	diffuseColor *= texture(material.diffuseMap, pass_texCoord * material.tiling).rgb;
 	    }
-		//refl += diffuseColor * light.color * light.energy * fDiffuse * fAtt;
-		refl += texture(reflCubeMap, reflDir).rgb;// * diffuseColor * light.color * light.energy * fDiffuse;
+		refl += diffuseColor * light.color * light.energy * fDiffuse * fAtt * 0.50;
+		refl += texture(reflCubeMap, reflDir).rgb * 0.50; // * diffuseColor * light.color * light.energy * fDiffuse;
 	    
 	    // Calculate specular lighting
 	    float fPhong = calcSpec(lightDir, camDir, normal, material.hardness);

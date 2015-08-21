@@ -269,8 +269,10 @@ public class DeferredRenderer extends Renderer {
 			light.shadowInfo.viewMatrix.translate(Vector3f.negate(lightT.position));
 			
 			if (light.shadowInfo != null) {
+				int resolution = light.shadowInfo.resolution;
+				
 				// Set the viewport to the size of the shadow map
-				glViewport(0, 0, 1024, 1024); // FIXME variable size
+				glViewport(0, 0, resolution, resolution);
 				
 				// Set the shadow shader to render the shadow map with
 				Shader shader = shaders.get(Shading.SHADOW);
@@ -305,10 +307,10 @@ public class DeferredRenderer extends Renderer {
 				
 				// Set up the framebuffer and validate it
 				shadowBuffer.bind();
-				shadowBuffer.setCubeMap(light.shadowMap, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
-				shadowBuffer.enableColor(GL_COLOR_ATTACHMENT0);
+				shadowBuffer.setDepthCubeMap(light.shadowMap, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
+				shadowBuffer.disableColor();
 				shadowBuffer.validate();
-
+				
 				// Upload the light matrices
 				glUniform3f(shader.siLightPosLoc, lightT.position.x, lightT.position.y, lightT.position.z); 
 				
@@ -334,7 +336,7 @@ public class DeferredRenderer extends Renderer {
 		Transform lightT = e.getComponent(Transform.class);
 		
 		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, light.shadowMap.colorMap);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, light.shadowMap.depthMap);
 		glUniform1i(shader.siCubeMapLoc, 4);
 
 		glUniform1i(shader.isPointLightLoc, 1);

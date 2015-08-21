@@ -41,6 +41,10 @@ public class FrameBuffer {
 		glFramebufferTexture(GL_FRAMEBUFFER, attachment, texture, 0);
 	}
 	
+	public void setDepthCubeMap(CubeMap cubeMap, int face) {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, face, cubeMap.depthMap, 0);
+	}
+	
 	public void setCubeMap(CubeMap cubeMap, int face) {
 		setTexture(GL_DEPTH_ATTACHMENT, cubeMap.depthMap);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, face, cubeMap.colorMap, 0);

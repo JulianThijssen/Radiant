@@ -18,6 +18,6 @@ public class PointLight extends Component {
 	public boolean castShadows = DEFAULT_CAST_SHADOWS;
 	
 	public PointLight() {
-		
+
 	}
 }

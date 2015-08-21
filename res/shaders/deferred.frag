@@ -34,7 +34,7 @@ void main(void) {
 	    float fPhong = calcSpec(lightDir, camDir, normal, specular.w);
 		refl += specular.rgb * light.color * fPhong * fAtt;
 		
-		visibility = getPointVisibility(bias * 20, lightDir);
+		visibility = getPointVisibility(bias, lightDir);
 	}
 	if (isDirLight) {
 		DirectionalLight light = dirLight;
