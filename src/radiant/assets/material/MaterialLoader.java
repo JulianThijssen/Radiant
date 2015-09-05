@@ -10,9 +10,12 @@ import java.util.List;
 
 import radiant.assets.texture.Sampling;
 import radiant.assets.texture.Texture;
+import radiant.assets.texture.TextureLoader;
+import radiant.engine.Window;
 import radiant.engine.core.errors.AssetLoaderException;
 import radiant.engine.core.file.Path;
 import radiant.engine.core.math.Vector2f;
+import static org.lwjgl.opengl.GL11.*;
 
 public class MaterialLoader {
 	public static List<Material> loadMTL(Path path) throws AssetLoaderException {
@@ -77,6 +80,14 @@ public class MaterialLoader {
 					}
 				} catch(NumberFormatException e) {
 					throw new AssetLoaderException("Invalid number at line: " + line);
+				}
+				
+				// Reflectivity
+				if (prefix.equals("reflective")) {
+					if ("on".equals(segments[1])) {
+						currentMaterial.reflective = true;
+						currentMaterial.reflectionMap = TextureLoader.create(GL_RGBA8, Window.width, Window.height, GL_RGBA, GL_UNSIGNED_BYTE, null);
+					}
 				}
 				
 				// Diffuse texture

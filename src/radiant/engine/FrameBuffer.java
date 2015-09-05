@@ -72,22 +72,22 @@ public class FrameBuffer {
 			
 			switch (error) {
 			case GL_FRAMEBUFFER_UNDEFINED:
-				errorMessage = "Target is the default framebuffer, but the default framebuffer does not exist";
+				errorMessage = "Target is the default framebuffer, but the default framebuffer does not exist"; break;
 			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-				errorMessage = "Any of the framebuffer attachment points are framebuffer incomplete";
+				errorMessage = "Any of the framebuffer attachment points are framebuffer incomplete"; break;
 			case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-				errorMessage = "The framebuffer does not have any texture attached to it";
+				errorMessage = "The framebuffer does not have any texture attached to it"; break;
 			case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
 				errorMessage = "The value of GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE is GL_NONE "
-							 + "for any color attachment point(s) named by GL_DRAW_BUFFERi";
+							 + "for any color attachment point(s) named by GL_DRAW_BUFFERi"; break;
 			case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
 				errorMessage = "GL_READ_BUFFER is not GL_NONE and the value of GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE "
-							 + "is GL_NONE for the color attachment point named by GL_READ_BUFFER";
+							 + "is GL_NONE for the color attachment point named by GL_READ_BUFFER"; break;
 			case GL_FRAMEBUFFER_UNSUPPORTED:
 				errorMessage = "The combination of internal formats of the attached textures violates "
-							 + "an implementation-dependent set of restrictions.";
+							 + "an implementation-dependent set of restrictions."; break;
 			case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
-				errorMessage = "The value of GL_RENDERBUFFER_SAMPLES is not the same for all attached renderbuffers";
+				errorMessage = "The value of GL_RENDERBUFFER_SAMPLES is not the same for all attached renderbuffers"; break;
 			default:
 				errorMessage = "There is a problem with the framebuffer";
 			}

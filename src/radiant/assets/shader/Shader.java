@@ -50,10 +50,12 @@ public class Shader {
 	public int diffuseMapLoc;
 	public int normalMapLoc;
 	public int specularMapLoc;
+	public int reflectionMapLoc;
 	
 	public int hasDiffuseMapLoc;
 	public int hasNormalMapLoc;
 	public int hasSpecularMapLoc;
+	public int hasReflectionMapLoc;
 	
 	public int receiveShadowsLoc;
 	
@@ -108,10 +110,12 @@ public class Shader {
 		//diffuseMapLoc = glGetUniformLocation(handle, "material.diffuseMap");
 		normalMapLoc = glGetUniformLocation(handle, "material.normalMap");
 		specularMapLoc = glGetUniformLocation(handle, "material.specularMap");
+		reflectionMapLoc = glGetUniformLocation(handle, "material.reflectionMap");
 		
 		hasDiffuseMapLoc = glGetUniformLocation(handle, "material.hasDiffuseMap");
 		hasNormalMapLoc = glGetUniformLocation(handle, "material.hasNormalMap");
 		hasSpecularMapLoc = glGetUniformLocation(handle, "material.hasSpecularMap");
+		hasReflectionMapLoc = glGetUniformLocation(handle, "material.hasReflectionMap");
 		
 		receiveShadowsLoc = glGetUniformLocation(handle, "material.receiveShadows");
 		

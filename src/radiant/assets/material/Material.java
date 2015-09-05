@@ -24,9 +24,11 @@ public class Material {
 	public Texture diffuseMap = null;
 	public Texture normalMap = null;
 	public Texture specularMap = null;
+	public int reflectionMap = -1;
 	
 	public float transparency = DEFAULT_TRANSPARENCY;
 	
+	public boolean reflective = false;
 	public boolean receiveShadows = true;
 	
 	public Material(String name) {

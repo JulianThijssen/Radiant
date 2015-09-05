@@ -14,6 +14,7 @@ import radiant.assets.material.Material;
 import radiant.assets.material.Shading;
 import radiant.assets.shader.Shader;
 import radiant.assets.texture.TextureData;
+import radiant.assets.texture.TextureLoader;
 import radiant.engine.components.AttachedTo;
 import radiant.engine.components.Camera;
 import radiant.engine.components.DirectionalLight;
@@ -209,6 +210,7 @@ public class ForwardRenderer extends Renderer {
 		glUniform3f(shader.cameraPositionLoc, t.position.x, t.position.y, t.position.z);
 		glUniformMatrix4(shader.projectionMatrixLoc, false, projectionMatrix.getBuffer());
 		glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
+		glUniform1i(glGetUniformLocation(shader.handle, "reflections"), 1);
 		
 		for (PointLight light: scene.pointLights) {
 			uploadPointLight(shader, light);
@@ -254,7 +256,7 @@ public class ForwardRenderer extends Renderer {
 		}
 		
 		clock.end();
-		
+
 		glDisable(GL_BLEND);
 		
 		// Debug
@@ -366,6 +368,135 @@ public class ForwardRenderer extends Renderer {
 	}
 	
 	private void genReflectionMaps() {
+		for (Entity e: scene.getEntities()) {
+			MeshRenderer mr = e.getComponent(MeshRenderer.class);
+			Camera cam = scene.mainCamera.getComponent(Camera.class);
+			Transform ct = scene.mainCamera.getComponent(Transform.class);
+			
+			if (mr != null && mr.material.reflective) {
+				reflBuffer.bind();
+				reflBuffer.setTexture(GL_COLOR_ATTACHMENT0, mr.material.reflectionMap);
+				int depthMap = TextureLoader.create(GL_DEPTH24_STENCIL8, Window.width, Window.height, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, null);
+				reflBuffer.setTexture(GL_DEPTH_STENCIL_ATTACHMENT, depthMap);
+				reflBuffer.enableColor(GL_COLOR_ATTACHMENT0);
+				reflBuffer.validate();
+				
+				Shader shader = shaders.get(Shading.UNSHADED);
+				glUseProgram(shader.handle);
+				
+				glEnable(GL_STENCIL_TEST);
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+				
+				glStencilFunc(GL_NEVER, 1, 1);
+				glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+				
+				cam.loadProjectionMatrix(projectionMatrix);
+				// Calculate view matrix
+				viewMatrix.setIdentity();
+				viewMatrix.rotate(Vector3f.negate(ct.rotation));
+				viewMatrix.translate(Vector3f.negate(ct.position));
+				
+				glUniformMatrix4(shader.projectionMatrixLoc, false, projectionMatrix.getBuffer());
+				glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
+				
+				glViewport(0, 0, Window.width, Window.height);
+				glColorMask(false, false, false, false);
+				glDepthMask(false);
+				drawMesh(shader, e);
+				glDepthMask(true);
+				glColorMask(true, true, true, true);
+				
+				glStencilFunc(GL_EQUAL, 1, 1);
+				glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+				glDisable(GL_BLEND);
+				ct.scale.y *= -1;
+				
+				////////////////////////////////
+				// Set the clear color
+				glClearColor(clearColor.x, clearColor.y, clearColor.z, 1);
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				
+				cam.loadProjectionMatrix(projectionMatrix);
+				// Calculate view matrix
+				viewMatrix.setIdentity();
+				viewMatrix.rotate(Vector3f.negate(ct.rotation));
+				viewMatrix.translate(Vector3f.negate(ct.position));
+				viewMatrix.scale(new Vector3f(1, -1, 1));
+
+				// Render all the meshes associated with a shader
+				Matrix4f biasMatrix = new Matrix4f();
+				biasMatrix.array[0] = 0.5f;
+				biasMatrix.array[5] = 0.5f;
+				biasMatrix.array[10] = 0.5f;
+				biasMatrix.array[12] = 0.5f;
+				biasMatrix.array[13] = 0.5f;
+				biasMatrix.array[14] = 0.5f;
+				
+				glCullFace(GL_FRONT);
+				
+				// Multiply diffuse texture with the lighting
+				shader = shaders.get(Shading.TEXTURE);
+				glUseProgram(shader.handle);
+
+				glUniform1f(glGetUniformLocation(shader.handle, "ambientLight"), scene.ambient);
+				
+				glUseProgram(shader.handle);
+				
+				glUniformMatrix4(shader.projectionMatrixLoc, false, projectionMatrix.getBuffer());
+				glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
+				
+				for(Entity entity: scene.getEntities()) {
+					Mesh mesh = entity.getComponent(Mesh.class);
+					
+					if(mesh != null) {
+						drawMesh(shader, entity);
+					}
+				}
+				
+				// Enable the blending of light contributions
+				glEnable(GL_BLEND);
+				glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ZERO);
+				glDepthFunc(GL_LEQUAL);
+
+				// Specular
+				shader = shaders.get(Shading.SPECULAR);
+				glUseProgram(shader.handle);
+				
+				glUniformMatrix4(shader.biasMatrixLoc, false, biasMatrix.getBuffer());
+				glUniform3f(shader.cameraPositionLoc, ct.position.x, ct.position.y, ct.position.z);
+				glUniformMatrix4(shader.projectionMatrixLoc, false, projectionMatrix.getBuffer());
+				glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
+				glUniform1i(glGetUniformLocation(shader.handle, "reflections"), 0);
+				
+				for (PointLight light: scene.pointLights) {
+					uploadPointLight(shader, light);
+					
+					for(Entity entity: shaderMap.get(shader)) {
+						drawMesh(shader, entity);
+					}
+				}
+				for (DirectionalLight light: scene.dirLights) {
+					uploadDirectionalLight(shader, light);
+					
+					for(Entity entity: shaderMap.get(shader)) {				
+						drawMesh(shader, entity);
+					}
+				}
+
+				glCullFace(GL_BACK);
+				glDisable(GL_BLEND);
+				////////////////////////////////
+
+				ct.scale.y *= -1;
+				
+				glDisable(GL_STENCIL_TEST);
+				
+				glDeleteTextures(depthMap);
+				
+				reflBuffer.unbind();
+			}
+		}
 		for (ReflectionProbe probe: scene.probes) {
 			Camera camera  = new Camera(90, 1, 0.1f, 20);
 			Vector3f probePos = probe.owner.getComponent(Transform.class).position;
@@ -524,6 +655,16 @@ public class ForwardRenderer extends Renderer {
 			glUniform1i(shader.hasSpecularMapLoc, 1);
 		} else {
 			glUniform1i(shader.hasSpecularMapLoc, 0);
+		}
+		// Reflection texture
+		if (mat.reflective) {
+			glActiveTexture(GL_TEXTURE3);
+			glBindTexture(GL_TEXTURE_2D, mat.reflectionMap);
+			glUniform1i(shader.reflectionMapLoc, 3);
+			
+			glUniform1i(shader.hasReflectionMapLoc, 1);
+		} else {
+			glUniform1i(shader.hasReflectionMapLoc, 0);
 		}
 	}
 	
