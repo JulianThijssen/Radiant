@@ -16,7 +16,7 @@ void main(void) {
 	vec3 position = texture(positionTex, pass_texCoord).rgb;
 	vec4 specular = texture(specularTex, pass_texCoord);
 
-	float bias = 0.005;
+	float bias = 0.0015;
 	float visibility = 1.0;
 	vec3 refl = vec3(0, 0, 0);
 	

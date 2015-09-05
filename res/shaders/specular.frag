@@ -9,7 +9,7 @@ out vec4 out_Color;
 void main(void) {
 	// Shadows
 	float visibility = 1.0;
-	float bias = 0.005;
+	float bias = 0.0015;
 	
 	vec3 refl = vec3(0, 0, 0);
 	
@@ -28,9 +28,7 @@ void main(void) {
 	
 	if (reflections && material.hasReflectionMap) {
 		vec2 fragPos = vec2(gl_FragCoord.x / 1024, gl_FragCoord.y / 800);
-		refl += texture(material.reflectionMap, fragPos).rgb * 0.3f;
-		out_Color = vec4(refl, 1);
-		return;
+		refl += texture(material.reflectionMap, fragPos).rgb * 0.2f;
 	}
 	
 	// Point lighting

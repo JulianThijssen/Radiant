@@ -169,5 +169,5 @@ float getPointVisibility(float bias, vec3 lightDir) {
 		}
 	}
 	
-	return (factor / 54.0) + 0.5;
+	return (factor / 54.0);
 }
