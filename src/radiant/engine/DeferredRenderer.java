@@ -169,9 +169,9 @@ public class DeferredRenderer extends Renderer {
 		modelMatrix.setIdentity();
 		
 		// Upload matrices to the shader
-		glUniformMatrix4(shader.projectionMatrixLoc, false, projectionMatrix.getBuffer());
-		glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
-		glUniformMatrix4(shader.modelMatrixLoc, false, modelMatrix.getBuffer());
+		glUniformMatrix4(shader.uniform("projectionMatrix"), false, projectionMatrix.getBuffer());
+		glUniformMatrix4(shader.uniform("viewMatrix"), false, viewMatrix.getBuffer());
+		glUniformMatrix4(shader.uniform("modelMatrix"), false, modelMatrix.getBuffer());
 		
 		glBindVertexArray(quad.handle);
 		glDrawArrays(GL_TRIANGLES, 0, quad.getNumFaces() * 3);
@@ -203,9 +203,9 @@ public class DeferredRenderer extends Renderer {
 		glUniform1i(glGetUniformLocation(shader.handle, "specularTex"), 3);
 		
 		// Upload matrices to the shader
-		glUniformMatrix4(shader.projectionMatrixLoc, false, projectionMatrix.getBuffer());
-		glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
-		glUniformMatrix4(shader.modelMatrixLoc, false, modelMatrix.getBuffer());
+		glUniformMatrix4(shader.uniform("projectionMatrix"), false, projectionMatrix.getBuffer());
+		glUniformMatrix4(shader.uniform("viewMatrix"), false, viewMatrix.getBuffer());
+		glUniformMatrix4(shader.uniform("modelMatrix"), false, modelMatrix.getBuffer());
 		
 		// Render all the meshes associated with a shader
 		Matrix4f biasMatrix = new Matrix4f();
@@ -215,7 +215,7 @@ public class DeferredRenderer extends Renderer {
 		biasMatrix.array[12] = 0.5f;
 		biasMatrix.array[13] = 0.5f;
 		biasMatrix.array[14] = 0.5f;
-		glUniformMatrix4(shader.biasMatrixLoc, false, biasMatrix.getBuffer());
+		glUniformMatrix4(shader.uniform("biasMatrix"), false, biasMatrix.getBuffer());
 		
 		for (PointLight light: scene.pointLights) {
 			uploadPointLight(shader, light);
@@ -246,8 +246,8 @@ public class DeferredRenderer extends Renderer {
 		
 		glUseProgram(shader.handle);
 		
-		glUniformMatrix4(shader.projectionMatrixLoc, false, projectionMatrix.getBuffer());
-		glUniformMatrix4(shader.viewMatrixLoc, false, viewMatrix.getBuffer());
+		glUniformMatrix4(shader.uniform("projectionMatrix"), false, projectionMatrix.getBuffer());
+		glUniformMatrix4(shader.uniform("viewMatrix"), false, viewMatrix.getBuffer());
 		
 		for(Entity entity: scene.getEntities()) {
 			Mesh mesh = entity.getComponent(Mesh.class);
@@ -312,7 +312,7 @@ public class DeferredRenderer extends Renderer {
 				shadowBuffer.validate();
 				
 				// Upload the light matrices
-				glUniform3f(shader.siLightPosLoc, lightT.position.x, lightT.position.y, lightT.position.z); 
+				glUniform3f(shader.uniform("lightPos"), lightT.position.x, lightT.position.y, lightT.position.z); 
 				
 				// Set the clear color to be the furthest distance possible
 				shadowBuffer.setClearColor(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, 1);
@@ -337,18 +337,18 @@ public class DeferredRenderer extends Renderer {
 		
 		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, light.shadowMap.depthMap);
-		glUniform1i(shader.siCubeMapLoc, 4);
+		glUniform1i(shader.uniform("shadowCubeMap"), 4);
 
-		glUniform1i(shader.isPointLightLoc, 1);
-		glUniform1i(shader.isDirLightLoc, 0);
-		glUniform3f(shader.plPositionLoc, lightT.position.x, lightT.position.y, lightT.position.z);
-		glUniform3f(shader.plColorLoc, light.color.x, light.color.y, light.color.z);
-		glUniform1f(shader.plEnergyLoc, light.energy);
-		glUniform1f(shader.plDistanceLoc, light.distance);
+		glUniform1i(shader.uniform("isPointLight"), 1);
+		glUniform1i(shader.uniform("isDirLight"), 0);
+		glUniform3f(shader.uniform("pointLight.position"), lightT.position.x, lightT.position.y, lightT.position.z);
+		glUniform3f(shader.uniform("pointLight.color"), light.color.x, light.color.y, light.color.z);
+		glUniform1f(shader.uniform("pointLight.energy"), light.energy);
+		glUniform1f(shader.uniform("pointLight.distance"), light.distance);
 		if (light.castShadows) {
-			glUniform1i(shader.plCastShadowsLoc, 1);
+			glUniform1i(shader.uniform("pointLight.castShadows"), 1);
 		} else {
-			glUniform1i(shader.plCastShadowsLoc, 0);
+			glUniform1i(shader.uniform("pointLight.castShadows"), 0);
 		}
 	}
 	
@@ -369,19 +369,19 @@ public class DeferredRenderer extends Renderer {
 		glActiveTexture(GL_TEXTURE5);
 		ShadowInfo shadowInfo = light.shadowInfo;
 		glBindTexture(GL_TEXTURE_2D, shadowInfo.shadowMap);
-		glUniform1i(shader.siMapLoc, 5);
-		glUniformMatrix4(shader.siProjectionLoc, false, shadowInfo.projectionMatrix.getBuffer());
-		glUniformMatrix4(shader.siViewLoc, false, shadowInfo.viewMatrix.getBuffer());
+		glUniform1i(shader.uniform("shadowInfo.shadowMap"), 5);
+		glUniformMatrix4(shader.uniform("shadowInfo.projectionMatrix"), false, shadowInfo.projectionMatrix.getBuffer());
+		glUniformMatrix4(shader.uniform("shadowInfo.viewMatrix"), false, shadowInfo.viewMatrix.getBuffer());
 		
-		glUniform1i(shader.isPointLightLoc, 0);
-		glUniform1i(shader.isDirLightLoc, 1);
-		glUniform3f(shader.dlDirectionLoc, dir.x, dir.y, dir.z);
-		glUniform3f(shader.dlColorLoc, light.color.x, light.color.y, light.color.z);
-		glUniform1f(shader.dlEnergyLoc, light.energy);
+		glUniform1i(shader.uniform("isPointLight"), 0);
+		glUniform1i(shader.uniform("isDirLight"), 1);
+		glUniform3f(shader.uniform("dirLight.direction"), dir.x, dir.y, dir.z);
+		glUniform3f(shader.uniform("dirLight.color"), light.color.x, light.color.y, light.color.z);
+		glUniform1f(shader.uniform("dirLight.energy"), light.energy);
 		if (light.castShadows) {
-			glUniform1i(shader.dlCastShadowsLoc, 1);
+			glUniform1i(shader.uniform("dirLight.castShadows"), 1);
 		} else {
-			glUniform1i(shader.dlCastShadowsLoc, 0);
+			glUniform1i(shader.uniform("dirLight.castShadows"), 0);
 		}
 	}
 	
@@ -411,17 +411,17 @@ public class DeferredRenderer extends Renderer {
 	 */
 	private void uploadMaterial(Shader shader, Material mat) {
 		// Colors
-		glUniform3f(shader.diffuseColorLoc,	mat.diffuseColor.x, mat.diffuseColor.y, mat.diffuseColor.z);
-		glUniform3f(shader.specularColorLoc, mat.specularColor.x, mat.specularColor.y, mat.specularColor.z);
+		glUniform3f(shader.uniform("material.diffuseColor"),	mat.diffuseColor.x, mat.diffuseColor.y, mat.diffuseColor.z);
+		glUniform3f(shader.uniform("material.specularColor"), mat.specularColor.x, mat.specularColor.y, mat.specularColor.z);
 		
-		glUniform1f(shader.specularIntensityLoc, mat.specularIntensity);
-		glUniform2f(shader.tilingLoc, mat.tiling.x, mat.tiling.y);
-		glUniform1f(shader.hardnessLoc, mat.hardness);
+		glUniform1f(shader.uniform("material.specularIntensity"), mat.specularIntensity);
+		glUniform2f(shader.uniform("material.tiling"), mat.tiling.x, mat.tiling.y);
+		glUniform1f(shader.uniform("material.hardness"), mat.hardness);
 		
 		if(mat.receiveShadows) {
-			glUniform1i(shader.receiveShadowsLoc, 1);
+			glUniform1i(shader.uniform("material.receiveShadows"), 1);
 		} else {
-			glUniform1i(shader.receiveShadowsLoc, 0);
+			glUniform1i(shader.uniform("material.receiveShadows"), 0);
 		}
 		
 		// Diffuse texture
@@ -430,12 +430,12 @@ public class DeferredRenderer extends Renderer {
 
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, diffuseMap.handle);
-			glUniform1i(shader.diffuseMapLoc, 0);
+			glUniform1i(shader.uniform("material.diffuseMap"), 0);
 
 			// Let the shader know we uploaded a diffuse map
-			glUniform1i(shader.hasDiffuseMapLoc, 1);
+			glUniform1i(shader.uniform("material.hasDiffuseMap"), 1);
 		} else {
-			glUniform1i(shader.hasDiffuseMapLoc, 0);
+			glUniform1i(shader.uniform("material.hasDiffuseMap"), 0);
 		}
 		// Normal texture
 		if(mat.normalMap != null) {
@@ -443,12 +443,12 @@ public class DeferredRenderer extends Renderer {
 
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, normalMap.handle);
-			glUniform1i(shader.normalMapLoc, 1);
+			glUniform1i(shader.uniform("material.normalMap"), 1);
 			
 			// Let the shader know we uploaded a normal map
-			glUniform1i(shader.hasNormalMapLoc, 1);
+			glUniform1i(shader.uniform("material.hasNormalMap"), 1);
 		} else {
-			glUniform1i(shader.hasNormalMapLoc, 0);
+			glUniform1i(shader.uniform("material.hasNormalMap"), 0);
 		}
 		// Specular texture
 		if(mat.specularMap != null) {
@@ -456,12 +456,12 @@ public class DeferredRenderer extends Renderer {
 
 			glActiveTexture(GL_TEXTURE2);
 			glBindTexture(GL_TEXTURE_2D, specularMap.handle);
-			glUniform1i(shader.specularMapLoc, 2);
+			glUniform1i(shader.uniform("material.specularMap"), 2);
 
 			// Let the shader know we uploaded a specular map
-			glUniform1i(shader.hasSpecularMapLoc, 1);
+			glUniform1i(shader.uniform("material.hasSpecularMap"), 1);
 		} else {
-			glUniform1i(shader.hasSpecularMapLoc, 0);
+			glUniform1i(shader.uniform("material.hasSpecularMap"), 0);
 		}
 	}
 	
@@ -493,7 +493,7 @@ public class DeferredRenderer extends Renderer {
 		modelMatrix.scale(transform.scale);
 		
 		// Upload matrices to the shader
-		glUniformMatrix4(shader.modelMatrixLoc, false, modelMatrix.getBuffer());
+		glUniformMatrix4(shader.uniform("modelMatrix"), false, modelMatrix.getBuffer());
 		
 		if(mr.material != null) {
 			uploadMaterial(shader, mr.material);
