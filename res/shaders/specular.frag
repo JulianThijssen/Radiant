@@ -1,6 +1,8 @@
+uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 uniform vec3 cameraPosition;
 uniform vec3 camDir;
+uniform bool reflections;
 
 out vec4 out_Color;
 
@@ -23,6 +25,13 @@ void main(void) {
     normal = normalize((modelMatrix * vec4(normal, 0))).xyz;
     
     vec3 camDir = normalize(cameraPosition - position);
+	
+	if (reflections && material.hasReflectionMap) {
+		vec2 fragPos = vec2(gl_FragCoord.x / 1024, gl_FragCoord.y / 800);
+		refl += texture(material.reflectionMap, fragPos).rgb * 0.3f;
+		out_Color = vec4(refl, 1);
+		return;
+	}
 	
 	// Point lighting
 	if (isPointLight) {

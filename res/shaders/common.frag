@@ -36,10 +36,12 @@ struct Material {
 	sampler2D diffuseMap;
 	sampler2D normalMap;
 	sampler2D specularMap;
+	sampler2D reflectionMap;
 	
 	bool hasDiffuseMap;
 	bool hasNormalMap;
 	bool hasSpecularMap;
+	bool hasReflectionMap;
 	
 	bool receiveShadows;
 };

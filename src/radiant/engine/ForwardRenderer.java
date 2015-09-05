@@ -236,41 +236,30 @@ public class ForwardRenderer extends Renderer {
 		glUniformMatrix4(shader.uniform("projectionMatrix"), false, projectionMatrix.getBuffer());
 		glUniformMatrix4(shader.uniform("viewMatrix"), false, viewMatrix.getBuffer());
 		
-		glActiveTexture(GL_TEXTURE6);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, scene.probes.get(0).cubeMap.colorMap);
-		glUniform1i(glGetUniformLocation(shader.handle, "reflCubeMap"), 6);
-		
-		for (PointLight light: scene.pointLights) {
-			uploadPointLight(shader, light);
+		for (ReflectionProbe probe: scene.probes) {
+			glActiveTexture(GL_TEXTURE6);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, probe.cubeMap.colorMap);
+			glUniform1i(glGetUniformLocation(shader.handle, "reflCubeMap"), 6);
 			
-			for(Entity entity: shaderMap.get(shader)) {
-				drawMesh(shader, entity);
+			for (PointLight light: scene.pointLights) {
+				uploadPointLight(shader, light);
+				
+				for(Entity entity: shaderMap.get(shader)) {
+					drawMesh(shader, entity);
+				}
 			}
-		}
-		for (DirectionalLight light: scene.dirLights) {
-			uploadDirectionalLight(shader, light);
-			
-			for(Entity entity: shaderMap.get(shader)) {
-				drawMesh(shader, entity);
+			for (DirectionalLight light: scene.dirLights) {
+				uploadDirectionalLight(shader, light);
+				
+				for(Entity entity: shaderMap.get(shader)) {
+					drawMesh(shader, entity);
+				}
 			}
 		}
 		
 		clock.end();
 
 		glDisable(GL_BLEND);
-		
-		// Debug
-		shader = shaders.get(Shading.DEBUG);
-		glUseProgram(shader.handle);
-		
-		glUniformMatrix4(shader.uniform("projectionMatrix"), false, projectionMatrix.getBuffer());
-		glUniformMatrix4(shader.uniform("viewMatrix"), false, viewMatrix.getBuffer());
-		
-		uploadPointLight(shader, scene.pointLights.get(0));
-		
-		for(Entity entity: shaderMap.get(shader)) {
-			drawMesh(shader, entity);
-		}
 		
 		//System.out.println("Total: " + clock.getNanoseconds());
 	}
