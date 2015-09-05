@@ -1,5 +1,3 @@
-#version 330 core
-
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
@@ -11,7 +9,6 @@ struct ShadowInfo {
 	mat4 viewMatrix;
 };
 
-uniform mat4 biasMatrix;
 uniform bool isDirLight;
 
 uniform ShadowInfo shadowInfo;

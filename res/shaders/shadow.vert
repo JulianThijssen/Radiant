@@ -1,5 +1,3 @@
-#version 330 core
-
 // Shadow
 struct ShadowInfo {
 	sampler2D shadowMap;

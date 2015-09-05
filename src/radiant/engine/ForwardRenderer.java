@@ -128,13 +128,6 @@ public class ForwardRenderer extends Renderer {
 		viewMatrix.translate(Vector3f.negate(t.position));
 		
 		// Render all the meshes associated with a shader
-		Matrix4f biasMatrix = new Matrix4f();
-		biasMatrix.array[0] = 0.5f;
-		biasMatrix.array[5] = 0.5f;
-		biasMatrix.array[10] = 0.5f;
-		biasMatrix.array[12] = 0.5f;
-		biasMatrix.array[13] = 0.5f;
-		biasMatrix.array[14] = 0.5f;
 		
 		// Multiply diffuse texture with the lighting
 		Shader shader = shaders.get(Shading.TEXTURE);
@@ -157,11 +150,14 @@ public class ForwardRenderer extends Renderer {
 			drawMesh(shader, entity);
 		}
 		
+//		for (PointLight point: scene.pointLights) {
+//			drawMesh()
+//		}
+		
 		// Diffuse
 		shader = shaders.get(Shading.DIFFUSE);
 		glUseProgram(shader.handle);
 		
-		glUniformMatrix4(shader.uniform("biasMatrix"), false, biasMatrix.getBuffer());
 		glUniformMatrix4(shader.uniform("projectionMatrix"), false, projectionMatrix.getBuffer());
 		glUniformMatrix4(shader.uniform("viewMatrix"), false, viewMatrix.getBuffer());
 		
@@ -206,7 +202,6 @@ public class ForwardRenderer extends Renderer {
 		shader = shaders.get(Shading.SPECULAR);
 		glUseProgram(shader.handle);
 		
-		glUniformMatrix4(shader.uniform("biasMatrix"), false, biasMatrix.getBuffer());
 		glUniform3f(shader.uniform("cameraPosition"), t.position.x, t.position.y, t.position.z);
 		glUniformMatrix4(shader.uniform("projectionMatrix"), false, projectionMatrix.getBuffer());
 		glUniformMatrix4(shader.uniform("viewMatrix"), false, viewMatrix.getBuffer());
@@ -231,7 +226,6 @@ public class ForwardRenderer extends Renderer {
 		shader = shaders.get(Shading.REFLECTIVE);
 		glUseProgram(shader.handle);
 		
-		glUniformMatrix4(shader.uniform("biasMatrix"), false, biasMatrix.getBuffer());
 		glUniform3f(shader.uniform("cameraPosition"), t.position.x, t.position.y, t.position.z);
 		glUniformMatrix4(shader.uniform("projectionMatrix"), false, projectionMatrix.getBuffer());
 		glUniformMatrix4(shader.uniform("viewMatrix"), false, viewMatrix.getBuffer());
