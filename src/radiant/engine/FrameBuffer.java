@@ -1,9 +1,12 @@
 package radiant.engine;
 
 import static org.lwjgl.opengl.GL11.GL_NONE;
+import static org.lwjgl.opengl.GL11.GL_RGB;
+import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
 import static org.lwjgl.opengl.GL11.glClearColor;
 import static org.lwjgl.opengl.GL11.glDrawBuffer;
 import static org.lwjgl.opengl.GL11.glReadBuffer;
+import static org.lwjgl.opengl.GL11.glReadPixels;
 import static org.lwjgl.opengl.GL30.GL_COLOR_ATTACHMENT0;
 import static org.lwjgl.opengl.GL30.GL_DEPTH_ATTACHMENT;
 import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
@@ -20,6 +23,13 @@ import static org.lwjgl.opengl.GL30.glCheckFramebufferStatus;
 import static org.lwjgl.opengl.GL30.glFramebufferTexture2D;
 import static org.lwjgl.opengl.GL30.glGenFramebuffers;
 import static org.lwjgl.opengl.GL32.glFramebufferTexture;
+
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+
+import org.lwjgl.BufferUtils;
+
+import radiant.assets.texture.TextureLoader;
 import radiant.engine.core.diag.Log;
 
 public class FrameBuffer {
@@ -62,6 +72,14 @@ public class FrameBuffer {
 	public void disableColor() {
 		glReadBuffer(GL_NONE);
 		glDrawBuffer(GL_NONE);
+	}
+	
+	public void save(int readBuffer) {
+		glReadBuffer(readBuffer);
+		ByteBuffer data = BufferUtils.createByteBuffer(Window.width * Window.height * 3);
+		glReadPixels(0, 0, Window.width, Window.height, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+		TextureLoader.savePNG(Window.width, Window.height, data);
 	}
 	
 	public void validate() {

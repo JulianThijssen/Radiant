@@ -700,6 +700,8 @@ public class ForwardRenderer extends Renderer {
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, 0);
 		
 		// Add a drawcall to the counter
 		drawCalls++;

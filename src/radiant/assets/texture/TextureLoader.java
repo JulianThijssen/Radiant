@@ -1,15 +1,37 @@
 package radiant.assets.texture;
 
-import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL11.GL_LINEAR;
+import static org.lwjgl.opengl.GL11.GL_LINEAR_MIPMAP_LINEAR;
+import static org.lwjgl.opengl.GL11.GL_NEAREST;
+import static org.lwjgl.opengl.GL11.GL_REPEAT;
+import static org.lwjgl.opengl.GL11.GL_RGBA;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_S;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_T;
+import static org.lwjgl.opengl.GL11.GL_UNPACK_ALIGNMENT;
+import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
+import static org.lwjgl.opengl.GL11.glBindTexture;
+import static org.lwjgl.opengl.GL11.glGenTextures;
+import static org.lwjgl.opengl.GL11.glPixelStorei;
+import static org.lwjgl.opengl.GL11.glTexImage2D;
+import static org.lwjgl.opengl.GL11.glTexParameteri;
 import static org.lwjgl.opengl.GL30.glGenerateMipmap;
 
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 
+import javax.imageio.ImageIO;
+
+import radiant.engine.core.diag.Log;
 import radiant.engine.core.errors.AssetLoaderException;
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
@@ -66,6 +88,29 @@ public class TextureLoader {
 		} catch (IOException e) {
 			throw new AssetLoaderException("An error occurred while loading the image: " + texture.path);
 		}
+	}
+	
+	public static void savePNG(int width, int height, ByteBuffer data) {
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+
+		byte[] array = new byte[data.capacity()];
+		data.get(array);
+		byte[] rearray = new byte[data.capacity()];
+		
+		for (int i = 0; i < array.length; i += 3) {
+			rearray[i + 0] = array[array.length - i - 3];
+			rearray[i + 1] = array[array.length - i - 2];
+			rearray[i + 2] = array[array.length - i - 1];
+		}
+		
+		image.getRaster().setDataElements(0, 0, width, height, rearray);
+		
+		try {
+			ImageIO.write(image, "PNG", new File("output.png"));
+		} catch (IOException e) {
+			Log.error("Failed to save screenshot");
+		}
+		Log.debug("Screenshot saved.");
 	}
 	
 	private static int uploadTexture(TextureData texture, Sampling sampling) {
