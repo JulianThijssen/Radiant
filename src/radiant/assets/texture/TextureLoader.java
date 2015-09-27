@@ -70,8 +70,8 @@ public class TextureLoader {
 			width = decoder.getWidth();
 			height = decoder.getHeight();
 			
-			buf = ByteBuffer.allocateDirect(4 * decoder.getWidth() * decoder.getHeight());
-			decoder.decode(buf, decoder.getWidth() * 4, Format.RGBA);
+			buf = ByteBuffer.allocateDirect(4 * width * height);
+			decoder.decode(buf, width * 4, Format.RGBA);
 			buf.flip();
 			
 			in.close();
