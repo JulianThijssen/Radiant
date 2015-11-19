@@ -16,7 +16,6 @@ void main(void) {
 	vec3 position = texture(positionTex, pass_texCoord).rgb;
 	vec4 specular = texture(specularTex, pass_texCoord);
 
-	float bias = 0.0015;
 	float visibility = 1.0;
 	vec3 refl = vec3(0, 0, 0);
 	
@@ -34,7 +33,7 @@ void main(void) {
 	    float fPhong = calcSpec(lightDir, camDir, normal, specular.w);
 		refl += specular.rgb * light.color * fPhong * fAtt;
 		
-		visibility = getPointVisibility(bias, lightDir);
+		visibility = getPointVisibility(light.bias, lightDir);
 	}
 	if (isDirLight) {
 		DirectionalLight light = dirLight;
@@ -49,7 +48,7 @@ void main(void) {
 		refl += specular.rgb * light.color * fPhong;
 		
 		shadowCoord = biasMatrix * shadowInfo.projectionMatrix * shadowInfo.viewMatrix * vec4(position, 1);
-		visibility = getDirVisibility(0.0025);
+		visibility = getDirVisibility(light.bias);
 	}
 	
 	out_Color = vec4(refl * visibility, 1);

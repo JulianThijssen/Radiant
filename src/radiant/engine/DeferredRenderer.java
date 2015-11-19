@@ -345,8 +345,10 @@ public class DeferredRenderer extends Renderer {
 		glUniform3f(shader.uniform("pointLight.color"), light.color.x, light.color.y, light.color.z);
 		glUniform1f(shader.uniform("pointLight.energy"), light.energy);
 		glUniform1f(shader.uniform("pointLight.distance"), light.distance);
+		
 		if (light.castShadows) {
 			glUniform1i(shader.uniform("pointLight.castShadows"), 1);
+			glUniform1f(shader.uniform("pointLight.bias"), light.shadowBias);
 		} else {
 			glUniform1i(shader.uniform("pointLight.castShadows"), 0);
 		}
@@ -380,6 +382,7 @@ public class DeferredRenderer extends Renderer {
 		glUniform1f(shader.uniform("dirLight.energy"), light.energy);
 		if (light.castShadows) {
 			glUniform1i(shader.uniform("dirLight.castShadows"), 1);
+			glUniform1f(shader.uniform("dirLight.bias"), light.shadowBias);
 		} else {
 			glUniform1i(shader.uniform("dirLight.castShadows"), 0);
 		}

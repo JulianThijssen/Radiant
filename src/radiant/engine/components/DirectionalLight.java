@@ -23,11 +23,13 @@ import radiant.engine.core.math.Vector3f;
 public class DirectionalLight extends Component {
 	public static final float DEFAULT_ENERGY = 1.0f;
 	public static final boolean DEFAULT_CAST_SHADOWS = false;
+	public static final float DEFAULT_SHADOW_BIAS = 0.05f;
 	
 	public Vector3f color = new Vector3f(1, 1, 1);
 	
 	public float energy = DEFAULT_ENERGY;
 	public boolean castShadows = DEFAULT_CAST_SHADOWS;
+	public float shadowBias = DEFAULT_SHADOW_BIAS;
 	
 	public ShadowInfo shadowInfo = null;
 	

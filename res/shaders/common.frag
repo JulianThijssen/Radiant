@@ -14,6 +14,7 @@ struct PointLight {
 	float energy;
 	float distance;
 	bool castShadows;
+	float bias;
 };
 
 struct DirectionalLight {
@@ -21,6 +22,7 @@ struct DirectionalLight {
 	vec3 color;
 	float energy;
 	bool castShadows;
+	float bias;
 };
 
 // Material

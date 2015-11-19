@@ -9,7 +9,6 @@ out vec4 out_Color;
 void main(void) {
 	// Shadows
 	float visibility = 1.0;
-	float bias = 0.0015;
 	
 	vec3 refl = vec3(0, 0, 0);
 	
@@ -52,7 +51,7 @@ void main(void) {
 		
 		// Shadows
 		if (material.receiveShadows && light.castShadows) {
-			visibility = getPointVisibility(bias, lightDir);
+			visibility = getPointVisibility(light.bias, lightDir);
 		}
 	}
 	
@@ -78,7 +77,7 @@ void main(void) {
 		// Shadows
 		if (material.receiveShadows && light.castShadows) {
 			shadowCoord = pass_shadowCoord;
-			visibility = getDirVisibility(bias);
+			visibility = getDirVisibility(light.bias);
 		}
 	}
 	
