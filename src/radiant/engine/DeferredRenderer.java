@@ -262,7 +262,8 @@ public class DeferredRenderer extends Renderer {
 		// Generate the shadow maps
 		for (DirectionalLight light: scene.dirLights) {
 			Transform lightT = light.owner.getComponent(Transform.class);
-			Camera lightC = new Camera(-10, 10, -10, 10, -20, 20);
+			// TODO Make convex hull of scene to get parameters
+			Camera lightC = new Camera(-20, 20, -20, 20, -30, 30);
 			lightC.loadProjectionMatrix(light.shadowInfo.projectionMatrix);
 			light.shadowInfo.viewMatrix.setIdentity();
 			light.shadowInfo.viewMatrix.rotate(Vector3f.negate(lightT.rotation));
