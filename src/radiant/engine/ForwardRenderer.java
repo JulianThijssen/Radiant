@@ -321,7 +321,7 @@ public class ForwardRenderer extends Renderer {
 		}
 		for (PointLight light: scene.pointLights) {
 			Transform lightT = light.owner.getComponent(Transform.class);
-			Camera lightC = new Camera(90, 1, 0.1f, 20);
+			Camera lightC = new Camera(90, 1, 0.1f, light.shadowDistance);
 			
 			for (int i = 0; i < 6; i++) {
 				lightT.rotation = CubeMap.transforms[i];
