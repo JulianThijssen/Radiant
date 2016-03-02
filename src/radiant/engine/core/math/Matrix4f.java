@@ -104,6 +104,87 @@ public class Matrix4f {
 		dest.z = array[2] * v.x + array[6] * v.y + array[10] * v.z + array[14] * w;
 		return dest;
 	}
+	
+	public float determinant() {
+		float f =
+			array[0]
+				* ((array[5] * array[10] * array[15] + array[6] * array[11] * array[13] + array[7] * array[9] * array[14])
+					- array[7] * array[10] * array[13]
+					- array[5] * array[11] * array[14]
+					- array[6] * array[9] * array[15]);
+		f -= array[1]
+			* ((array[4] * array[10] * array[15] + array[6] * array[11] * array[12] + array[7] * array[8] * array[14])
+				- array[7] * array[10] * array[12]
+				- array[4] * array[11] * array[14]
+				- array[6] * array[8] * array[15]);
+		f += array[2]
+			* ((array[4] * array[9] * array[15] + array[5] * array[11] * array[12] + array[7] * array[8] * array[13])
+				- array[7] * array[9] * array[12]
+				- array[4] * array[11] * array[13]
+				- array[5] * array[8] * array[15]);
+		f -= array[3]
+			* ((array[4] * array[9] * array[14] + array[5] * array[10] * array[12] + array[6] * array[8] * array[13])
+				- array[6] * array[9] * array[12]
+				- array[4] * array[10] * array[13]
+				- array[5] * array[8] * array[14]);
+		return f;
+	}
+	
+	private static float determinant3x3(float t00, float t01, float t02,
+		     float t10, float t11, float t12,
+		     float t20, float t21, float t22)
+	{
+	return   t00 * (t11 * t22 - t12 * t21)
+	      + t01 * (t12 * t20 - t10 * t22)
+	      + t02 * (t10 * t21 - t11 * t20);
+	}
+	
+	public void invert() {
+		float determinant = determinant();
+
+		if (determinant != 0) {
+			float determinant_inv = 1f/determinant;
+
+			// first row
+			float t00 =  determinant3x3(array[5], array[6], array[7], array[9], array[10], array[11], array[13], array[14], array[15]);
+			float t01 = -determinant3x3(array[4], array[6], array[7], array[8], array[10], array[11], array[12], array[14], array[15]);
+			float t02 =  determinant3x3(array[4], array[5], array[7], array[8], array[9], array[11], array[12], array[13], array[15]);
+			float t03 = -determinant3x3(array[4], array[5], array[6], array[8], array[9], array[10], array[12], array[13], array[14]);
+			// second row
+			float t10 = -determinant3x3(array[1], array[2], array[3], array[9], array[10], array[11], array[13], array[14], array[15]);
+			float t11 =  determinant3x3(array[0], array[2], array[3], array[8], array[10], array[11], array[12], array[14], array[15]);
+			float t12 = -determinant3x3(array[0], array[1], array[3], array[8], array[9], array[11], array[12], array[13], array[15]);
+			float t13 =  determinant3x3(array[0], array[1], array[2], array[8], array[9], array[10], array[12], array[13], array[14]);
+			// third row
+			float t20 =  determinant3x3(array[1], array[2], array[3], array[5], array[6], array[7], array[13], array[14], array[15]);
+			float t21 = -determinant3x3(array[0], array[2], array[3], array[4], array[6], array[7], array[12], array[14], array[15]);
+			float t22 =  determinant3x3(array[0], array[1], array[3], array[4], array[5], array[7], array[12], array[13], array[15]);
+			float t23 = -determinant3x3(array[0], array[1], array[2], array[4], array[5], array[6], array[12], array[13], array[14]);
+			// fourth row
+			float t30 = -determinant3x3(array[1], array[2], array[3], array[5], array[6], array[7], array[9], array[10], array[11]);
+			float t31 =  determinant3x3(array[0], array[2], array[3], array[4], array[6], array[7], array[8], array[10], array[11]);
+			float t32 = -determinant3x3(array[0], array[1], array[3], array[4], array[5], array[7], array[8], array[9], array[11]);
+			float t33 =  determinant3x3(array[0], array[1], array[2], array[4], array[5], array[6], array[8], array[9], array[10]);
+
+			// transpose and divide by the determinant
+			array[0] = t00*determinant_inv;
+			array[5] = t11*determinant_inv;
+			array[10] = t22*determinant_inv;
+			array[15] = t33*determinant_inv;
+			array[1] = t10*determinant_inv;
+			array[4] = t01*determinant_inv;
+			array[8] = t02*determinant_inv;
+			array[2] = t20*determinant_inv;
+			array[6] = t21*determinant_inv;
+			array[9] = t12*determinant_inv;
+			array[3] = t30*determinant_inv;
+			array[12] = t03*determinant_inv;
+			array[7] = t31*determinant_inv;
+			array[13] = t13*determinant_inv;
+			array[14] = t23*determinant_inv;
+			array[11] = t32*determinant_inv;
+		}
+	}
 
 	@Override
 	public String toString() {
