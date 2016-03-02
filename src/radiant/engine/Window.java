@@ -1,8 +1,10 @@
 package radiant.engine;
 
 import org.lwjgl.LWJGLException;
+import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
+import org.lwjgl.opengl.PixelFormat;
 
 import radiant.engine.core.diag.Log;
 import radiant.engine.core.errors.RadiantException;
@@ -34,7 +36,9 @@ public final class Window {
 		try {
 			setTitle(title);
 			setSize(width, height);
-			Display.create();
+			PixelFormat pixelFormat = new PixelFormat().withDepthBits(24).withStencilBits(8);
+			ContextAttribs contextAtrributes = new ContextAttribs(3, 2).withForwardCompatible(true).withProfileCore(true);
+			Display.create(pixelFormat, contextAtrributes);
 		} catch(LWJGLException e) {
 			throw new RadiantException("Window context can not be created");
 		}

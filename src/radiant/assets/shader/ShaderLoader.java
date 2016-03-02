@@ -28,6 +28,7 @@ public class ShaderLoader {
 	public static final String commonFrag = FileIO.loadAsString("res/shaders/common.frag");
 	
 	public static Shader loadShaders(String vertpath, String fragpath) throws AssetLoaderException {
+		Log.debug("Loading shader: " + vertpath + " and " + fragpath + " ...");
 		int vertexShader = loadShader(vertpath, GL_VERTEX_SHADER);
 		int fragmentShader = loadShader(fragpath, GL_FRAGMENT_SHADER);
 		
